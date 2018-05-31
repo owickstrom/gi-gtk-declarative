@@ -1,0 +1,70 @@
+name:                 gi-gtk-declarative
+version:              0.1.0
+synopsis:             Purely functional and declarative GTK+ programming in Haskell.
+-- description:
+license:              MPL-2.0
+license-file:         LICENSE
+author:               Oskar Wickström
+maintainer:           oskar.wickstrom@gmail.com
+copyright:            Oskar Wickström
+category:             Graphics
+build-type:           Simple
+cabal-version:        >=1.10
+
+extra-source-files:   CHANGELOG.md
+
+library
+  exposed-modules:      GI.Gtk.Declarative
+                      , GI.Gtk.Declarative.Container
+                      , GI.Gtk.Declarative.CSS
+                      , GI.Gtk.Declarative.Node
+                      , GI.Gtk.Declarative.Object
+                      , GI.Gtk.Declarative.Patch
+                      , GI.Gtk.Declarative.Props
+  build-depends:        base >=4.10 && <4.12
+                      , gi-gobject
+                      , gi-glib
+                      , gi-gtk
+                      , gi-gdk
+                      , haskell-gi
+                      , haskell-gi-base
+                      , text
+                      , unordered-containers
+  hs-source-dirs:       src
+  default-language:     Haskell2010
+  ghc-options:        -Wall
+
+executable gi-gtk-declarative-example
+  main-is:              Hello.hs
+  build-depends:        base >=4.10 && <4.12
+                      , gi-gobject
+                      , gi-glib
+                      , gi-gtk
+                      , gi-gtk-declarative
+                      , gi-gdk
+                      , gi-pango
+                      , haskell-gi
+                      , haskell-gi-base
+                      , text
+  hs-source-dirs:       example
+  default-language:     Haskell2010
+  ghc-options:        -Wall -threaded
+
+-- executable fastcut-split
+--   main-is:              Split.hs
+--   other-modules:        Paths_fastcut
+--   -- other-extensions:
+--   build-depends:        base >=4.10 && <4.12
+--                       , fastcut
+--                       , gi-gobject
+--                       , gi-glib
+--                       , gi-gtk
+--                       , gi-gdk
+--                       , gi-pango
+--                       , haskell-gi
+--                       , haskell-gi-base
+--                       , text
+--                       , time
+--   hs-source-dirs:       exe
+--   default-language:     Haskell2010
+--   ghc-options:        -Wall -threaded -O2

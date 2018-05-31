@@ -1,0 +1,7 @@
+/dist
+/dist-newstyle
+/.stack-work
+/tags
+/TAGS
+/.ghc.environment*
+/cabal.project.local
