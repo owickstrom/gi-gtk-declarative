@@ -59,7 +59,7 @@ main = do
   void (Gtk.onWidgetDestroy window mainQuit)
 
   -- Customize the top window.
-  Gtk.windowSetTitle window "FastCut"
+  Gtk.windowSetTitle window "Sample gi-gtk-declarative app!"
   Gtk.windowResize window 640 480
 
   -- A channel of "model" values.
