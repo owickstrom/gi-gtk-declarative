@@ -45,6 +45,13 @@ cannot compile this package with GHC 8.2.x.
 There is currently one example available in
 [examples/Hello.hs](examples/Hello.hs). More to come soon, hopefully.
 
+To run the `Hello.hs` example, follow these steps:
+
+``` shell
+cabal new-build
+cabal new-run gi-gtk-declarative-example-hello
+```
+
 ## License
 
 Copyright 2018 Ⓒ Oskar Wickström
