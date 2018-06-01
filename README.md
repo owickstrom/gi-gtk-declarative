@@ -1,12 +1,12 @@
 # gi-gtk-declarative
 
-*Purely functional and declarative GTK+ programming in Haskell.*
+*Declarative GTK+ programming in Haskell.*
 
 ## Motivation & Goal
 
 Using declarative markup to construct user interfaces, in a purely
-functional fashion, is a great joy. Instead of imperative building up
-stateful objects in `IO`, you construct a regular data structure
+functional fashion, is a great joy. Instead of imperatively building
+up stateful objects in `IO`, you construct a regular data structure
 describing the user interface to render.
 
 In web development, declarative user interfaces are supported not only

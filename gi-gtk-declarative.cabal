@@ -1,6 +1,6 @@
 name:                 gi-gtk-declarative
 version:              0.1.0
-synopsis:             Purely functional and declarative GTK+ programming in Haskell.
+synopsis:             Declarative GTK+ programming in Haskell.
 -- description:
 license:              MPL-2.0
 license-file:         LICENSE
