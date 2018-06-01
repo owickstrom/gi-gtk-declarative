@@ -34,7 +34,11 @@ manually wrap large parts of existing GTK+ widgets.
 
 ## Requirements
 
-As this library relies heavily on `OverloadedLabels` and the
+Follow the installation instructions at
+[haskell-gi](https://github.com/haskell-gi/haskell-gi#installation) to
+make sure you have the required GObject and GTK+ libraries installed.
+
+As this package relies heavily on `OverloadedLabels` and the
 `haskell-gi-overloading` functionality, the restrictions apply [as
 described in the haskell-gi package
 documentation](https://github.com/haskell-gi/haskell-gi), i.e. you
@@ -45,12 +49,15 @@ cannot compile this package with GHC 8.2.x.
 There is currently one example available in
 [examples/Hello.hs](examples/Hello.hs). More to come soon, hopefully.
 
-To run the `Hello.hs` example, follow these steps:
+To run the `Hello.hs` example, follow these steps (assuming you have a
+recent version of Cabal):
 
 ``` shell
 cabal new-build
 cabal new-run gi-gtk-declarative-example-hello
 ```
+
+You might also build in a Cabal sandbox, using Stack, or with Nix.
 
 ## License
 
