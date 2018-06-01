@@ -42,8 +42,8 @@ cannot compile this package with GHC 8.2.x.
 
 ## Example
 
-There is currently one example available in [examples/Hello.hs]. More
-to come soon, hopefully.
+There is currently one example available in
+[examples/Hello.hs](examples/Hello.hs). More to come soon, hopefully.
 
 ## License
 
