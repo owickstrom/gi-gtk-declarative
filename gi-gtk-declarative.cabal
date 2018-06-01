@@ -17,8 +17,8 @@ library
   exposed-modules:      GI.Gtk.Declarative
                       , GI.Gtk.Declarative.Container
                       , GI.Gtk.Declarative.CSS
+                      , GI.Gtk.Declarative.Markup
                       , GI.Gtk.Declarative.Node
-                      , GI.Gtk.Declarative.Object
                       , GI.Gtk.Declarative.Patch
                       , GI.Gtk.Declarative.Props
   build-depends:        base >=4.10 && <4.12

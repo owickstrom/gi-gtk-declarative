@@ -28,26 +28,28 @@ import qualified GI.Gtk                  as Gtk
 
 import           GI.Gtk.Declarative.CSS
 
-data PropPair obj where
+infix 5 :=
+
+data PropPair w where
   (:=)
-    :: (GI.AttrGetC info obj attr value
-      , GI.AttrOpAllowed 'GI.AttrConstruct info obj
-      , GI.AttrOpAllowed 'GI.AttrSet info obj
+    :: (GI.AttrGetC info w attr value
+      , GI.AttrOpAllowed 'GI.AttrConstruct info w
+      , GI.AttrOpAllowed 'GI.AttrSet info w
       , GI.AttrSetTypeConstraint info value
       , KnownSymbol attr
       , Typeable attr
       , Eq value
       )
-    =>  GI.AttrLabelProxy (attr :: Symbol) -> value -> PropPair obj
+    =>  GI.AttrLabelProxy (attr :: Symbol) -> value -> PropPair w
   Classes
-    :: Gtk.IsWidget obj
+    :: Gtk.IsWidget w
     => ClassSet
-    -> PropPair obj
+    -> PropPair w
 
-classes :: Gtk.IsWidget obj => [Text] -> PropPair obj
+classes :: Gtk.IsWidget w => [Text] -> PropPair w
 classes = Classes . HashSet.fromList
 
-instance Eq (PropPair obj) where
+instance Eq (PropPair w) where
   ((_ :: GI.AttrLabelProxy attr1) := v1) == ((_ :: GI.AttrLabelProxy attr2) := v2) =
     case eqT @attr1 @attr2 of
       Just Refl -> v1 == v2

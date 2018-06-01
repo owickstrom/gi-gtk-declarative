@@ -10,7 +10,7 @@ import           GI.Gtk                       as Export hiding ((:=))
 
 import           GI.Gtk.Declarative.Container as Export
 import           GI.Gtk.Declarative.CSS       as Export
+import           GI.Gtk.Declarative.Markup    as Export
 import           GI.Gtk.Declarative.Node      as Export
-import           GI.Gtk.Declarative.Object    as Export
 import           GI.Gtk.Declarative.Patch     as Export
 import           GI.Gtk.Declarative.Props     as Export

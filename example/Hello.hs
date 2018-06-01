@@ -13,7 +13,7 @@ import           GI.Gtk.Declarative hiding (main)
 import qualified GI.Gtk.Declarative as Gtk
 
 -- A very simple declarative user interface.
-helloView :: (Text, Bool) -> Object
+helloView :: (Text, Bool) -> Markup
 helloView (who, flipped) = container Box [] $
   op
   [ BoxChild True True 0 (node Label [#label := "This is a sample application."])
@@ -25,7 +25,11 @@ helloView (who, flipped) = container Box [] $
 runUI :: IO () -> IO ()
 runUI f = void (Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT (f *> return False))
 
-mainLoop :: Gtk.Window -> Chan a -> (a -> Object) -> IO ()
+-- Our generic main loop, reading models from the Chan, applying the
+-- view function, and patching the GTK+ widgets.
+--
+-- TODO: Extract this to the library (if would be a common useful pattern?)
+mainLoop :: Gtk.Window -> Chan a -> (a -> Markup) -> IO ()
 mainLoop window models view = do
   first <- view <$> readChan models
   runUI $ Gtk.containerAdd window =<< Gtk.toWidget =<< create first
@@ -35,7 +39,7 @@ mainLoop window models view = do
       next <- view <$> readChan models
       runUI $ patchContainer window old next
       loop next
-    patchContainer :: Gtk.Window -> Object -> Object -> IO ()
+    patchContainer :: Gtk.Window -> Markup -> Markup -> IO ()
     patchContainer w o1 o2 =
       case patch o1 o2 of
         Modify f ->

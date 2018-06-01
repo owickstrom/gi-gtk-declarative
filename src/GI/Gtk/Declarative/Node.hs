@@ -5,7 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeOperators         #-}
 
--- | A 'Node' represents a declarative "leaf" object, i.e. one that is
+-- | A 'Node' represents a declarative "leaf" widget, i.e. one that is
 -- not a container with children.
 
 module GI.Gtk.Declarative.Node
@@ -20,7 +20,7 @@ import           Data.Typeable
 import qualified GI.Gtk                    as Gtk
 
 import           GI.Gtk.Declarative.CSS
-import           GI.Gtk.Declarative.Object
+import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.Props
 
@@ -62,5 +62,5 @@ instance Patchable (Node a) where
           (attr := value) -> Left (attr Gtk.:= value)
           Classes c -> Right c
 
-node :: (Typeable a, Gtk.IsWidget a) => (Gtk.ManagedPtr a -> a) -> [PropPair a] -> Object
-node ctor attrs = Object (Node ctor attrs)
+node :: (Typeable a, Gtk.IsWidget a) => (Gtk.ManagedPtr a -> a) -> [PropPair a] -> Markup
+node ctor attrs = Markup (Node ctor attrs)

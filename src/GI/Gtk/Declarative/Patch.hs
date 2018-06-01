@@ -1,5 +1,7 @@
 -- | A 'Patch' represents a possible 'IO' action to apply to a
--- 'Gtk.Widget' to make it reflect the new declarative object.
+-- 'Gtk.Widget' to make it reflect an updated declarative widget.  The
+-- action to apply is calculated from the difference between the old
+-- and the new declarative widget.
 
 module GI.Gtk.Declarative.Patch
   ( Patch(..)
@@ -13,6 +15,6 @@ data Patch
   | Replace (IO Gtk.Widget)
   | Keep
 
-class Patchable obj where
-  create ::  obj -> IO Gtk.Widget
-  patch :: obj -> obj -> Patch
+class Patchable w where
+  create :: w -> IO Gtk.Widget
+  patch :: w -> w -> Patch

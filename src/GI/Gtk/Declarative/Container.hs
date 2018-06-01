@@ -26,7 +26,7 @@ import           Data.Word                 (Word32)
 import qualified GI.Gtk                    as Gtk
 
 import           GI.Gtk.Declarative.CSS
-import           GI.Gtk.Declarative.Object
+import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.Props
 
@@ -98,19 +98,19 @@ patchInBox appendChild box os' ns' = do
     (_i, Nothing, Nothing, Nothing) ->
       return ()
 
-appendCreatedObjectInBox :: Gtk.Box -> Object -> Gtk.Widget -> IO ()
-appendCreatedObjectInBox box _ = Gtk.containerAdd box
+appendCreatedWidgetInBox :: Gtk.Box -> Markup -> Gtk.Widget -> IO ()
+appendCreatedWidgetInBox box _ = Gtk.containerAdd box
 
 packCreatedBoxChildInBox :: Gtk.Box -> BoxChild -> Gtk.Widget -> IO ()
 packCreatedBoxChildInBox box BoxChild{..} widget =
   Gtk.boxPackStart box widget expand fill padding
 
-instance PatchableContainer Gtk.Box [Object] where
-  createChildrenIn box = mapM_ $ \(Object child) ->
-    appendCreatedObjectInBox box (Object child) =<< create child
-  patchChildrenIn = patchInBox appendCreatedObjectInBox
+instance PatchableContainer Gtk.Box [Markup] where
+  createChildrenIn box = mapM_ $ \(Markup child) ->
+    appendCreatedWidgetInBox box (Markup child) =<< create child
+  patchChildrenIn = patchInBox appendCreatedWidgetInBox
 
-data BoxChild = BoxChild { expand :: Bool, fill :: Bool, padding :: Word32, child :: Object }
+data BoxChild = BoxChild { expand :: Bool, fill :: Bool, padding :: Word32, child :: Markup }
   deriving (Eq, Show)
 
 instance Patchable BoxChild where
@@ -118,15 +118,15 @@ instance Patchable BoxChild where
   patch b1 b2 = patch (child b1) (child b2)
 
 instance PatchableContainer Gtk.Box [BoxChild] where
-  createChildrenIn box = mapM_ $ \BoxChild {child = Object child, ..} -> do
+  createChildrenIn box = mapM_ $ \BoxChild {child = Markup child, ..} -> do
     widget <- create child
     Gtk.boxPackStart box widget expand fill padding
   patchChildrenIn = patchInBox packCreatedBoxChildInBox
 
 -- * ScrolledWindow
 
-instance PatchableContainer Gtk.ScrolledWindow Object where
-  createChildrenIn box (Object child) = create child >>= Gtk.containerAdd box
+instance PatchableContainer Gtk.ScrolledWindow Markup where
+  createChildrenIn box (Markup child) = create child >>= Gtk.containerAdd box
   patchChildrenIn scrolledWindow oldChild newChild = do
     viewport <- Gtk.containerGetChildren scrolledWindow
       >>= requireSingle "Viewport"
@@ -202,5 +202,5 @@ container ::
   => (Gtk.ManagedPtr a -> a)
   -> [PropPair a]
   -> children
-  -> Object
-container ctor attrs = Object . GtkContainer ctor attrs
+  -> Markup
+container ctor attrs = Markup . GtkContainer ctor attrs
