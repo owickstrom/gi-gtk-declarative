@@ -10,7 +10,6 @@ copyright:            Oskar Wickström
 category:             Graphics
 build-type:           Simple
 cabal-version:        >=1.10
-
 extra-source-files:   CHANGELOG.md
 
 library
@@ -22,17 +21,15 @@ library
                       , GI.Gtk.Declarative.Patch
                       , GI.Gtk.Declarative.Props
   build-depends:        base >=4.10 && <4.12
-                      , gi-gobject
-                      , gi-glib
-                      , gi-gtk
-                      , gi-gdk
-                      , haskell-gi
-                      , haskell-gi-base
+                      , gi-gobject           >= 2    && <3
+                      , gi-gtk               >= 3    && <4
+                      , haskell-gi           >= 0.21 && <0.22
+                      , haskell-gi-base      >= 0.21 && <0.22
                       , text
-                      , unordered-containers
+                      , unordered-containers >= 0.2 && < 0.3
   hs-source-dirs:       src
   default-language:     Haskell2010
-  ghc-options:        -Wall
+  ghc-options:          -Wall
 
 executable gi-gtk-declarative-example
   main-is:              Hello.hs
@@ -42,13 +39,12 @@ executable gi-gtk-declarative-example
                       , gi-gtk
                       , gi-gtk-declarative
                       , gi-gdk
-                      , gi-pango
                       , haskell-gi
                       , haskell-gi-base
                       , text
   hs-source-dirs:       example
   default-language:     Haskell2010
-  ghc-options:        -Wall -threaded
+  ghc-options:          -Wall -threaded
 
 -- executable fastcut-split
 --   main-is:              Split.hs
