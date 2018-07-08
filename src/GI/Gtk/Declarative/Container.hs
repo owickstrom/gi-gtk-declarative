@@ -111,7 +111,6 @@ instance PatchableContainer Gtk.Box [Markup] where
   patchChildrenIn = patchInBox appendCreatedWidgetInBox
 
 data BoxChild = BoxChild { expand :: Bool, fill :: Bool, padding :: Word32, child :: Markup }
-  deriving (Eq, Show)
 
 instance Patchable BoxChild where
   create = create . child
@@ -148,15 +147,11 @@ instance PatchableContainer Gtk.ScrolledWindow Markup where
 
 data GtkContainer a children where
   GtkContainer
-    :: (Typeable a, Gtk.IsWidget a, Eq children)
+    :: (Typeable a, Gtk.IsWidget a)
     => (Gtk.ManagedPtr a -> a)
     -> [PropPair a]
     -> children
     -> GtkContainer a children
-
-instance Eq (GtkContainer a children) where
-  GtkContainer _ a1 c1 == GtkContainer _ a2 c2 =
-    a1 == a2 && c1 == c2
 
 instance Show (GtkContainer a children) where
   show = \case
@@ -193,8 +188,7 @@ instance PatchableContainer a children => Patchable (GtkContainer a children) wh
           Classes c -> Right c
 
 container ::
-     ( Eq children
-     , PatchableContainer a children
+     ( PatchableContainer a children
      , Typeable children
      , Typeable a
      , Gtk.IsWidget a

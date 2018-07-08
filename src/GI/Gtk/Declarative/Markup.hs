@@ -19,7 +19,7 @@ import           GI.Gtk.Declarative.Patch
 -- heterogeneous containers of widgets, and to support equality
 -- checks on different types of widgets when calculating patches.
 data Markup where
-  Markup :: (Eq w, Show w, Typeable w, Patchable w) => w -> Markup
+  Markup :: (Typeable w, Patchable w) => w -> Markup
 
 -- | 'Markup' is itself patchable, by delegating to the underlying
 -- widget instances.
@@ -29,11 +29,3 @@ instance Patchable Markup where
     case eqT @t1 @t2 of
       Just Refl -> patch w1 w2
       Nothing   -> Replace (create w2)
-
-deriving instance Show Markup
-
-instance Eq Markup where
-  Markup (a :: x) == Markup (b :: y) =
-    case eqT @x @y  of
-      Just Refl -> a == b
-      Nothing   -> False

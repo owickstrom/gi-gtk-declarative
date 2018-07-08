@@ -8,6 +8,7 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 
 -- | Property lists on declarative objects, supporting the underlying
@@ -16,19 +17,24 @@
 module GI.Gtk.Declarative.Props
   ( PropPair(..)
   , classes
+  , on
   ) where
 
 import qualified Data.GI.Base.Attributes as GI
+import qualified Data.GI.Base.Signals    as GI
 import qualified Data.HashSet            as HashSet
 import           Data.Text               (Text)
 import           Data.Typeable
-import           GHC.TypeLits            (Symbol)
-import           GHC.TypeLits            (KnownSymbol, symbolVal)
+import           GHC.TypeLits            (KnownSymbol, Symbol)
 import qualified GI.Gtk                  as Gtk
 
 import           GI.Gtk.Declarative.CSS
 
 infix 5 :=
+
+type family PureSignalCallback t e where
+  PureSignalCallback (IO ()) e = e
+  PureSignalCallback (a -> b) e = a -> PureSignalCallback b e
 
 data PropPair w where
   (:=)
@@ -45,18 +51,17 @@ data PropPair w where
     :: Gtk.IsWidget w
     => ClassSet
     -> PropPair w
+  OnSignal
+    :: (Gtk.GObject w, GI.SignalInfo info)
+    => Gtk.SignalProxy w info
+    -> (w -> GI.HaskellCallbackType info)
+    -> PropPair w
 
 classes :: Gtk.IsWidget w => [Text] -> PropPair w
 classes = Classes . HashSet.fromList
 
-instance Eq (PropPair w) where
-  ((_ :: GI.AttrLabelProxy attr1) := v1) == ((_ :: GI.AttrLabelProxy attr2) := v2) =
-    case eqT @attr1 @attr2 of
-      Just Refl -> v1 == v2
-      Nothing   -> False
-  Classes c1 == Classes c2 = c1 == c2
-  _ == _ = False
-
-instance Show a => Show (PropPair a) where
-  show (attr := _value) = symbolVal attr <> " := " <> "???"
-  show (Classes cs)     = "Classes " <> show cs
+on :: (Gtk.GObject w, GI.SignalInfo info)
+    => Gtk.SignalProxy w info
+    -> (w -> GI.HaskellCallbackType info)
+    -> PropPair w
+on = OnSignal

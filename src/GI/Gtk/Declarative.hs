@@ -6,7 +6,7 @@
 
 module GI.Gtk.Declarative (module Export) where
 
-import           GI.Gtk                       as Export hiding ((:=))
+import           GI.Gtk                       as Export hiding ((:=), on)
 
 import           GI.Gtk.Declarative.Container as Export
 import           GI.Gtk.Declarative.CSS       as Export
