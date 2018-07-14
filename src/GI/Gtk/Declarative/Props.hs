@@ -38,15 +38,15 @@ type family PureSignalCallback t e where
 
 data PropPair w where
   (:=)
-    :: (GI.AttrGetC info w attr value
-      , GI.AttrOpAllowed 'GI.AttrConstruct info w
+    :: (GI.AttrOpAllowed 'GI.AttrConstruct info w
       , GI.AttrOpAllowed 'GI.AttrSet info w
-      , GI.AttrSetTypeConstraint info value
+      , GI.AttrGetC info w attr getValue
+      , GI.AttrSetTypeConstraint info setValue
       , KnownSymbol attr
       , Typeable attr
-      , Eq value
+      , Eq getValue
       )
-    =>  GI.AttrLabelProxy (attr :: Symbol) -> value -> PropPair w
+    =>  GI.AttrLabelProxy (attr :: Symbol) -> setValue -> PropPair w
   Classes
     :: Gtk.IsWidget w
     => ClassSet

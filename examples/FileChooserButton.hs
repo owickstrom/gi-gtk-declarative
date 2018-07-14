@@ -40,7 +40,10 @@ fileChooserView fileSelected buttonClicked currentFile =
       10
       (node
          Button
-         [#label := "Select", on #clicked (const (writeChan buttonClicked ButtonClicked))])
+         [ #label := "Select"
+         , #tooltipText := "Hello!"
+         , on #clicked (const (writeChan buttonClicked ButtonClicked))
+         ])
   ]
   where
     onFileSelectionChanged w =
