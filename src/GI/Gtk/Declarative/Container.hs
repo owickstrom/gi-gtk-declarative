@@ -100,6 +100,8 @@ patchInBox appendChild box os' ns' = do
     -- No more widgets or objects, we are done.
     (_i, Nothing, Nothing, Nothing) -> return ()
 
+  Gtk.widgetQueueResize box
+
 appendCreatedWidgetInBox :: Gtk.Box -> Markup -> Gtk.Widget -> IO ()
 appendCreatedWidgetInBox box _ = Gtk.containerAdd box
 
