@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Main where
+module FileChooserButton where
 
 import           Control.Concurrent
 import           Control.Monad

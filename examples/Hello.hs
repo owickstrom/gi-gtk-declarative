@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Main where
+module Hello where
 
 import           Control.Concurrent
 import           Control.Monad

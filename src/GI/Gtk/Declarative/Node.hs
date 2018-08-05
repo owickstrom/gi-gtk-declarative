@@ -12,13 +12,14 @@
 module GI.Gtk.Declarative.Node
   ( Node
   , node
-  ) where
+  )
+where
 
-import           Control.Monad             (void)
-import           Control.Monad.IO.Class
-import qualified Data.GI.Base.Attributes   as GI
+import           Control.Monad                            ( void )
+import           Control.Monad.IO.Class                   ( MonadIO )
+import qualified Data.GI.Base.Attributes       as GI
 import           Data.Typeable
-import qualified GI.Gtk                    as Gtk
+import qualified GI.Gtk                        as Gtk
 
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
@@ -28,34 +29,29 @@ data Node a where
   Node :: (Typeable a, Gtk.IsWidget a) => (Gtk.ManagedPtr a -> a) -> [PropPair a] -> Node a
 
 extractAttrConstructOps :: PropPair obj -> [GI.AttrOp obj 'GI.AttrConstruct]
-extractAttrConstructOps =
-  \case
-    (attr := value) -> pure (attr Gtk.:= value)
-    _ -> []
+extractAttrConstructOps = \case
+  (attr := value) -> pure (attr Gtk.:= value)
+  _               -> []
 
 extractAttrSetOps :: PropPair obj -> [GI.AttrOp obj 'GI.AttrSet]
-extractAttrSetOps =
-  \case
-    (attr := value) -> pure (attr Gtk.:= value)
-    _ -> []
+extractAttrSetOps = \case
+  (attr := value) -> pure (attr Gtk.:= value)
+  _               -> []
 
 addClass :: MonadIO m => Gtk.StyleContext -> PropPair obj -> m ()
-addClass sc =
-  \case
-    Classes cs -> mapM_ (Gtk.styleContextAddClass sc) cs
-    _ -> pure ()
+addClass sc = \case
+  Classes cs -> mapM_ (Gtk.styleContextAddClass sc) cs
+  _          -> pure ()
 
 removeClass :: MonadIO m => Gtk.StyleContext -> PropPair obj -> m ()
-removeClass sc =
-  \case
-    Classes cs -> mapM_ (Gtk.styleContextRemoveClass sc) cs
-    _ -> pure ()
+removeClass sc = \case
+  Classes cs -> mapM_ (Gtk.styleContextRemoveClass sc) cs
+  _          -> pure ()
 
 addSignalHandler :: MonadIO m => obj -> PropPair obj -> m ()
-addSignalHandler obj =
-  \case
-    OnSignal signal handler -> void (Gtk.on obj signal (handler obj))
-    _ -> pure ()
+addSignalHandler obj = \case
+  OnSignal signal handler -> void (Gtk.on obj signal (handler obj))
+  _                       -> pure ()
 
 instance Patchable (Node a) where
   create = \case
@@ -80,5 +76,9 @@ instance Patchable (Node a) where
 
     Gtk.widgetShowAll w
 
-node :: (Typeable a, Gtk.IsWidget a) => (Gtk.ManagedPtr a -> a) -> [PropPair a] -> Markup
+node
+  :: (Typeable a, Gtk.IsWidget a)
+  => (Gtk.ManagedPtr a -> a)
+  -> [PropPair a]
+  -> Markup
 node ctor attrs = Markup (Node ctor attrs)
