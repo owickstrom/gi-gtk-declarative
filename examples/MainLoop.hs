@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 module MainLoop where
 
+import           Data.Typeable
 import           Control.Concurrent
 import           Control.Monad
 import qualified GI.Gdk             as Gdk
@@ -15,7 +16,7 @@ runUI f = void (Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT (f *> return False))
 -- view function, and patching the GTK+ widgets.
 --
 -- TODO: Extract this to the library (if would be a common useful pattern?)
-mainLoop :: Gtk.Window -> Chan model -> (model -> Markup event) -> IO ()
+mainLoop :: Typeable event => Gtk.Window -> Chan model -> (model -> Markup event) -> IO ()
 mainLoop window models view = do
   first <- view <$> readChan models
   runUI $ do
@@ -27,7 +28,7 @@ mainLoop window models view = do
       next <- view <$> readChan models
       runUI $ patchContainer window old next
       loop next
-    patchContainer :: Gtk.Window -> Markup event -> Markup event -> IO ()
+    patchContainer :: Typeable event => Gtk.Window -> Markup event -> Markup event -> IO ()
     patchContainer w o1 o2 =
       case patch o1 o2 of
         Modify f ->

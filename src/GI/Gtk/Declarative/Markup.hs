@@ -1,9 +1,10 @@
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE GADTs                #-}
+{-# LANGUAGE ConstraintKinds      #-}
+{-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications    #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TypeApplications     #-}
+{-# LANGUAGE TypeOperators        #-}
 
 -- | 'Markup' is the common type for the (declarative) GTK+ markup
 -- language. A 'Markup' value can wrap a 'Patchable' widgets, and
@@ -19,17 +20,26 @@ import           GI.Gtk.Declarative.Patch
 -- constrained equivalent of a 'Dynamic' value. It is used to support
 -- heterogeneous containers of widgets, and to support equality
 -- checks on different types of widgets when calculating patches.
-data Markup e where
+data Markup event where
   Markup
-    :: (Typeable (widget event), Patchable widget event)
+    :: (Functor widget, Typeable widget, Patchable widget)
     => widget event
     -> Markup event
 
+instance Functor Markup where
+  fmap f (Markup w) = Markup (fmap f w)
+
 -- | 'Markup' is itself patchable, by delegating to the underlying
 -- widget instances.
-instance Patchable Markup event where
+
+instance Patchable Markup where
   create (Markup w) = create w
-  patch (Markup (w1 :: t1 e)) (Markup (w2 :: t2 e)) =
-    case eqT @(t1 e) @(t2 e) of
-      Just Refl -> patch w1 w2
-      Nothing   -> Replace (create w2)
+  patch
+    (Markup (w1 :: t1 event))
+    (Markup (w2 :: t2 event)) =
+      case eqT @(t1 event) @(t2 event) of
+        Just Refl -> patch w1 w2
+        _   -> Replace (create w2)
+
+-- mapP :: (Typeable b) => (event -> b) -> widget event -> widget b
+-- mapP p f (Markup (w :: widget event)) = Markup (mapP (Proxy :: Proxy widget) f w)

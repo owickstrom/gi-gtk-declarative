@@ -26,7 +26,14 @@ import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.Props
 
 data Node event where
-  Node :: (Typeable w, Gtk.IsWidget w) => (Gtk.ManagedPtr w -> w) -> [PropPair w] -> Node event
+  Node
+    :: (Typeable w, Gtk.IsWidget w)
+    => (Gtk.ManagedPtr w -> w)
+    -> [PropPair w]
+    -> Node event
+
+instance Functor Node where
+  fmap _f (Node ctor props) = (Node ctor props)
 
 extractAttrConstructOps :: PropPair widget -> [GI.AttrOp widget 'GI.AttrConstruct]
 extractAttrConstructOps = \case
@@ -53,7 +60,7 @@ addSignalHandler widget = \case
   OnSignal signal handler -> void (Gtk.on widget signal (handler widget))
   _                       -> pure ()
 
-instance Patchable Node event where
+instance Patchable Node where
   create = \case
     (Node ctor props) -> do
         let attrOps = concatMap extractAttrConstructOps props
