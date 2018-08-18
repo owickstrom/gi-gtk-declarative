@@ -1,16 +1,16 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists   #-}
 
 module FileChooserButton where
 
 import           Control.Concurrent
 import           Control.Monad
-import           Data.Text          (Text)
-import qualified Data.Text          as Text
+import qualified Data.Text                     as Text
 
-import           GI.Gtk.Declarative hiding (main)
-import qualified GI.Gtk.Declarative as Gtk
+import           GI.Gtk.Declarative                hiding ( main )
+import qualified GI.Gtk.Declarative            as Gtk
 
 import           MainLoop
 
@@ -19,37 +19,37 @@ data FileSelected = FileSelected FilePath
 data ButtonClicked = ButtonClicked
 
 -- A very simple declarative user interface.
-fileChooserView ::  Chan FileSelected -> Chan ButtonClicked ->Maybe FilePath -> Markup
-fileChooserView fileSelected buttonClicked currentFile =
-  container Box [#orientation := OrientationVertical] $
+fileChooserView
+  :: Chan FileSelected -> Chan ButtonClicked -> Maybe FilePath -> Markup ()
+fileChooserView fileSelected buttonClicked' currentFile = container
+  Box
+  [#orientation := OrientationVertical]
   [ BoxChild
-      True
-      True
-      0
-      (node Label [#label := maybe "No file yet." Text.pack currentFile])
+    True
+    True
+    0
+    (node Label [#label := maybe "No file yet." Text.pack currentFile])
   , BoxChild
-      False
-      False
-      10
-      (node
-         FileChooserButton
-         [on #selectionChanged onFileSelectionChanged])
+    False
+    False
+    10
+    (node FileChooserButton [on #selectionChanged onFileSelectionChanged])
   , BoxChild
-      False
-      False
-      10
-      (node
-         Button
-         [ #label := "Select"
-         , #tooltipText := "Hello!"
-         , on #clicked (const (writeChan buttonClicked ButtonClicked))
-         ])
+    False
+    False
+    10
+    (node
+      Button
+      [ #label := "Select"
+      , #tooltipText := "Hello!"
+      , on #clicked (const (writeChan buttonClicked' ButtonClicked))
+      ]
+    )
   ]
-  where
-    onFileSelectionChanged w =
-      Gtk.fileChooserGetFilename w >>= \case
-        Just file -> writeChan fileSelected (FileSelected file)
-        Nothing -> pure ()
+ where
+  onFileSelectionChanged w = Gtk.fileChooserGetFilename w >>= \case
+    Just file -> writeChan fileSelected (FileSelected file)
+    Nothing   -> pure ()
 
 main :: IO ()
 main = do
@@ -68,8 +68,8 @@ main = do
   writeChan models Nothing
 
   -- A channel for each event type.
-  fileSelected <- newChan
-  buttonClicked <- newChan
+  fileSelected  <- newChan
+  buttonClicked' <- newChan
 
   -- Here's the main flow of the application, where we first await a
   -- file to be selected, and then the button to be clicked for
@@ -77,13 +77,14 @@ main = do
   void . forkIO $ do
     FileSelected f <- readChan fileSelected
     writeChan models (Just "Now, click the button.")
-    ButtonClicked <- readChan buttonClicked
+    ButtonClicked <- readChan buttonClicked'
     writeChan models (Just ("You have selected a file: " <> f))
 
   -- And a thread for the main loop that listens for models, diffs the
   -- GUI, and re-renders the underlying GTK+ widgets when needed.
-  void . forkIO $
-    mainLoop window models (fileChooserView fileSelected buttonClicked)
+  void . forkIO $ mainLoop window
+                           models
+                           (fileChooserView fileSelected buttonClicked')
 
   -- Let's do it!
   Gtk.main

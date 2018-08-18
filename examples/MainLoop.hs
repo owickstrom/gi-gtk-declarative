@@ -15,7 +15,7 @@ runUI f = void (Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT (f *> return False))
 -- view function, and patching the GTK+ widgets.
 --
 -- TODO: Extract this to the library (if would be a common useful pattern?)
-mainLoop :: Gtk.Window -> Chan a -> (a -> Markup) -> IO ()
+mainLoop :: Gtk.Window -> Chan model -> (model -> Markup event) -> IO ()
 mainLoop window models view = do
   first <- view <$> readChan models
   runUI $ do
@@ -27,7 +27,7 @@ mainLoop window models view = do
       next <- view <$> readChan models
       runUI $ patchContainer window old next
       loop next
-    patchContainer :: Gtk.Window -> Markup -> Markup -> IO ()
+    patchContainer :: Gtk.Window -> Markup event -> Markup event -> IO ()
     patchContainer w o1 o2 =
       case patch o1 o2 of
         Modify f ->

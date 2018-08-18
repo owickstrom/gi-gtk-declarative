@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists   #-}
 
 module AddBoxes where
 
 import           Control.Concurrent
 import           Control.Monad
 import qualified Data.Text                     as Text
+import GHC.Exts
 
 import           GI.Gtk.Declarative                hiding ( main )
 import qualified GI.Gtk.Declarative            as Gtk
@@ -16,7 +18,7 @@ type AddBoxCommand = Either () ()
 
 type Model = ([Int], [Int])
 
-addBoxesView :: Chan AddBoxCommand -> Model -> Markup
+addBoxesView :: Chan AddBoxCommand -> Model -> Markup ()
 addBoxesView events (lefts, rights) = container
   ScrolledWindow
   [ #hscrollbarPolicy := PolicyTypeAutomatic
@@ -25,11 +27,12 @@ addBoxesView events (lefts, rights) = container
   (container
     Box
     [#orientation := OrientationVertical]
-    [ renderLane (const (writeChan events (Left ())))  lefts
+    ([ renderLane (const (writeChan events (Left ())))  lefts
     , renderLane (const (writeChan events (Right ()))) rights
-    ]
+    ] :: Children BoxChild ())
   )
  where
+  renderLane :: (Button -> ButtonClickedCallback) -> [Int] -> BoxChild ()
   renderLane onClick children = BoxChild
     True
     True
@@ -37,13 +40,15 @@ addBoxesView events (lefts, rights) = container
     (container
       Box
       []
+      (fromList
       ( BoxChild False
                  False
                  10
                  (node Button [#label := "Add", on #clicked onClick])
       : map renderChild children
-      )
+      ))
     )
+  renderChild :: Int -> BoxChild ()
   renderChild n =
     BoxChild True True 0 (node Label [#label := Text.pack ("Box " <> show n)])
 

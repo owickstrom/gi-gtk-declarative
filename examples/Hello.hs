@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists   #-}
 
 module Hello where
 
 import           Control.Concurrent
 import           Control.Monad
 import           Data.Text          (Text)
+import           GHC.Exts
 
 import           GI.Gtk.Declarative hiding (main)
 import qualified GI.Gtk.Declarative as Gtk
@@ -13,14 +15,15 @@ import qualified GI.Gtk.Declarative as Gtk
 import           MainLoop
 
 -- A very simple declarative user interface.
-helloView :: (Text, Bool) -> Markup
+helloView :: (Text, Bool) -> Markup ()
 helloView (who, flipped) = container Box [] $
   op
   [ BoxChild True True 0 (node Label [#label := "This is a sample application."])
   , BoxChild True True 0 (node Label [#label := who])
   ]
   where
-    op = if flipped then reverse else id
+    op :: [BoxChild ()] -> Children BoxChild ()
+    op = fromList . if flipped then reverse else id
 
 main :: IO ()
 main = do

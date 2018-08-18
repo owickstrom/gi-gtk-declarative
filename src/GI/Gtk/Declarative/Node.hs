@@ -25,35 +25,35 @@ import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.Props
 
-data Node a where
-  Node :: (Typeable a, Gtk.IsWidget a) => (Gtk.ManagedPtr a -> a) -> [PropPair a] -> Node a
+data Node event where
+  Node :: (Typeable w, Gtk.IsWidget w) => (Gtk.ManagedPtr w -> w) -> [PropPair w] -> Node event
 
-extractAttrConstructOps :: PropPair obj -> [GI.AttrOp obj 'GI.AttrConstruct]
+extractAttrConstructOps :: PropPair widget -> [GI.AttrOp widget 'GI.AttrConstruct]
 extractAttrConstructOps = \case
   (attr := value) -> pure (attr Gtk.:= value)
   _               -> []
 
-extractAttrSetOps :: PropPair obj -> [GI.AttrOp obj 'GI.AttrSet]
+extractAttrSetOps :: PropPair widget -> [GI.AttrOp widget 'GI.AttrSet]
 extractAttrSetOps = \case
   (attr := value) -> pure (attr Gtk.:= value)
   _               -> []
 
-addClass :: MonadIO m => Gtk.StyleContext -> PropPair obj -> m ()
+addClass :: MonadIO m => Gtk.StyleContext -> PropPair widget -> m ()
 addClass sc = \case
   Classes cs -> mapM_ (Gtk.styleContextAddClass sc) cs
   _          -> pure ()
 
-removeClass :: MonadIO m => Gtk.StyleContext -> PropPair obj -> m ()
+removeClass :: MonadIO m => Gtk.StyleContext -> PropPair widget -> m ()
 removeClass sc = \case
   Classes cs -> mapM_ (Gtk.styleContextRemoveClass sc) cs
   _          -> pure ()
 
-addSignalHandler :: MonadIO m => obj -> PropPair obj -> m ()
-addSignalHandler obj = \case
-  OnSignal signal handler -> void (Gtk.on obj signal (handler obj))
+addSignalHandler :: MonadIO m => widget -> PropPair widget -> m ()
+addSignalHandler widget = \case
+  OnSignal signal handler -> void (Gtk.on widget signal (handler widget))
   _                       -> pure ()
 
-instance Patchable (Node a) where
+instance Patchable Node event where
   create = \case
     (Node ctor props) -> do
         let attrOps = concatMap extractAttrConstructOps props
@@ -77,8 +77,8 @@ instance Patchable (Node a) where
     Gtk.widgetShowAll w
 
 node
-  :: (Typeable a, Gtk.IsWidget a)
-  => (Gtk.ManagedPtr a -> a)
-  -> [PropPair a]
-  -> Markup
+  :: (Typeable widget, Typeable e, Gtk.IsWidget widget)
+  => (Gtk.ManagedPtr widget -> widget)
+  -> [PropPair widget]
+  -> Markup e
 node ctor attrs = Markup (Node ctor attrs)

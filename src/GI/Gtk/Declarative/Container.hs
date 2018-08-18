@@ -1,15 +1,18 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE LambdaCase            #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedLabels      #-}
-{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE LambdaCase             #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedLabels       #-}
+{-# LANGUAGE RecordWildCards        #-}
 
 -- | Implementations of 'Patchable' for common GTK+ container widgets.
 
 module GI.Gtk.Declarative.Container
   ( BoxChild(..)
+  , Children
   , PatchableContainer(..)
   , container
   )
@@ -19,6 +22,7 @@ import           Control.Monad.IO.Class                   ( MonadIO )
 import           Control.Monad                            ( forM_
                                                           , void
                                                           )
+import           GHC.Exts
 import qualified Data.GI.Base                  as GI
 import qualified Data.GI.Base.Attributes       as GI
 import           Data.Int                                 ( Int32 )
@@ -31,9 +35,9 @@ import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.Props
 
-class PatchableContainer obj children where
-  createChildrenIn :: obj -> children -> IO ()
-  patchChildrenIn :: obj -> children -> children -> IO ()
+class PatchableContainer widget children event | widget -> children where
+  createChildrenIn :: widget -> children event -> IO ()
+  patchChildrenIn :: widget -> children event -> children event -> IO ()
 
 -- * Box
 
@@ -54,11 +58,11 @@ replaceInBox append box i old new = do
   Gtk.widgetShowAll box
 
 patchInBox
-  :: Patchable child
-  => (Gtk.Box -> child -> Gtk.Widget -> IO ())
+  :: Patchable child event
+  => (Gtk.Box -> child event -> Gtk.Widget -> IO ())
   -> Gtk.Box
-  -> [child]
-  -> [child]
+  -> [child event]
+  -> [child event]
   -> IO ()
 patchInBox appendChild box os' ns' = do
   cs <- Gtk.containerGetChildren box
@@ -102,33 +106,43 @@ patchInBox appendChild box os' ns' = do
 
   Gtk.widgetQueueResize box
 
-appendCreatedWidgetInBox :: Gtk.Box -> Markup -> Gtk.Widget -> IO ()
-appendCreatedWidgetInBox box _ = Gtk.containerAdd box
+-- appendCreatedWidgetInBox :: Gtk.Box -> Markup event -> Gtk.Widget -> IO ()
+-- appendCreatedWidgetInBox box _ = Gtk.containerAdd box
 
-packCreatedBoxChildInBox :: Gtk.Box -> BoxChild -> Gtk.Widget -> IO ()
+packCreatedBoxChildInBox :: Gtk.Box -> BoxChild event -> Gtk.Widget -> IO ()
 packCreatedBoxChildInBox box BoxChild {..} widget =
   Gtk.boxPackStart box widget expand fill padding
 
-instance PatchableContainer Gtk.Box [Markup] where
-  createChildrenIn box = mapM_ $ \(Markup child) ->
-    appendCreatedWidgetInBox box (Markup child) =<< create child
-  patchChildrenIn = patchInBox appendCreatedWidgetInBox
+newtype Children child event = Children [child event]
 
-data BoxChild = BoxChild { expand :: Bool, fill :: Bool, padding :: Word32, child :: Markup }
+instance IsList (Children child event) where
+  type Item (Children child event) = child event
+  fromList = Children
+  toList (Children xs) = xs
 
-instance Patchable BoxChild where
+-- instance PatchableContainer Gtk.Box (Children Markup) event where
+--   createChildrenIn box (Children children) = forM_ children $ \(Markup child) ->
+--     appendCreatedWidgetInBox box (Markup child) =<< create child
+--   patchChildrenIn widget (Children oldChildren) (Children newChildren) =
+--     patchInBox appendCreatedWidgetInBox widget oldChildren newChildren
+
+data BoxChild event = BoxChild { expand :: Bool, fill :: Bool, padding :: Word32, child :: Markup event }
+
+instance Patchable BoxChild event where
   create = create . child
   patch b1 b2 = patch (child b1) (child b2)
 
-instance PatchableContainer Gtk.Box [BoxChild] where
-  createChildrenIn box = mapM_ $ \BoxChild {child = Markup child, ..} -> do
-    widget <- create child
-    Gtk.boxPackStart box widget expand fill padding
-  patchChildrenIn = patchInBox packCreatedBoxChildInBox
+instance PatchableContainer Gtk.Box (Children BoxChild) event where
+  createChildrenIn box (Children children) =
+    forM_ children $ \BoxChild {child = Markup child, ..} -> do
+      widget <- create child
+      Gtk.boxPackStart box widget expand fill padding
+  patchChildrenIn widget (Children oldChildren) (Children newChildren) =
+    patchInBox packCreatedBoxChildInBox widget oldChildren newChildren
 
 -- * ScrolledWindow
 
-instance PatchableContainer Gtk.ScrolledWindow Markup where
+instance PatchableContainer Gtk.ScrolledWindow Markup event where
   createChildrenIn box (Markup child) = create child >>= Gtk.containerAdd box
   patchChildrenIn scrolledWindow oldChild newChild = do
     viewport <- Gtk.containerGetChildren scrolledWindow
@@ -149,45 +163,46 @@ instance PatchableContainer Gtk.ScrolledWindow Markup where
 
 -- * Container object
 
-data GtkContainer a children where
+data GtkContainer widget children a where
   GtkContainer
-    :: (Typeable a, Gtk.IsWidget a)
-    => (Gtk.ManagedPtr a -> a)
-    -> [PropPair a]
+    :: (Typeable widget, Gtk.IsWidget widget)
+    => (Gtk.ManagedPtr widget -> widget)
+    -> [PropPair widget]
     -> children
-    -> GtkContainer a children
+    -> GtkContainer widget children a
 
-instance Show (GtkContainer a children) where
+instance Show (GtkContainer widget children a) where
   show = \case
     GtkContainer{} -> "GtkContainer"
 
-extractAttrConstructOps :: PropPair obj -> [GI.AttrOp obj 'GI.AttrConstruct]
+extractAttrConstructOps
+  :: PropPair widget -> [GI.AttrOp widget 'GI.AttrConstruct]
 extractAttrConstructOps = \case
   (attr := value) -> pure (attr Gtk.:= value)
   _               -> mempty
 
-extractAttrSetOps :: PropPair obj -> [GI.AttrOp obj 'GI.AttrSet]
+extractAttrSetOps :: PropPair widget -> [GI.AttrOp widget 'GI.AttrSet]
 extractAttrSetOps = \case
   (attr := value) -> pure (attr Gtk.:= value)
   _               -> mempty
 
-addClass :: MonadIO m => Gtk.StyleContext -> PropPair obj -> m ()
+addClass :: MonadIO m => Gtk.StyleContext -> PropPair widget -> m ()
 addClass sc = \case
   Classes cs -> mapM_ (Gtk.styleContextAddClass sc) cs
   _          -> pure ()
 
-removeClass :: MonadIO m => Gtk.StyleContext -> PropPair obj -> m ()
+removeClass :: MonadIO m => Gtk.StyleContext -> PropPair widget -> m ()
 removeClass sc = \case
   Classes cs -> mapM_ (Gtk.styleContextRemoveClass sc) cs
   _          -> pure ()
 
-addSignalHandler :: MonadIO m => obj -> PropPair obj -> m ()
-addSignalHandler obj = \case
-  OnSignal signal handler -> void (Gtk.on obj signal (handler obj))
+addSignalHandler :: MonadIO m => widget -> PropPair widget -> m ()
+addSignalHandler widget = \case
+  OnSignal signal handler -> void (Gtk.on widget signal (handler widget))
   _                       -> pure ()
 
 
-instance PatchableContainer a children => Patchable (GtkContainer a children) where
+instance PatchableContainer widget children event => Patchable (GtkContainer widget (children event)) event where
   create (GtkContainer ctor props children) = do
     let attrOps = concatMap extractAttrConstructOps props
     widget <- Gtk.new ctor attrOps
@@ -212,13 +227,14 @@ instance PatchableContainer a children => Patchable (GtkContainer a children) wh
       patchChildrenIn w oldChildren newChildren
 
 container
-  :: ( PatchableContainer a children
+  :: ( PatchableContainer widget children event
+     , Typeable widget
      , Typeable children
-     , Typeable a
-     , Gtk.IsWidget a
+     , Typeable event
+     , Gtk.IsWidget widget
      )
-  => (Gtk.ManagedPtr a -> a)
-  -> [PropPair a]
-  -> children
-  -> Markup
+  => (Gtk.ManagedPtr widget -> widget)
+  -> [PropPair widget]
+  -> children event
+  -> Markup event
 container ctor attrs = Markup . GtkContainer ctor attrs

@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 -- | A 'Patch' represents a possible 'IO' action to apply to a
 -- 'Gtk.Widget' to make it reflect an updated declarative widget.  The
 -- action to apply is calculated from the difference between the old
@@ -15,6 +16,6 @@ data Patch
   | Replace (IO Gtk.Widget)
   | Keep
 
-class Patchable w where
-  create :: w -> IO Gtk.Widget
-  patch :: w -> w -> Patch
+class Patchable widget event where
+  create :: widget event -> IO Gtk.Widget
+  patch :: widget event -> widget event -> Patch

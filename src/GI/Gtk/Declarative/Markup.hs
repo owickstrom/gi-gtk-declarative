@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs               #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving  #-}
 {-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE TypeOperators       #-}
 
@@ -18,14 +19,17 @@ import           GI.Gtk.Declarative.Patch
 -- constrained equivalent of a 'Dynamic' value. It is used to support
 -- heterogeneous containers of widgets, and to support equality
 -- checks on different types of widgets when calculating patches.
-data Markup where
-  Markup :: (Typeable w, Patchable w) => w -> Markup
+data Markup e where
+  Markup
+    :: (Typeable (widget event), Patchable widget event)
+    => widget event
+    -> Markup event
 
 -- | 'Markup' is itself patchable, by delegating to the underlying
 -- widget instances.
-instance Patchable Markup where
+instance Patchable Markup event where
   create (Markup w) = create w
-  patch (Markup (w1 :: t1)) (Markup (w2 :: t2)) =
-    case eqT @t1 @t2 of
+  patch (Markup (w1 :: t1 e)) (Markup (w2 :: t2 e)) =
+    case eqT @(t1 e) @(t2 e) of
       Just Refl -> patch w1 w2
       Nothing   -> Replace (create w2)
