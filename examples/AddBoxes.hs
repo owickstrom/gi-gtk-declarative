@@ -1,38 +1,36 @@
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedLists   #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module AddBoxes where
 
 import           Control.Concurrent
 import           Control.Monad
 import qualified Data.Text                     as Text
-import GHC.Exts
+import           GHC.Exts
 
 import           GI.Gtk.Declarative                hiding ( main )
 import qualified GI.Gtk.Declarative            as Gtk
 
 import           MainLoop
 
-type AddBoxCommand = Either () ()
+type Event = Either () ()
 
-type Model = ([Int], [Int])
+data Model = Model { lefts :: [Int], rights :: [Int], next :: Int }
 
-addBoxesView :: Chan AddBoxCommand -> Model -> Markup ()
-addBoxesView events (lefts, rights) = container
+addBoxesView :: Model -> Markup Event
+addBoxesView Model {..} = container
   ScrolledWindow
   [ #hscrollbarPolicy := PolicyTypeAutomatic
   , #vscrollbarPolicy := PolicyTypeNever
   ]
-  (container
-    Box
-    [#orientation := OrientationVertical]
-    ([ renderLane (const (writeChan events (Left ())))  lefts
-    , renderLane (const (writeChan events (Right ()))) rights
-    ] :: Children BoxChild ())
+  (container Box
+             [#orientation := OrientationVertical]
+             [renderLane (Left ()) lefts, renderLane (Right ()) rights]
   )
  where
-  renderLane :: (Button -> ButtonClickedCallback) -> [Int] -> BoxChild ()
+  renderLane :: Event -> [Int] -> BoxChild Event
   renderLane onClick children = BoxChild
     True
     True
@@ -41,30 +39,23 @@ addBoxesView events (lefts, rights) = container
       Box
       []
       (fromList
-      ( BoxChild False
-                 False
-                 10
-                 (node Button [#label := "Add", on #clicked onClick])
-      : map renderChild children
-      ))
+        ( BoxChild False
+                   False
+                   10
+                   (node Button [#label := "Add", on #clicked onClick])
+        : map renderChild children
+        )
+      )
     )
-  renderChild :: Int -> BoxChild ()
+  renderChild :: Int -> BoxChild Event
   renderChild n =
     BoxChild True True 0 (node Label [#label := Text.pack ("Box " <> show n)])
 
-commandLoop :: Chan AddBoxCommand -> Chan Model -> IO ()
-commandLoop events models = do
-  let initialModel = ([1], [2])
-  writeChan models initialModel
-  go 3 initialModel
- where
-  go n (lefts, rights) = do
-    event <- readChan events
-    let newModel = case event of
-          Left  () -> (lefts ++ [n], rights)
-          Right () -> (lefts, rights ++ [n])
-    writeChan models newModel
-    go (succ n) newModel
+update' :: Model -> Event -> (Model, IO (Maybe Event))
+update' model@Model {..} (Left ()) =
+  (model { lefts = lefts ++ [next], next = succ next }, return Nothing)
+update' model@Model {..} (Right ()) =
+  (model { rights = rights ++ [next], next = succ next }, return Nothing)
 
 main :: IO ()
 main = do
@@ -75,14 +66,11 @@ main = do
   Gtk.windowSetTitle window "AddBoxes"
   Gtk.windowResize window 640 480
 
-  models <- newChan
-  events <- newChan
+  input' <- newChan
 
-  void (forkIO (commandLoop events models))
+  let app = App {view = addBoxesView, update = update', input = input', ..}
 
-  -- And a thread for the main loop that listens for models, diffs the
-  -- GUI, and re-renders the underlying GTK+ widgets when needed.
-  void . forkIO $ mainLoop window models (addBoxesView events)
+  void . forkIO $ runInWindow window app (Model [1] [2] 3)
 
   -- Let's do it!
   Gtk.main

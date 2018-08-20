@@ -15,6 +15,7 @@ module GI.Gtk.Declarative.Markup where
 import           Data.Typeable
 
 import           GI.Gtk.Declarative.Patch
+import           GI.Gtk.Declarative.EventSource
 
 -- | A 'Markup' value wraps a 'Patchable' widget, providing a
 -- constrained equivalent of a 'Dynamic' value. It is used to support
@@ -22,7 +23,7 @@ import           GI.Gtk.Declarative.Patch
 -- checks on different types of widgets when calculating patches.
 data Markup event where
   Markup
-    :: (Functor widget, Typeable widget, Patchable widget)
+    :: (Functor widget, Typeable widget, Patchable widget, EventSource widget)
     => widget event
     -> Markup event
 
@@ -41,5 +42,5 @@ instance Patchable Markup where
         Just Refl -> patch w1 w2
         _   -> Replace (create w2)
 
--- mapP :: (Typeable b) => (event -> b) -> widget event -> widget b
--- mapP p f (Markup (w :: widget event)) = Markup (mapP (Proxy :: Proxy widget) f w)
+instance EventSource Markup where
+  subscribe (Markup markup) = subscribe markup

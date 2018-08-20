@@ -16,6 +16,7 @@ library
   exposed-modules:      GI.Gtk.Declarative
                       , GI.Gtk.Declarative.Container
                       , GI.Gtk.Declarative.CSS
+                      , GI.Gtk.Declarative.EventSource
                       , GI.Gtk.Declarative.Markup
                       , GI.Gtk.Declarative.Node
                       , GI.Gtk.Declarative.Patch
@@ -39,6 +40,7 @@ executable gi-gtk-declarative-example
                       , FileChooserButton
                       , Hello
   build-depends:        base >=4.10 && <4.12
+                      , async
                       , gi-gobject
                       , gi-glib
                       , gi-gtk

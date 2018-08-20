@@ -1,45 +1,76 @@
 {-# LANGUAGE LambdaCase #-}
-module MainLoop where
+{-# LANGUAGE RecordWildCards #-}
+module MainLoop
+  ( App(..)
+  , runInWindow
+  )
+where
 
 import           Data.Typeable
 import           Control.Concurrent
+import           Control.Concurrent.Async                 ( race )
 import           Control.Monad
-import qualified GI.Gdk             as Gdk
-import qualified GI.GLib.Constants  as GLib
-import           GI.Gtk.Declarative hiding (main)
-import qualified GI.Gtk.Declarative as Gtk
+import qualified GI.Gdk                        as Gdk
+import qualified GI.GLib.Constants             as GLib
+import           GI.Gtk.Declarative                hiding ( main )
+import qualified GI.Gtk.Declarative            as Gtk
+import           GI.Gtk.Declarative.EventSource
 
-runUI :: IO () -> IO ()
-runUI f = void (Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT (f *> return False))
+runUI :: IO a -> IO a
+runUI f = do
+  r <- newEmptyMVar
+  void . Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT $ do
+    f >>= putMVar r
+    return False
+  takeMVar r
 
--- Our generic main loop, reading models from the Chan, applying the
--- view function, and patching the GTK+ widgets.
---
--- TODO: Extract this to the library (if would be a common useful pattern?)
-mainLoop :: Typeable event => Gtk.Window -> Chan model -> (model -> Markup event) -> IO ()
-mainLoop window models view = do
-  first <- view <$> readChan models
-  runUI $ do
-    Gtk.containerAdd window =<< Gtk.toWidget =<< create first
+data App model event =
+  App
+    { update :: model -> event -> (model, IO (Maybe event))
+    , view :: model -> Markup event
+    , input :: Chan event
+    }
+
+runInWindow :: Typeable event => Gtk.Window -> App model event -> model -> IO ()
+runInWindow window App {..} initialModel = do
+  let firstMarkup = view initialModel
+  subscription <- runUI $ do
+    widget <- Gtk.toWidget =<< create firstMarkup
+    Gtk.containerAdd window widget
     Gtk.widgetShowAll window
-  loop first
-  where
-    loop old = do
-      next <- view <$> readChan models
-      runUI $ patchContainer window old next
-      loop next
-    patchContainer :: Typeable event => Gtk.Window -> Markup event -> Markup event -> IO ()
-    patchContainer w o1 o2 =
-      case patch o1 o2 of
-        Modify f ->
-          Gtk.containerGetChildren w >>= \case
-            [] -> return ()
-            (c:_) -> do
-              f =<< Gtk.toWidget c
-              Gtk.widgetShowAll w
-        Replace createNew -> do
-          Gtk.containerForall w (Gtk.containerRemove w)
-          newWidget <- createNew
-          Gtk.containerAdd w newWidget
-          Gtk.widgetShowAll w
-        Keep -> return ()
+    subscribe firstMarkup widget
+  loop firstMarkup subscription initialModel
+ where
+  loop oldMarkup oldSubscription oldModel = do
+    event <- either return return
+      =<< race (readChan (events oldSubscription)) (readChan input)
+    let (newModel, action) = update oldModel event
+        newMarkup          = view newModel
+    sub <-
+      runUI (patchContainer window oldMarkup newMarkup) >>= \case
+        Just newSubscription -> cancel oldSubscription *> pure newSubscription
+        Nothing -> pure oldSubscription
+    void . forkIO $ action >>= maybe (return ()) (writeChan input)
+    loop newMarkup sub newModel
+
+patchContainer
+  :: Typeable event
+  => Gtk.Window
+  -> Markup event
+  -> Markup event
+  -> IO (Maybe (Subscription event))
+patchContainer w o1 o2 = case patch o1 o2 of
+  Modify f -> Gtk.containerGetChildren w >>= \case
+    []      -> return Nothing
+    (c : _) -> do
+      widget <- Gtk.toWidget c
+      f widget
+      Gtk.widgetShowAll w
+      Just <$> subscribe o2 widget
+  Replace createNew -> do
+    Gtk.containerForall w (Gtk.containerRemove w)
+    newWidget <- createNew
+    Gtk.containerAdd w newWidget
+    Gtk.widgetShowAll w
+    Just <$> subscribe o2 newWidget
+  Keep -> return Nothing

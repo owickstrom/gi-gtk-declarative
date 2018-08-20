@@ -1,67 +1,210 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE KindSignatures        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedLabels      #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE KindSignatures         #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedLabels       #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeApplications       #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeOperators          #-}
 
 -- | Property lists on declarative objects, supporting the underlying
--- attributes from "Data.GI.Base.Attributes".
+-- attributes from "Data.GI.Base.Attributes", along with pure and impure event
+-- callbacks.
 
 module GI.Gtk.Declarative.Props
-  ( PropPair(..)
+  ( ToGtkCallback
+  , toGtkCallback
+  , PropPair(..)
   , classes
   , on
-  ) where
+  , onM
+  )
+where
 
-import qualified Data.GI.Base.Attributes as GI
-import qualified Data.GI.Base.Signals    as GI
-import qualified Data.HashSet            as HashSet
-import           Data.Text               (Text)
+import           Control.Monad                            ( void )
+import qualified Data.GI.Base.Attributes       as GI
+import qualified Data.GI.Base.Signals          as GI
+import qualified Data.HashSet                  as HashSet
+import           Data.Text                                ( Text )
 import           Data.Typeable
-import           GHC.TypeLits            (KnownSymbol, Symbol)
-import qualified GI.Gtk                  as Gtk
+import           GHC.TypeLits                             ( KnownSymbol
+                                                          , Symbol
+                                                          )
+import qualified GI.Gtk                        as Gtk
 
 import           GI.Gtk.Declarative.CSS
 
 infix 5 :=
 
-type family PureSignalCallback t e where
-  PureSignalCallback (IO ()) e = e
-  PureSignalCallback (a -> b) e = a -> PureSignalCallback b e
+-- * Pure Callbacks
 
-data PropPair w where
+-- | Convert a GTK+ callback type to a pure callback type, i.e. a type
+-- without 'IO'. The pure callback is either a single 'event', or a function of
+-- the same arity and arguments as the GTK+ callback, but with the 'event' as
+-- the range.
+type family ToPureCallback gtkCallback event where
+  ToPureCallback (IO ()) event = event
+  ToPureCallback (a -> b) event = a -> ToPureCallback b event
+
+-- | A 'PureCallback' holds a pure callback, as defined by 'ToPureCallback'.
+data PureCallback callback event where
+  PureCallback
+    :: (pure ~ ToPureCallback callback event)
+    => pure
+    -> PureCallback callback event
+
+-- The functor instances are pretty annoying, being repeated for each function
+-- arity. Could this be done in another way?
+
+instance Functor (PureCallback (IO ())) where
+  fmap f (PureCallback e) = PureCallback (f e)
+
+instance Functor (PureCallback (x -> IO ())) where
+  fmap f (PureCallback g) = PureCallback (f . g)
+
+instance Functor (PureCallback (x -> y -> IO ())) where
+  fmap f (PureCallback g) = PureCallback (\x -> f . g x)
+
+-- * Impure Callbacks
+
+-- | Convert a GTK+ callback type to an impure callback type, i.e. a type
+-- with 'IO event' as the range, instead of 'IO ()'. The impure callback is
+-- either a single 'IO event', or a function of the same arity and arguments as
+-- the GTK+ callback, but with 'IO event' as the range.
+type family ToImpureCallback t e where
+  ToImpureCallback (IO ()) e  = IO e
+  ToImpureCallback (a -> b) e = a -> ToImpureCallback b e
+
+-- | An 'ImpureCallback' holds an impure callback, as defined by
+-- 'ToImpureCallback', but with an extra 'widget' argument. This is so that
+-- impure callbacks can query their underlying GTK+ widgets for data.
+data ImpureCallback callback widget event where
+  ImpureCallback
+    :: (impure ~ ToImpureCallback callback event)
+    => (widget -> impure)
+    -> ImpureCallback callback widget event
+
+-- The functor instances are pretty annoying, being repeated for each function
+-- arity. Could this be done in another way?
+
+instance Functor (ImpureCallback (IO ()) widget) where
+  fmap f (ImpureCallback g) = ImpureCallback (\w -> f <$> g w)
+
+instance Functor (ImpureCallback (x -> IO ()) widget) where
+  fmap f (ImpureCallback g) = ImpureCallback (\w -> fmap f . g w)
+
+instance Functor (ImpureCallback (x -> y -> IO ()) widget) where
+  fmap f (ImpureCallback g) = ImpureCallback (\w x -> fmap f . g w x)
+
+-- * GTK+ Callback Conversions
+
+-- | Converts a user callback, i.e. a pure or an impure callback, back to a
+-- GTK+ callback.
+class ToGtkCallback userCallback where
+  type CustomGtkCallback userCallback :: *
+  toGtkCallback :: userCallback event -> (event -> IO ()) -> CustomGtkCallback userCallback
+
+instance ToGtkCallback (PureCallback (IO ())) where
+  type CustomGtkCallback (PureCallback (IO ())) = IO ()
+  toGtkCallback (PureCallback cb) f = void (f cb)
+
+instance ToGtkCallback (PureCallback (x -> IO ())) where
+  type CustomGtkCallback (PureCallback (x -> IO ())) = x -> IO ()
+  toGtkCallback (PureCallback cb) f x = void (f (cb x))
+
+instance ToGtkCallback (PureCallback (x -> y -> IO ()))  where
+  type CustomGtkCallback (PureCallback (x -> y -> IO ())) = x -> y -> IO ()
+  toGtkCallback (PureCallback cb) f x y = void (f (cb x y))
+
+instance ToGtkCallback (ImpureCallback (IO ()) widget)  where
+  type CustomGtkCallback (ImpureCallback (IO ()) widget) = widget -> IO ()
+  toGtkCallback (ImpureCallback cb) f w = void (cb w >>= f)
+
+-- * Props
+
+data PropPair widget event where
   (:=)
-    :: (GI.AttrOpAllowed 'GI.AttrConstruct info w
-      , GI.AttrOpAllowed 'GI.AttrSet info w
-      , GI.AttrGetC info w attr getValue
+    :: (GI.AttrOpAllowed 'GI.AttrConstruct info widget
+      , GI.AttrOpAllowed 'GI.AttrSet info widget
+      , GI.AttrGetC info widget attr getValue
       , GI.AttrSetTypeConstraint info setValue
       , KnownSymbol attr
       , Typeable attr
       , Eq getValue
       )
-    =>  GI.AttrLabelProxy (attr :: Symbol) -> setValue -> PropPair w
+   =>  GI.AttrLabelProxy (attr :: Symbol) -> setValue -> PropPair widget event
   Classes
-    :: Gtk.IsWidget w
+    :: Gtk.IsWidget widget
     => ClassSet
-    -> PropPair w
-  OnSignal
-    :: (Gtk.GObject w, GI.SignalInfo info)
-    => Gtk.SignalProxy w info
-    -> (w -> GI.HaskellCallbackType info)
-    -> PropPair w
+    -> PropPair widget event
+  OnSignalPure
+    :: ( Gtk.GObject widget
+       , GI.SignalInfo info
+       , callback ~ GI.HaskellCallbackType info
+       , Functor (PureCallback callback)
+       , ToGtkCallback (PureCallback callback)
+       , callback ~ CustomGtkCallback (PureCallback callback)
+       )
+    => Gtk.SignalProxy widget info
+    -> PureCallback callback event
+    -> PropPair widget event
+  OnSignalImpure
+    :: ( Gtk.GObject widget
+       , GI.SignalInfo info
+       , callback ~ GI.HaskellCallbackType info
+       , Functor (ImpureCallback callback widget)
+       , ToGtkCallback (ImpureCallback callback widget)
+       , (widget -> callback) ~ CustomGtkCallback (ImpureCallback callback widget)
+       )
+    => Gtk.SignalProxy widget info
+    -> ImpureCallback callback widget event
+    -> PropPair widget event
 
-classes :: Gtk.IsWidget w => [Text] -> PropPair w
+instance Functor (PropPair widget) where
+  fmap f prop =
+    case prop of
+      (attr := value) -> (attr := value)
+      (Classes cs) -> Classes cs
+      OnSignalPure signal callback -> OnSignalPure signal (fmap f callback)
+      OnSignalImpure signal callback -> OnSignalImpure signal (fmap f callback)
+
+classes :: Gtk.IsWidget widget => [Text] -> PropPair widget event
 classes = Classes . HashSet.fromList
 
-on :: (Gtk.GObject w, GI.SignalInfo info)
-    => Gtk.SignalProxy w info
-    -> (w -> GI.HaskellCallbackType info)
-    -> PropPair w
-on = OnSignal
+-- | Publish events, using a pure callback, by subcribing to the specified
+-- signal.
+on
+  :: ( Gtk.GObject widget
+     , GI.SignalInfo info
+     , callback ~ GI.HaskellCallbackType info
+     , pure ~ ToPureCallback callback event
+     , Functor (PureCallback callback)
+     , ToGtkCallback (PureCallback callback)
+     , callback ~ CustomGtkCallback (PureCallback callback)
+     )
+  => Gtk.SignalProxy widget info
+  -> pure
+  -> PropPair widget event
+on signal = OnSignalPure signal . PureCallback
+
+-- | Publish events, using an impure callback, by subcribing to the specified
+-- signal.
+onM
+  :: ( Gtk.GObject widget
+     , GI.SignalInfo info
+     , callback ~ GI.HaskellCallbackType info
+     , impure ~ ToImpureCallback callback event
+     , withWidget ~ (widget -> impure)
+     , Functor (ImpureCallback callback widget)
+     , ToGtkCallback (ImpureCallback callback widget)
+     , (widget -> callback) ~ CustomGtkCallback (ImpureCallback callback widget)
+     )
+  => Gtk.SignalProxy widget info
+  -> withWidget
+  -> PropPair widget event
+onM signal = OnSignalImpure signal . ImpureCallback

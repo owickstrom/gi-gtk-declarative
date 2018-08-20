@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedLists   #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module FileChooserButton where
 
@@ -15,13 +16,13 @@ import qualified GI.Gtk.Declarative            as Gtk
 import           MainLoop
 
 
-data FileSelected = FileSelected FilePath
-data ButtonClicked = ButtonClicked
+data Model = Started (Maybe FilePath) | Done FilePath
 
--- A very simple declarative user interface.
-fileChooserView
-  :: Chan FileSelected -> Chan ButtonClicked -> Maybe FilePath -> Markup ()
-fileChooserView fileSelected buttonClicked' currentFile = container
+data Event = FileSelectionChanged (Maybe FilePath) | ButtonClicked
+
+view' :: Model -> Markup Event
+view' (Done path) = node Label [#label := (Text.pack path <> " was selected.")]
+view' (Started currentFile) = container
   Box
   [#orientation := OrientationVertical]
   [ BoxChild
@@ -33,23 +34,26 @@ fileChooserView fileSelected buttonClicked' currentFile = container
     False
     False
     10
-    (node FileChooserButton [on #selectionChanged onFileSelectionChanged])
+    (node
+      FileChooserButton
+      [ onM #selectionChanged
+            (fmap FileSelectionChanged . Gtk.fileChooserGetFilename)
+      ]
+    )
   , BoxChild
     False
     False
     10
     (node
       Button
-      [ #label := "Select"
-      , #tooltipText := "Hello!"
-      , on #clicked (const (writeChan buttonClicked' ButtonClicked))
-      ]
+      [#label := "Select", #tooltipText := "Hello!", on #clicked ButtonClicked]
     )
   ]
- where
-  onFileSelectionChanged w = Gtk.fileChooserGetFilename w >>= \case
-    Just file -> writeChan fileSelected (FileSelected file)
-    Nothing   -> pure ()
+
+update' :: Model -> Event -> (Model, IO (Maybe Event))
+update' (Started _) (FileSelectionChanged p) = (Started p, return Nothing)
+update' (Started (Just path)) ButtonClicked = (Done path, return Nothing)
+update' s _ = (s, return Nothing)
 
 main :: IO ()
 main = do
@@ -62,29 +66,11 @@ main = do
   Gtk.windowSetTitle window "Sample gi-gtk-declarative app!"
   Gtk.windowResize window 640 480
 
-  -- A channel of "model" values.
-  models <- newChan
-  -- And the initial state.
-  writeChan models Nothing
+  input' <- newChan
 
-  -- A channel for each event type.
-  fileSelected  <- newChan
-  buttonClicked' <- newChan
+  let app = App {view = view', update = update', input = input'}
 
-  -- Here's the main flow of the application, where we first await a
-  -- file to be selected, and then the button to be clicked for
-  -- confirmation.
-  void . forkIO $ do
-    FileSelected f <- readChan fileSelected
-    writeChan models (Just "Now, click the button.")
-    ButtonClicked <- readChan buttonClicked'
-    writeChan models (Just ("You have selected a file: " <> f))
-
-  -- And a thread for the main loop that listens for models, diffs the
-  -- GUI, and re-renders the underlying GTK+ widgets when needed.
-  void . forkIO $ mainLoop window
-                           models
-                           (fileChooserView fileSelected buttonClicked')
+  void . forkIO $ runInWindow window app (Started Nothing)
 
   -- Let's do it!
   Gtk.main
