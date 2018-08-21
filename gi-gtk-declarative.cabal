@@ -32,23 +32,3 @@ library
   hs-source-dirs:       src
   default-language:     Haskell2010
   ghc-options:          -Wall
-
-executable gi-gtk-declarative-example
-  main-is:              Main.hs
-  other-modules:        AddBoxes
-                      , MainLoop
-                      , FileChooserButton
-                      , Hello
-  build-depends:        base >=4.10 && <4.12
-                      , async
-                      , gi-gobject
-                      , gi-glib
-                      , gi-gtk
-                      , gi-gtk-declarative
-                      , gi-gdk
-                      , haskell-gi
-                      , haskell-gi-base
-                      , text
-  hs-source-dirs:       examples
-  default-language:     Haskell2010
-  ghc-options:          -Wall -threaded
