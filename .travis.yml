@@ -1,1 +1,13 @@
+# Based off https://github.com/domenkozar/hie-nix/blob/master/.travis.yml
 language: nix
+sudo: required
+before_script:
+- sudo mount -o remount,exec,size=4G,mode=755 /run/user || true
+env:
+  global:
+  - secure: tf8O2IZiH/cxirKW9yPQ//ZTPBFlA3xMADeKfx7Wm8aNZnKPyNe/pwGnR+lLkqy7QpghhD9ja+ozg79Ks7Ow53mgkEVDvkaaNzEfxVsOwpa6xCdkhmm1AQiS9a81y21DGT2tqHk1FPKOxTCMSjB4Rt+in1lcguYJ70ZstlA4BEyR4+ecxQA3+0ISArwNCAkhSGtxKhPujm6j0D2a49IoNiM9Wtc7M34CjpNjVQ9vars8Lzn7k5KVFlh2jdOswaqMrzywb5pVcY2VWrXogDlHkwp1XUv7KIHs3pJPiwgMJaHPN6WTIB7cCd3ijcw9QPV6lu54dtf00Gg0PeOS7mpIjDzY/wNdbzlgHASVUw8T+5kgrdRAqNTH5RSeObeTMHG3nZW3nIasqEYpGhdtxP80A2/4X5oM7Fn+ffMgwcwEKIPNwRgV0Wb/uBcgwGMEdHsFdRPZrWpH7RHcnbKNCHEW4XFMy5MjuuveaH8B3b5lls9jNMQYIdEaZhvLYQ1XjlKiVSuhy+/MXfpSRKIvLbEc7GnJICRFY0Ke2J2+UZ0+/E1goP83MGbB8n2LPDqtN0kx81m+YY+Jshc95MAkbd35qcb30oWvYWME7cw4gLNLrxC5aBP0EB0FFbf76eeNz8fVJ1KlyCjIZCsP8vdfvtaaciehRxO/81xztauqyHLy/R8=
+script:
+- nix-env -if https://github.com/cachix/cachix/tarball/master --extra-substituters https://cachix.cachix.org --trusted-public-keys 'cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM='
+- cachix use gi-gtk-declarative
+- cachix push gi-gtk-declarative --watch-store&
+- nix-build -j2 | cachix push gi-gtk-declarative
