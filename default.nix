@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {}, compiler ? "ghc842", doBenchmark ? false }:
+{ pkgs ? import <nixpkgs> {}, compiler ? "ghc843", doBenchmark ? false }:
 
 let
 
@@ -9,6 +9,6 @@ let
     };
   };
   variant = if doBenchmark then pkgs.haskell.lib.doBenchmark else pkgs.lib.id;
-  drv = variant (haskellPackages.callPackage (import ./gi-gtk-declarative.nix) {});
+  drv = variant (haskellPackages.callCabal2nix "gi-gtk-declarative" ./. {});
 in
   if pkgs.lib.inNixShell then drv.env else drv

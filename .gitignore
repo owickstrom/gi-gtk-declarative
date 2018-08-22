@@ -1,6 +1,6 @@
 /dist
 /dist-newstyle
-/.stack-work
+.stack-work
 /tags
 /TAGS
 /.ghc.environment*

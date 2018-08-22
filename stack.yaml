@@ -2,3 +2,4 @@ resolver: lts-12.4
 
 packages:
 - .
+- examples
