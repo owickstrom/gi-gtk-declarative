@@ -1,5 +1,8 @@
 # Based off https://github.com/domenkozar/hie-nix/blob/master/.travis.yml
 language: nix
+cache:
+  directories:
+    - /nix
 sudo: required
 before_script:
 - sudo mount -o remount,exec,size=4G,mode=755 /run/user || true
