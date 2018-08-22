@@ -13,11 +13,9 @@ cabal-version:        >=1.10
 executable example
   main-is:              Main.hs
   other-modules:        AddBoxes
-                      , MainLoop
                       , FileChooserButton
                       , Hello
   build-depends:        base >=4.10 && <4.12
-                      , async
                       , gi-gobject
                       , gi-glib
                       , gi-gtk

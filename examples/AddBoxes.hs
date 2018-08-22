@@ -12,8 +12,8 @@ import           GHC.Exts
 
 import           GI.Gtk.Declarative                hiding ( main )
 import qualified GI.Gtk.Declarative            as Gtk
+import           GI.Gtk.Declarative.App.Simple
 
-import           MainLoop
 
 type Event = Either () ()
 

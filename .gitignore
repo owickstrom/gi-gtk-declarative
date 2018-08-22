@@ -5,3 +5,6 @@
 /TAGS
 /.ghc.environment*
 /cabal.project.local
+examples/dist
+examples/dist-newstyle
+examples/.stack-work

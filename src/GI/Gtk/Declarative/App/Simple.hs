@@ -1,11 +1,13 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE RecordWildCards #-}
-module MainLoop
+module GI.Gtk.Declarative.App.Simple
   ( App(..)
   , runInWindow
-  )
-where
+  , run
+  ) where
 
+import           Data.Int
+import           Data.Text          (Text)
 import           Data.Typeable
 import           Control.Concurrent
 import           Control.Concurrent.Async                 ( race )
@@ -15,14 +17,6 @@ import qualified GI.GLib.Constants             as GLib
 import           GI.Gtk.Declarative                hiding ( main )
 import qualified GI.Gtk.Declarative            as Gtk
 import           GI.Gtk.Declarative.EventSource
-
-runUI :: IO a -> IO a
-runUI f = do
-  r <- newEmptyMVar
-  void . Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT $ do
-    f >>= putMVar r
-    return False
-  takeMVar r
 
 data App model event =
   App
@@ -53,6 +47,24 @@ runInWindow window App {..} initialModel = do
     void . forkIO $ action >>= maybe (return ()) (writeChan input)
     loop newMarkup sub newModel
 
+run ::
+     Typeable event
+  => Text
+  -> Maybe (Int32, Int32)
+  -> App model event
+  -> model
+  -> IO ()
+run title size app initialModel = do
+  void $ Gtk.init Nothing
+  window <- Gtk.windowNew Gtk.WindowTypeToplevel
+  void (Gtk.onWidgetDestroy window mainQuit)
+  Gtk.windowSetTitle window title
+  case size of
+    Just (width, height) -> Gtk.windowResize window width height
+    Nothing -> return ()
+  void . forkIO $ runInWindow window app initialModel
+  Gtk.main
+
 patchContainer
   :: Typeable event
   => Gtk.Window
@@ -74,3 +86,12 @@ patchContainer w o1 o2 = case patch o1 o2 of
     Gtk.widgetShowAll w
     Just <$> subscribe o2 newWidget
   Keep -> return Nothing
+
+runUI :: IO a -> IO a
+runUI f = do
+  r <- newEmptyMVar
+  void . Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT $ do
+    f >>= putMVar r
+    return False
+  takeMVar r
+

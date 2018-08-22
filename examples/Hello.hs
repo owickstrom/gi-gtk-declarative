@@ -11,8 +11,7 @@ import           GHC.Exts
 
 import           GI.Gtk.Declarative hiding (main)
 import qualified GI.Gtk.Declarative as Gtk
-
-import           MainLoop
+import           GI.Gtk.Declarative.App.Simple
 
 data Model = Initial | Running Text Bool
 
