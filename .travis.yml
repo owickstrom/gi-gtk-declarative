@@ -10,4 +10,5 @@ script:
 - nix-env -if https://github.com/cachix/cachix/tarball/master --extra-substituters https://cachix.cachix.org --trusted-public-keys 'cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM='
 - cachix use gi-gtk-declarative
 - cachix push gi-gtk-declarative --watch-store&
-- nix-build -j2 | cachix push gi-gtk-declarative
+- nix-build -j2 -A gi-gtk-declarative | cachix push gi-gtk-declarative
+- nix-build -j2 -A examples

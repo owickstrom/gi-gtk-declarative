@@ -1,5 +1,5 @@
 resolver: lts-12.4
 
 packages:
-- .
+- gi-gtk-declarative
 - examples

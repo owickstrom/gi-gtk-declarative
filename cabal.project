@@ -1,1 +1,3 @@
-packages: . examples
+packages:
+  gi-gtk-declarative
+  examples

@@ -2,7 +2,7 @@ name:                 examples
 version:              0.1.0
 synopsis:             Examples of using gi-gtk-declarative.
 license:              MPL-2.0
-license-file:         ../LICENSE
+license-file:         LICENSE
 author:               Oskar Wickström
 maintainer:           oskar.wickstrom@gmail.com
 copyright:            Oskar Wickström
