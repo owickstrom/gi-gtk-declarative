@@ -8,49 +8,41 @@ import           Control.Concurrent
 import           Control.Monad
 import qualified Data.Text                     as Text
 
-import           GI.Gtk.Declarative                hiding ( main )
+import           GI.Gtk.Declarative            hiding (main)
 import qualified GI.Gtk.Declarative            as Gtk
 import           GI.Gtk.Declarative.App.Simple
 
 
-type Event = Either () ()
+data Event = AddLeft | AddRight
 
 data Model = Model { lefts :: [Int], rights :: [Int], next :: Int }
 
-addBoxesView :: Model -> Markup Event
+addBoxesView :: Model -> Widget Event
 addBoxesView Model {..} = container
   ScrolledWindow
   [ #hscrollbarPolicy := PolicyTypeAutomatic
   , #vscrollbarPolicy := PolicyTypeNever
   ]
-  (container Box
-             [#orientation := OrientationVertical]
-             [renderLane (Left ()) lefts, renderLane (Right ()) rights]
-  )
+  windowContents
  where
-  renderLane :: Event -> [Int] -> BoxChild Event
-  renderLane onClick children = BoxChild
-    True
-    True
-    10
-    (container
-      Box
-      []
-      ( BoxChild False
-                  False
-                  10
-                  (node Button [#label := "Add", on #clicked onClick])
-      : map renderChild children
-      )
-    )
-  renderChild :: Int -> BoxChild Event
+  windowContents :: Widget Event
+  windowContents = container Box [#orientation := OrientationVertical] $ do
+    renderLane AddLeft  lefts
+    renderLane AddRight rights
+  renderLane :: Event -> [Int] -> MarkupOf BoxChild Event ()
+  renderLane onClick children = boxChild True True 10 $ do
+    container Box [] $ do
+      boxChild False False 10 $ do
+        node Button [#label := "Add", on #clicked onClick]
+      mapM_ renderChild children
+  renderChild :: Int -> MarkupOf BoxChild Event ()
   renderChild n =
-    BoxChild True True 0 (node Label [#label := Text.pack ("Box " <> show n)])
+    boxChild True True 0 $ node Label [#label := Text.pack ("Box " <> show n)]
 
 update' :: Model -> Event -> (Model, IO (Maybe Event))
-update' model@Model {..} (Left ()) =
+update' model@Model {..} AddLeft =
   (model { lefts = lefts ++ [next], next = succ next }, return Nothing)
-update' model@Model {..} (Right ()) =
+update' model@Model {..} AddRight =
   (model { rights = rights ++ [next], next = succ next }, return Nothing)
 
 main :: IO ()
@@ -62,9 +54,8 @@ main = do
   Gtk.windowSetTitle window "AddBoxes"
   Gtk.windowResize window 640 480
 
-  let app = App {view = addBoxesView, update = update', inputs = [] }
+  let app = App {view = addBoxesView, update = update', inputs = []}
 
   void . forkIO $ runInWindow window app (Model [1] [2] 3)
-
   -- Let's do it!
   Gtk.main

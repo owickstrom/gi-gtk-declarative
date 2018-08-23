@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FunctionalDependencies             #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE LambdaCase            #-}
@@ -63,14 +64,14 @@ addSignalHandler
   -> widget
   -> PropPair widget event
   -> m (Maybe ConnectedHandler)
-addSignalHandler onEvent widget = \case
+addSignalHandler onEvent widget' = \case
   OnSignalPure signal handler -> do
-    handlerId <- Gtk.on widget signal (toGtkCallback handler onEvent)
-    w         <- Gtk.toWidget widget
+    handlerId <- Gtk.on widget' signal (toGtkCallback handler onEvent)
+    w         <- Gtk.toWidget widget'
     pure (Just (ConnectedHandler w handlerId))
   OnSignalImpure signal handler -> do
-    handlerId <- Gtk.on widget signal (toGtkCallback handler onEvent widget)
-    w         <- Gtk.toWidget widget
+    handlerId <- Gtk.on widget' signal (toGtkCallback handler onEvent widget')
+    w         <- Gtk.toWidget widget'
     pure (Just (ConnectedHandler w handlerId))
   _ -> pure Nothing
 
@@ -78,31 +79,35 @@ instance Patchable (Node event) where
   create = \case
     (Node ctor props) -> do
         let attrOps = concatMap extractAttrConstructOps props
-        widget <- Gtk.new ctor attrOps
+        widget' <- Gtk.new ctor attrOps
 
-        sc <- Gtk.widgetGetStyleContext widget
+        sc <- Gtk.widgetGetStyleContext widget'
         mapM_ (addClass sc) props
 
-        Gtk.widgetShowAll widget
-        Gtk.toWidget widget
-  patch (Node _ oldProps) (Node ctor newProps) = Modify $ \widget -> do
-    w <- Gtk.unsafeCastTo ctor widget
+        Gtk.widgetShowAll widget'
+        Gtk.toWidget widget'
+  patch (Node _ oldProps) (Node ctor newProps) = Modify $ \widget' -> do
+    w <- Gtk.unsafeCastTo ctor widget'
     Gtk.set w (concatMap extractAttrSetOps newProps)
 
-    sc <- Gtk.widgetGetStyleContext widget
+    sc <- Gtk.widgetGetStyleContext widget'
     mapM_ (removeClass sc) oldProps
     mapM_ (addClass sc) newProps
 
     Gtk.widgetShowAll w
 
 instance EventSource (Node event) event where
-  subscribe (Node ctor props) widget cb = do
-    w <- Gtk.unsafeCastTo ctor widget
+  subscribe (Node ctor props) widget' cb = do
+    w <- Gtk.unsafeCastTo ctor widget'
     Subscription . catMaybes <$> mapM (addSignalHandler cb w) props
 
-node
-  :: (Typeable widget, Typeable event, Gtk.IsWidget widget)
+node ::
+     ( Typeable widget
+     , Typeable event
+     , Gtk.IsWidget widget
+     , FromWidget markup event
+     )
   => (Gtk.ManagedPtr widget -> widget)
   -> [PropPair widget event]
-  -> Markup event
-node ctor = Markup . Node ctor
+  -> markup
+node ctor = fromWidget . Widget . Node ctor

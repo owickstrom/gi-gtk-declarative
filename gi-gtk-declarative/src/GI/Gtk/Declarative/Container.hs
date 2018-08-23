@@ -1,4 +1,8 @@
+{-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
 {-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE DataKinds              #-}
@@ -28,6 +32,7 @@ import           Data.Int                                 ( Int32 )
 import           Data.List                                ( zip4 )
 import           Data.Typeable
 import           Data.Word                                ( Word32 )
+import GHC.TypeLits
 import qualified GI.Gtk                        as Gtk
 
 import           GI.Gtk.Declarative.EventSource
@@ -109,17 +114,17 @@ patchInBox appendChild box os' ns' = do
 
   Gtk.widgetQueueResize box
 
--- appendCreatedWidgetInBox :: Gtk.Box -> Markup event -> Gtk.Widget -> IO ()
+-- appendCreatedWidgetInBox :: Gtk.Box -> Widget event -> Gtk.Widget -> IO ()
 -- appendCreatedWidgetInBox box _ = Gtk.containerAdd box
 
 packCreatedBoxChildInBox :: Gtk.Box -> BoxChild event -> Gtk.Widget -> IO ()
-packCreatedBoxChildInBox box BoxChild {..} widget =
-  Gtk.boxPackStart box widget expand fill padding
+packCreatedBoxChildInBox box BoxChild {..} widget' =
+  Gtk.boxPackStart box widget' expand fill padding
 
-data BoxChild event = BoxChild { expand :: Bool, fill :: Bool, padding :: Word32, child :: Markup event }
+data BoxChild event = BoxChild { expand :: Bool, fill :: Bool, padding :: Word32, child :: Widget event }
 
-boxChild :: Bool -> Bool -> Word32 -> Markup event -> BoxChild event
-boxChild expand fill padding child = BoxChild {..}
+boxChild :: Bool -> Bool -> Word32 -> Widget event -> MarkupOf BoxChild event ()
+boxChild expand fill padding child = widget BoxChild {..}
 
 instance Typeable event => Patchable (BoxChild event) where
   create = create . child
@@ -128,18 +133,24 @@ instance Typeable event => Patchable (BoxChild event) where
 instance EventSource (BoxChild event) event where
   subscribe BoxChild{..} = subscribe child
 
-instance Typeable event => PatchableContainer Gtk.Box [BoxChild event] where
+instance Typeable event => PatchableContainer Gtk.Box (MarkupOf BoxChild event ()) where
   createChildrenIn box children =
-    forM_ children $ \BoxChild {child = child, ..} -> do
-      widget <- create child
-      Gtk.boxPackStart box widget expand fill padding
-  patchChildrenIn widget oldChildren newChildren =
-    patchInBox packCreatedBoxChildInBox widget oldChildren newChildren
+    forM_ (runMarkup children) $ \BoxChild {child = child, ..} -> do
+      widget' <- create child
+      Gtk.boxPackStart box widget' expand fill padding
+  patchChildrenIn widget' oldChildren newChildren =
+    patchInBox packCreatedBoxChildInBox widget' (runMarkup oldChildren) (runMarkup newChildren)
 
-instance Typeable event => ContainerEventSource Gtk.Box [BoxChild event] event where
+instance Typeable event => ContainerEventSource Gtk.Box (MarkupOf BoxChild event ()) event where
   subscribeChildren children box cb = do
     ws <- Gtk.containerGetChildren box
-    foldMap (\(c, w) -> subscribe c w cb) (zip children ws)
+    foldMap (\(c, w) -> subscribe c w cb) (zip (runMarkup children) ws)
+
+instance TypeError (Text "The markup embedded in a Box needs to return " :<>: ShowType ()
+                    :<>: Text ", not " :<>: ShowType [a] :<>: Text "."
+                    :$$: Text "Did you perhaps use ‘mapM’ or ‘for’, instead of ‘mapM_’ or ‘for_’?")
+  => ContainerEventSource Gtk.Box (MarkupOf BoxChild event [a]) event where
+  subscribeChildren = undefined
 
 -- * ScrolledWindow
 
@@ -148,7 +159,7 @@ requireSingle what = \case
   [w] -> return w
   _   -> fail ("Expected a single " ++ what ++ " in the container.")
 
-instance Typeable event => PatchableContainer Gtk.ScrolledWindow (Markup event) where
+instance Typeable event => PatchableContainer Gtk.ScrolledWindow (Widget event) where
   createChildrenIn box child = create child >>= Gtk.containerAdd box
   patchChildrenIn scrolledWindow oldChild newChild = do
     viewport <- Gtk.containerGetChildren scrolledWindow
@@ -164,7 +175,7 @@ instance Typeable event => PatchableContainer Gtk.ScrolledWindow (Markup event) 
       Keep -> return ()
     where
 
-instance ContainerEventSource Gtk.ScrolledWindow (Markup event) event where
+instance ContainerEventSource Gtk.ScrolledWindow (Widget event) event where
   subscribeChildren child scrolledWindow cb = do
     viewport <- Gtk.containerGetChildren scrolledWindow
       >>= requireSingle "Viewport"
@@ -214,10 +225,10 @@ addSignalHandler
   -> widget
   -> PropPair widget event
   -> m (Maybe ConnectedHandler)
-addSignalHandler onEvent widget = \case
+addSignalHandler onEvent widget' = \case
   OnSignalPure signal handler -> do
-    handlerId <- Gtk.on widget signal (toGtkCallback handler onEvent)
-    w         <- Gtk.toWidget widget
+    handlerId <- Gtk.on widget' signal (toGtkCallback handler onEvent)
+    w         <- Gtk.toWidget widget'
     pure (Just (ConnectedHandler w handlerId))
   _ -> pure Nothing
 
@@ -225,20 +236,20 @@ addSignalHandler onEvent widget = \case
 instance (PatchableContainer widget children) => Patchable (GtkContainer widget children event) where
   create (GtkContainer ctor props children) = do
     let attrOps = concatMap extractAttrConstructOps props
-    widget <- Gtk.new ctor attrOps
+    widget' <- Gtk.new ctor attrOps
 
-    sc <- Gtk.widgetGetStyleContext widget
+    sc <- Gtk.widgetGetStyleContext widget'
     mapM_ (addClass sc) props
 
-    createChildrenIn widget children
-    Gtk.toWidget widget
+    createChildrenIn widget' children
+    Gtk.toWidget widget'
   patch (GtkContainer _ oldProps oldChildren) (GtkContainer ctor newProps newChildren) =
-    Modify $ \widget -> do
+    Modify $ \widget' -> do
 
-      w <- Gtk.unsafeCastTo ctor widget
+      w <- Gtk.unsafeCastTo ctor widget'
       Gtk.set w (concatMap extractAttrSetOps newProps)
 
-      sc <- Gtk.widgetGetStyleContext widget
+      sc <- Gtk.widgetGetStyleContext widget'
       mapM_ (removeClass sc) oldProps
       mapM_ (addClass sc) newProps
 
@@ -246,8 +257,8 @@ instance (PatchableContainer widget children) => Patchable (GtkContainer widget 
 
 instance ContainerEventSource widget children event
   => EventSource (GtkContainer widget children event) event where
-  subscribe (GtkContainer ctor props children) widget cb = do
-    w <- Gtk.unsafeCastTo ctor widget
+  subscribe (GtkContainer ctor props children) widget' cb = do
+    w <- Gtk.unsafeCastTo ctor widget'
     handlers' <- catMaybes <$> mapM (addSignalHandler cb w) props
     (<> Subscription handlers') <$> subscribeChildren children w cb
 
@@ -259,9 +270,10 @@ container
      , Typeable children
      , Typeable event
      , Gtk.IsWidget widget
+     , FromWidget markup event
      )
   => (Gtk.ManagedPtr widget -> widget)
   -> [PropPair widget event]
   -> children
-  -> Markup event
-container ctor attrs = Markup . GtkContainer ctor attrs
+  -> markup
+container ctor attrs = fromWidget . Widget . GtkContainer ctor attrs

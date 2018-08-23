@@ -12,6 +12,7 @@ where
 import           GI.Gtk                        as Export
                                                    hiding ( (:=)
                                                           , on
+                                                          , Widget
                                                           )
 
 import           GI.Gtk.Declarative.Container  as Export

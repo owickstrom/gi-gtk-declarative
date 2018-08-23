@@ -23,7 +23,7 @@ import           GI.Gtk.Declarative.EventSource
 data App model event =
   App
     { update :: model -> event -> (model, IO (Maybe event))
-    , view :: model -> Markup event
+    , view :: model -> Widget event
     , inputs :: [Producer event IO ()]
     }
 
@@ -50,10 +50,10 @@ runInWindow window App {..} initialModel = do
   let firstMarkup = view initialModel
   nextEvent    <- newEmptyMVar
   subscription <- runUI $ do
-    widget <- Gtk.toWidget =<< create firstMarkup
-    Gtk.containerAdd window widget
+    widget' <- Gtk.toWidget =<< create firstMarkup
+    Gtk.containerAdd window widget'
     Gtk.widgetShowAll window
-    subscribe firstMarkup widget (publishEvent nextEvent)
+    subscribe firstMarkup widget' (publishEvent nextEvent)
   void . forkIO $
     runEffect (mergeProducers inputs >-> publishInputEvents nextEvent)
   loop firstMarkup nextEvent subscription initialModel
@@ -98,18 +98,18 @@ run title size app initialModel = do
 patchContainer
   :: Typeable event
   => Gtk.Window
-  -> Markup event
-  -> Markup event
+  -> Widget event
+  -> Widget event
   -> MVar event
   -> IO (Maybe Subscription)
 patchContainer w o1 o2 nextEvent = case patch o1 o2 of
   Modify f -> Gtk.containerGetChildren w >>= \case
     []      -> return Nothing
     (c : _) -> do
-      widget <- Gtk.toWidget c
-      f widget
+      widget' <- Gtk.toWidget c
+      f widget'
       Gtk.widgetShowAll w
-      Just <$> subscribe o2 widget (publishEvent nextEvent)
+      Just <$> subscribe o2 widget' (publishEvent nextEvent)
   Replace createNew -> do
     Gtk.containerForall w (Gtk.containerRemove w)
     newWidget <- createNew

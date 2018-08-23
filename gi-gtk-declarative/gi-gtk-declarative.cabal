@@ -27,6 +27,7 @@ library
                       , haskell-gi             >= 0.21 && <0.22
                       , haskell-gi-base        >= 0.21 && <0.22
                       , haskell-gi-overloading == 1.0
+                      , mtl
                       , text
                       , unordered-containers >= 0.2 && < 0.3
   hs-source-dirs:       src

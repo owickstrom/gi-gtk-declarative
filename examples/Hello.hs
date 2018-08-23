@@ -16,7 +16,7 @@ data Model = Initial | Greeting Text
 
 data Event = Greet Text
 
-helloView :: Model -> Markup Event
+helloView :: Model -> Widget Event
 helloView Initial       = node Label [#label := "Nothing here yet."]
 helloView (Greeting who) = node Label [#label := who]
 
