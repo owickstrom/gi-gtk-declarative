@@ -66,9 +66,7 @@ main = do
   Gtk.windowSetTitle window "AddBoxes"
   Gtk.windowResize window 640 480
 
-  input' <- newChan
-
-  let app = App {view = addBoxesView, update = update', input = input', ..}
+  let app = App {view = addBoxesView, update = update', inputs = [] }
 
   void . forkIO $ runInWindow window app (Model [1] [2] 3)
 

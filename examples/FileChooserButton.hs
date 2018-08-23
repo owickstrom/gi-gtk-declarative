@@ -64,9 +64,7 @@ main = do
   Gtk.windowSetTitle window "Sample gi-gtk-declarative app!"
   Gtk.windowResize window 640 480
 
-  input' <- newChan
-
-  let app = App {view = view', update = update', input = input'}
+  let app = App {view = view', update = update', inputs = [] }
 
   void . forkIO $ runInWindow window app (Started Nothing)
 

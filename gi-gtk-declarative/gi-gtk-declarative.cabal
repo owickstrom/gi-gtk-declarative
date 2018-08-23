@@ -14,7 +14,6 @@ extra-source-files:   CHANGELOG.md
 
 library
   exposed-modules:      GI.Gtk.Declarative
-                      , GI.Gtk.Declarative.App.Simple
                       , GI.Gtk.Declarative.Container
                       , GI.Gtk.Declarative.CSS
                       , GI.Gtk.Declarative.EventSource
@@ -23,11 +22,8 @@ library
                       , GI.Gtk.Declarative.Patch
                       , GI.Gtk.Declarative.Props
   build-depends:        base >=4.10 && <4.12
-                      , async
                       , gi-gobject             >= 2    && <3
-                      , gi-glib
                       , gi-gtk                 >= 3    && <4
-                      , gi-gdk
                       , haskell-gi             >= 0.21 && <0.22
                       , haskell-gi-base        >= 0.21 && <0.22
                       , haskell-gi-overloading == 1.0
