@@ -25,27 +25,40 @@ data App model event =
     , input :: Chan event
     }
 
+publishEvent :: MVar event -> event -> IO ()
+publishEvent mvar = void . tryPutMVar mvar
+
 runInWindow :: Typeable event => Gtk.Window -> App model event -> model -> IO ()
 runInWindow window App {..} initialModel = do
   let firstMarkup = view initialModel
+  nextEvent <- newEmptyMVar
   subscription <- runUI $ do
     widget <- Gtk.toWidget =<< create firstMarkup
     Gtk.containerAdd window widget
     Gtk.widgetShowAll window
-    subscribe firstMarkup widget
-  loop firstMarkup subscription initialModel
+    subscribe firstMarkup widget (publishEvent nextEvent)
+  loop firstMarkup nextEvent subscription initialModel
  where
-  loop oldMarkup oldSubscription oldModel = do
-    event <- either return return
-      =<< race (readChan (events oldSubscription)) (readChan input)
+   loop oldMarkup nextEvent oldSubscription oldModel = do
+    event <- either id id <$> race (takeMVar nextEvent) (readChan input)
     let (newModel, action) = update oldModel event
         newMarkup          = view newModel
+
     sub <-
-      runUI (patchContainer window oldMarkup newMarkup) >>= \case
-        Just newSubscription -> cancel oldSubscription *> pure newSubscription
+      runUI (patchContainer window oldMarkup newMarkup nextEvent) >>= \case
+        Just newSubscription ->
+          cancel oldSubscription *> pure newSubscription
         Nothing -> pure oldSubscription
+
+    -- Make sure the MVar is empty.
+    void (tryTakeMVar nextEvent)
+
+    -- If the action returned by the update function produced an event, then
+    -- we write that as an input.
     void . forkIO $ action >>= maybe (return ()) (writeChan input)
-    loop newMarkup sub newModel
+
+    -- Finally, we loop.
+    loop newMarkup nextEvent sub newModel
 
 run ::
      Typeable event
@@ -70,21 +83,22 @@ patchContainer
   => Gtk.Window
   -> Markup event
   -> Markup event
-  -> IO (Maybe (Subscription event))
-patchContainer w o1 o2 = case patch o1 o2 of
+  -> MVar event
+  -> IO (Maybe Subscription)
+patchContainer w o1 o2 nextEvent = case patch o1 o2 of
   Modify f -> Gtk.containerGetChildren w >>= \case
     []      -> return Nothing
     (c : _) -> do
       widget <- Gtk.toWidget c
       f widget
       Gtk.widgetShowAll w
-      Just <$> subscribe o2 widget
+      Just <$> subscribe o2 widget (publishEvent nextEvent)
   Replace createNew -> do
     Gtk.containerForall w (Gtk.containerRemove w)
     newWidget <- createNew
     Gtk.containerAdd w newWidget
     Gtk.widgetShowAll w
-    Just <$> subscribe o2 newWidget
+    Just <$> subscribe o2 newWidget (publishEvent nextEvent)
   Keep -> return Nothing
 
 runUI :: IO a -> IO a

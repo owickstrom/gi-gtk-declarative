@@ -18,10 +18,8 @@ module GI.Gtk.Declarative.Container
   )
 where
 
-import           Data.Traversable                         ( for )
 import           Control.Monad.IO.Class                   ( MonadIO )
 import           Control.Monad                            ( forM_ )
-import           Control.Concurrent
 import           GHC.Exts
 import           Data.Maybe
 import qualified Data.GI.Base                  as GI
@@ -42,7 +40,7 @@ class PatchableContainer widget children | widget -> children where
   patchChildrenIn :: Typeable event => widget -> children event -> children event -> IO ()
 
 class ContainerEventSource widget children | widget -> children where
-  subscribeChildren :: children event -> widget -> IO (Subscription event)
+  subscribeChildren :: children event -> widget -> (event -> IO ()) -> IO Subscription
 
 -- * Box
 
@@ -149,12 +147,9 @@ instance PatchableContainer Gtk.Box (Children BoxChild) where
     patchInBox packCreatedBoxChildInBox widget oldChildren newChildren
 
 instance ContainerEventSource Gtk.Box (Children BoxChild) where
-  subscribeChildren (Children children) box = do
+  subscribeChildren (Children children) box cb = do
     ws <- Gtk.containerGetChildren box
-    subs <-
-      for (zip children ws) $ \(child, childWidget) ->
-        subscribe child childWidget
-    joinSubscriptions subs
+    foldMap (\(c, w) -> subscribe c w cb) (zip children ws)
 
 -- * ScrolledWindow
 
@@ -180,13 +175,13 @@ instance PatchableContainer Gtk.ScrolledWindow Markup where
     where
 
 instance ContainerEventSource Gtk.ScrolledWindow Markup where
-  subscribeChildren child scrolledWindow = do
+  subscribeChildren child scrolledWindow cb = do
     viewport <- Gtk.containerGetChildren scrolledWindow
       >>= requireSingle "Viewport"
       >>= Gtk.unsafeCastTo Gtk.Viewport
     childWidget <- Gtk.containerGetChildren viewport
       >>= requireSingle "scrolled child"
-    subscribe child childWidget
+    subscribe child childWidget cb
 
 -- * Container object
 
@@ -264,12 +259,10 @@ instance (PatchableContainer widget children) => Patchable (GtkContainer widget 
       patchChildrenIn w oldChildren newChildren
 
 instance ContainerEventSource widget children => EventSource (GtkContainer widget children) where
-  subscribe (GtkContainer ctor props children) widget = do
+  subscribe (GtkContainer ctor props children) widget cb = do
     w <- Gtk.unsafeCastTo ctor widget
-    events' <- newChan
-    handlers' <- catMaybes <$> mapM (addSignalHandler (writeChan events') w) props
-    childrenSub <- subscribeChildren children w
-    joinSubscriptions [Subscription events' handlers', childrenSub]
+    handlers' <- catMaybes <$> mapM (addSignalHandler cb w) props
+    (<> Subscription handlers') <$> subscribeChildren children w cb
 
 container
   :: ( PatchableContainer widget children

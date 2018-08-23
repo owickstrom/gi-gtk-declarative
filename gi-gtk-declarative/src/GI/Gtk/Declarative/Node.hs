@@ -16,7 +16,6 @@ module GI.Gtk.Declarative.Node
 where
 
 import           Data.Maybe
-import           Control.Concurrent
 import           Control.Monad.IO.Class                   ( MonadIO )
 import qualified Data.GI.Base.Attributes       as GI
 import           Data.Typeable
@@ -97,11 +96,9 @@ instance Patchable Node where
     Gtk.widgetShowAll w
 
 instance EventSource Node where
-  subscribe (Node ctor props) widget = do
+  subscribe (Node ctor props) widget cb = do
     w <- Gtk.unsafeCastTo ctor widget
-    events' <- newChan
-    handlers' <- catMaybes <$> mapM (addSignalHandler (writeChan events') w) props
-    pure (Subscription events' handlers')
+    Subscription . catMaybes <$> mapM (addSignalHandler cb w) props
 
 node
   :: (Typeable widget, Typeable event, Gtk.IsWidget widget)
