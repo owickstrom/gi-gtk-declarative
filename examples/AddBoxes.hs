@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE RecordWildCards   #-}
 
 module AddBoxes where
@@ -8,7 +7,6 @@ module AddBoxes where
 import           Control.Concurrent
 import           Control.Monad
 import qualified Data.Text                     as Text
-import           GHC.Exts
 
 import           GI.Gtk.Declarative                hiding ( main )
 import qualified GI.Gtk.Declarative            as Gtk
@@ -38,13 +36,11 @@ addBoxesView Model {..} = container
     (container
       Box
       []
-      (fromList
-        ( BoxChild False
-                   False
-                   10
-                   (node Button [#label := "Add", on #clicked onClick])
-        : map renderChild children
-        )
+      ( BoxChild False
+                  False
+                  10
+                  (node Button [#label := "Add", on #clicked onClick])
+      : map renderChild children
       )
     )
   renderChild :: Int -> BoxChild Event

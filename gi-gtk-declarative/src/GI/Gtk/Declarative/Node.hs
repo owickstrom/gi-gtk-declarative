@@ -74,7 +74,7 @@ addSignalHandler onEvent widget = \case
     pure (Just (ConnectedHandler w handlerId))
   _ -> pure Nothing
 
-instance Patchable Node where
+instance Patchable (Node event) where
   create = \case
     (Node ctor props) -> do
         let attrOps = concatMap extractAttrConstructOps props
@@ -95,7 +95,7 @@ instance Patchable Node where
 
     Gtk.widgetShowAll w
 
-instance EventSource Node where
+instance EventSource (Node event) event where
   subscribe (Node ctor props) widget cb = do
     w <- Gtk.unsafeCastTo ctor widget
     Subscription . catMaybes <$> mapM (addSignalHandler cb w) props
@@ -105,4 +105,4 @@ node
   => (Gtk.ManagedPtr widget -> widget)
   -> [PropPair widget event]
   -> Markup event
-node ctor attrs = Markup (Node ctor attrs)
+node ctor = Markup . Node ctor

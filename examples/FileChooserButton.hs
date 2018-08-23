@@ -1,7 +1,6 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE RecordWildCards   #-}
 
 module FileChooserButton where
@@ -64,7 +63,7 @@ main = do
   Gtk.windowSetTitle window "Sample gi-gtk-declarative app!"
   Gtk.windowResize window 640 480
 
-  let app = App {view = view', update = update', inputs = [] }
+  let app = App {view = view', update = update', inputs = []}
 
   void . forkIO $ runInWindow window app (Started Nothing)
 

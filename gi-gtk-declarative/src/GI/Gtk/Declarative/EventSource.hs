@@ -1,3 +1,5 @@
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module GI.Gtk.Declarative.EventSource
   ( ConnectedHandler(..)
@@ -22,5 +24,5 @@ cancel sub =
     -- TODO: Disconnect signals. Doesn't seem like haskell-gi-base supports this. PR time!
   forM_ (handlers sub) $ \(ConnectedHandler _widget _handlerId) -> return ()
 
-class EventSource widget where
-  subscribe :: widget event -> Gtk.Widget -> (event -> IO ()) -> IO Subscription
+class EventSource widget event | widget -> event where
+  subscribe :: widget -> Gtk.Widget -> (event -> IO ()) -> IO Subscription

@@ -9,7 +9,6 @@ module GI.Gtk.Declarative.Patch
   , Patchable(..)
   ) where
 
-import           Data.Typeable
 import qualified GI.Gtk as Gtk
 
 data Patch
@@ -18,5 +17,5 @@ data Patch
   | Keep
 
 class Patchable widget where
-  create :: Typeable event => widget event -> IO Gtk.Widget
-  patch :: Typeable event => widget event -> widget event -> Patch
+  create :: widget -> IO Gtk.Widget
+  patch :: widget -> widget -> Patch
