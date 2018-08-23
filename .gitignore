@@ -1,10 +1,9 @@
 /dist
 /dist-newstyle
+/*/dist
+/*/dist-newstyle
 .stack-work
 /tags
 /TAGS
-/.ghc.environment*
+.ghc.environment*
 /cabal.project.local
-examples/dist
-examples/dist-newstyle
-examples/.stack-work
