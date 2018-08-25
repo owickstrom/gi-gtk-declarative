@@ -17,5 +17,5 @@ data Patch
   | Keep
 
 class Patchable widget where
-  create :: widget -> IO Gtk.Widget
-  patch :: widget -> widget -> Patch
+  create :: widget e -> IO Gtk.Widget
+  patch :: widget e1 -> widget e2 -> Patch

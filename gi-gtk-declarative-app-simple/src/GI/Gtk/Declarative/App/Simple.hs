@@ -16,8 +16,8 @@ import           Pipes
 import           Pipes.Concurrent
 import qualified GI.Gdk                        as Gdk
 import qualified GI.GLib.Constants             as GLib
-import           GI.Gtk.Declarative                hiding ( main )
-import qualified GI.Gtk.Declarative            as Gtk
+import qualified GI.Gtk as Gtk
+import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.EventSource
 
 data App model event =
@@ -87,7 +87,7 @@ run
 run title size app initialModel = do
   void $ Gtk.init Nothing
   window <- Gtk.windowNew Gtk.WindowTypeToplevel
-  void (Gtk.onWidgetDestroy window mainQuit)
+  void (Gtk.onWidgetDestroy window Gtk.mainQuit)
   Gtk.windowSetTitle window title
   case size of
     Just (width, height) -> Gtk.windowResize window width height

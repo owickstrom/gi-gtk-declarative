@@ -7,8 +7,12 @@ module FileChooserButton where
 
 import qualified Data.Text                     as Text
 
-import           GI.Gtk.Declarative            hiding (main)
-import qualified GI.Gtk.Declarative            as Gtk
+import           GI.Gtk                        (Box (..),
+                                                FileChooserButton (..),
+                                               Button(..),
+                                                Label (..), Orientation (..),
+                                                fileChooserGetFilename)
+import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
 data Model = Started (Maybe FilePath) | Done FilePath
@@ -24,11 +28,11 @@ view' (Started currentFile) =
     boxChild False False 10 $ node
       FileChooserButton
       [ onM #selectionChanged
-            (fmap FileSelectionChanged . Gtk.fileChooserGetFilename)
+            (fmap FileSelectionChanged . fileChooserGetFilename)
       ]
     boxChild False False 10 $ node
       Button
-      [#label := "Select", #tooltipText := "Hello!", on #clicked ButtonClicked]
+      [#label := "Select", #tooltipText := "Select the chosen file", on #clicked ButtonClicked]
 
 update' :: Model -> Event -> (Model, IO (Maybe Event))
 update' (Started _) (FileSelectionChanged p) = (Started p, return Nothing)

@@ -1,4 +1,3 @@
-{-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GADTs                      #-}
@@ -15,7 +14,18 @@
 -- A 'Widget' value can wrap any 'Patchable' widget, hiding the underlying
 -- widget type, such that you can embed heterogeneous collections of widgets in
 -- containers.
-module GI.Gtk.Declarative.Markup (Widget(..), Patchable(..), MarkupBuilder, MarkupOf, Markup, widget, widgets, runMarkup, FromWidget(..)) where
+module GI.Gtk.Declarative.Markup
+  ( Widget(..)
+  , Patchable(..)
+  , MarkupBuilder
+  , MarkupOf
+  , Markup
+  , widget
+  , widgets
+  , runMarkup
+  , FromWidget(..)
+  )
+where
 
 import           Control.Monad.Writer
 import           Data.Typeable
@@ -30,7 +40,7 @@ import           GI.Gtk.Declarative.Patch
 data Widget event where
   Widget
     :: ( Typeable (widget event)
-       , Patchable (widget event)
+       , Patchable widget
        , EventSource (widget event) event
        )
     => widget event
@@ -38,10 +48,10 @@ data Widget event where
 
 -- | 'Widget' is itself patchable, by delegating to the underlying
 -- widget instances.
-instance Typeable event => Patchable (Widget event) where
+instance Patchable Widget where
   create (Widget w) = create w
-  patch (Widget (w1 :: t1 event)) (Widget (w2 :: t2 event)) =
-    case eqT @(t1 event) @(t2 event) of
+  patch (Widget (w1 :: t1 e1)) (Widget (w2 :: t2 e2)) =
+    case eqT @(t1 e1) @(t2 e2) of
       Just Refl -> patch w1 w2
       _         -> Replace (create w2)
 

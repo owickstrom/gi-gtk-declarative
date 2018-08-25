@@ -1,11 +1,12 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FunctionalDependencies             #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE LambdaCase            #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE LambdaCase             #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE TypeOperators          #-}
 
 -- | A 'Node' represents a declarative "leaf" widget, i.e. one that is
 -- not a container with children.
@@ -16,11 +17,11 @@ module GI.Gtk.Declarative.Node
   )
 where
 
+import           Control.Monad.IO.Class         (MonadIO)
+import qualified Data.GI.Base.Attributes        as GI
 import           Data.Maybe
-import           Control.Monad.IO.Class                   ( MonadIO )
-import qualified Data.GI.Base.Attributes       as GI
 import           Data.Typeable
-import qualified GI.Gtk                        as Gtk
+import qualified GI.Gtk                         as Gtk
 
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Markup
@@ -75,7 +76,7 @@ addSignalHandler onEvent widget' = \case
     pure (Just (ConnectedHandler w handlerId))
   _ -> pure Nothing
 
-instance Patchable (Node event) where
+instance Patchable Node where
   create = \case
     (Node ctor props) -> do
         let attrOps = concatMap extractAttrConstructOps props
