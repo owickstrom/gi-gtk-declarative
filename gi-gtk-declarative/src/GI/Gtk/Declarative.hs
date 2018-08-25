@@ -9,12 +9,6 @@ module GI.Gtk.Declarative
   )
 where
 
-import           GI.Gtk                        as Export
-                                                   hiding ( (:=)
-                                                          , on
-                                                          , Widget
-                                                          )
-
 import           GI.Gtk.Declarative.Container  as Export
 import           GI.Gtk.Declarative.CSS        as Export
 import           GI.Gtk.Declarative.Markup     as Export

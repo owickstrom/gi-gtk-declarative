@@ -9,7 +9,8 @@ import           Data.Text                                ( Text )
 import           Pipes
 import qualified Pipes.Extras                         as Pipes
 
-import           GI.Gtk.Declarative                hiding ( main )
+import           GI.Gtk                        (Label (..))
+import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
 data Model = Initial | Greeting Text

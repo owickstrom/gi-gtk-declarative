@@ -67,10 +67,10 @@ replaceInBox append box i old new = do
 
 patchInBox
   :: (Patchable child)
-  => (Gtk.Box -> child -> Gtk.Widget -> IO ())
+  => (Gtk.Box -> child e2 -> Gtk.Widget -> IO ())
   -> Gtk.Box
-  -> [child]
-  -> [child]
+  -> [child e1]
+  -> [child e2]
   -> IO ()
 patchInBox appendChild box os' ns' = do
   cs <- Gtk.containerGetChildren box
@@ -126,25 +126,34 @@ data BoxChild event = BoxChild { expand :: Bool, fill :: Bool, padding :: Word32
 boxChild :: Bool -> Bool -> Word32 -> Widget event -> MarkupOf BoxChild event ()
 boxChild expand fill padding child = widget BoxChild {..}
 
-instance Typeable event => Patchable (BoxChild event) where
+instance Patchable BoxChild where
   create = create . child
   patch b1 b2 = patch (child b1) (child b2)
 
 instance EventSource (BoxChild event) event where
   subscribe BoxChild{..} = subscribe child
 
-instance Typeable event => PatchableContainer Gtk.Box (MarkupOf BoxChild event ()) where
+instance Typeable event => PatchableContainer Gtk.Box [BoxChild event] where
   createChildrenIn box children =
-    forM_ (runMarkup children) $ \BoxChild {child = child, ..} -> do
+    forM_ children $ \BoxChild {child = child, ..} -> do
       widget' <- create child
       Gtk.boxPackStart box widget' expand fill padding
   patchChildrenIn widget' oldChildren newChildren =
-    patchInBox packCreatedBoxChildInBox widget' (runMarkup oldChildren) (runMarkup newChildren)
+    patchInBox packCreatedBoxChildInBox widget' oldChildren newChildren
 
-instance Typeable event => ContainerEventSource Gtk.Box (MarkupOf BoxChild event ()) event where
+instance Typeable event => PatchableContainer Gtk.Box (MarkupOf BoxChild event ()) where
+  createChildrenIn box children =
+    createChildrenIn box (runMarkup children)
+  patchChildrenIn widget' oldChildren newChildren =
+    patchChildrenIn widget' (runMarkup oldChildren) (runMarkup newChildren)
+
+instance Typeable event => ContainerEventSource Gtk.Box [BoxChild event] event where
   subscribeChildren children box cb = do
     ws <- Gtk.containerGetChildren box
-    foldMap (\(c, w) -> subscribe c w cb) (zip (runMarkup children) ws)
+    foldMap (\(c, w) -> subscribe c w cb) (zip children ws)
+
+instance Typeable event => ContainerEventSource Gtk.Box (MarkupOf BoxChild event ()) event where
+  subscribeChildren children = subscribeChildren (runMarkup children)
 
 instance TypeError (Text "The markup embedded in a Box needs to return " :<>: ShowType ()
                     :<>: Text ", not " :<>: ShowType [a] :<>: Text "."
@@ -233,7 +242,7 @@ addSignalHandler onEvent widget' = \case
   _ -> pure Nothing
 
 
-instance (PatchableContainer widget children) => Patchable (GtkContainer widget children event) where
+instance (PatchableContainer widget children) => Patchable (GtkContainer widget children) where
   create (GtkContainer ctor props children) = do
     let attrOps = concatMap extractAttrConstructOps props
     widget' <- Gtk.new ctor attrOps
@@ -265,7 +274,7 @@ instance ContainerEventSource widget children event
 container
   :: ( PatchableContainer widget children
      , ContainerEventSource widget children event
-     , Patchable (GtkContainer widget children event)
+     , Patchable (GtkContainer widget children)
      , Typeable widget
      , Typeable children
      , Typeable event

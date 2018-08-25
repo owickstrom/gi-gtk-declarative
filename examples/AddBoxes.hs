@@ -4,12 +4,13 @@
 
 module AddBoxes where
 
-import           Control.Concurrent
-import           Control.Monad
 import qualified Data.Text                     as Text
 
-import           GI.Gtk.Declarative            hiding (main)
-import qualified GI.Gtk.Declarative            as Gtk
+import           GI.Gtk                        (Box (..), Button (..),
+                                                Label (..), Orientation (..),
+                                                PolicyType (..),
+                                                ScrolledWindow (..))
+import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
 
@@ -34,10 +35,10 @@ addBoxesView Model {..} = container
     container Box [] $ do
       boxChild False False 10 $ do
         node Button [#label := "Add", on #clicked onClick]
-      mapM_ renderChild children
-  renderChild :: Int -> MarkupOf BoxChild Event ()
+      (mapM_ (boxChild False False 0 . renderChild) children)
+  renderChild :: Int -> Widget Event
   renderChild n =
-    boxChild True True 0 $ node Label [#label := Text.pack ("Box " <> show n)]
+    node Label [#label := Text.pack ("Box " <> show n)]
 
 update' :: Model -> Event -> (Model, IO (Maybe Event))
 update' model@Model {..} AddLeft =
@@ -46,16 +47,6 @@ update' model@Model {..} AddRight =
   (model { rights = rights ++ [next], next = succ next }, return Nothing)
 
 main :: IO ()
-main = do
-  void $ Gtk.init Nothing
-  window <- Gtk.windowNew Gtk.WindowTypeToplevel
-  void (Gtk.onWidgetDestroy window mainQuit)
-
-  Gtk.windowSetTitle window "AddBoxes"
-  Gtk.windowResize window 640 480
-
+main =
   let app = App {view = addBoxesView, update = update', inputs = []}
-
-  void . forkIO $ runInWindow window app (Model [1] [2] 3)
-  -- Let's do it!
-  Gtk.main
+  in run "AddBoxes" (Just (640, 480)) app (Model [1] [2] 3)
