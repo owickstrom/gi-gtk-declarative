@@ -6,6 +6,8 @@
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeOperators          #-}
 
 -- | A 'Node' represents a declarative "leaf" widget, i.e. one that is
@@ -87,15 +89,20 @@ instance Patchable Node where
 
         Gtk.widgetShowAll widget'
         Gtk.toWidget widget'
-  patch (Node _ oldProps) (Node ctor newProps) = Modify $ \widget' -> do
-    w <- Gtk.unsafeCastTo ctor widget'
-    Gtk.set w (concatMap extractAttrSetOps newProps)
+  patch (Node (_ :: Gtk.ManagedPtr w1 -> w1) oldProps) (Node (ctor :: Gtk.ManagedPtr w2 -> w2) newProps) =
+    case eqT @w1 @w2 of
+      Just Refl ->
+        Modify $ \widget' -> do
+          w <- Gtk.unsafeCastTo ctor widget'
+          Gtk.set w (concatMap extractAttrSetOps newProps)
 
-    sc <- Gtk.widgetGetStyleContext widget'
-    mapM_ (removeClass sc) oldProps
-    mapM_ (addClass sc) newProps
+          sc <- Gtk.widgetGetStyleContext widget'
+          mapM_ (removeClass sc) oldProps
+          mapM_ (addClass sc) newProps
 
-    Gtk.widgetShowAll w
+          Gtk.widgetShowAll w
+
+      Nothing -> Replace (create (Node ctor newProps))
 
 instance EventSource (Node event) event where
   subscribe (Node ctor props) widget' cb = do

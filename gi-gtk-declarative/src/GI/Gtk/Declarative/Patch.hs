@@ -1,4 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes            #-}
+
 -- | A 'Patch' represents a possible 'IO' action to apply to a
 -- 'Gtk.Widget' to make it reflect an updated declarative widget.  The
 -- action to apply is calculated from the difference between the old
