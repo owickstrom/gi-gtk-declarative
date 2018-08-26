@@ -135,7 +135,6 @@ data PropPair widget event where
       , GI.AttrSetTypeConstraint info setValue
       , KnownSymbol attr
       , Typeable attr
-      , Eq getValue
       )
    =>  GI.AttrLabelProxy (attr :: Symbol) -> setValue -> PropPair widget event
   Classes
