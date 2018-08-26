@@ -16,23 +16,17 @@
 -- | Implementations of 'Patchable' for common GTK+ container widgets.
 
 module GI.Gtk.Declarative.Container
-  ( BoxChild(..)
-  , boxChild
-  , PatchableContainer(..)
+  ( PatchableContainer(..)
+  , ContainerEventSource(..)
   , container
   )
 where
 
 import           Control.Monad.IO.Class                   ( MonadIO )
-import           Control.Monad                            ( forM_ )
 import           Data.Maybe
 import qualified Data.GI.Base                  as GI
 import qualified Data.GI.Base.Attributes       as GI
-import           Data.Int                                 ( Int32 )
-import           Data.List                                ( zip4 )
 import           Data.Typeable
-import           Data.Word                                ( Word32 )
-import GHC.TypeLits
 import qualified GI.Gtk                        as Gtk
 
 import           GI.Gtk.Declarative.EventSource
@@ -46,120 +40,6 @@ class PatchableContainer widget children where
 
 class ContainerEventSource widget children event | children -> event where
   subscribeChildren :: children -> widget -> (event -> IO ()) -> IO Subscription
-
--- * Box
-
-padMaybes :: [a] -> [Maybe a]
-padMaybes xs = map Just xs ++ repeat Nothing
-
-replaceInBox
-  :: (Gtk.Widget -> IO ())
-  -> Gtk.Box
-  -> Int32
-  -> Gtk.Widget
-  -> Gtk.Widget
-  -> IO ()
-replaceInBox append box i old new = do
-  Gtk.containerRemove box old
-  append new
-  Gtk.boxReorderChild box new i
-  Gtk.widgetShowAll box
-
-patchInBox
-  :: (Patchable child)
-  => (Gtk.Box -> child e2 -> Gtk.Widget -> IO ())
-  -> Gtk.Box
-  -> [child e1]
-  -> [child e2]
-  -> IO ()
-patchInBox appendChild box os' ns' = do
-  cs <- Gtk.containerGetChildren box
-  let maxLength = maximum [length cs, length os', length ns']
-      indices   = [0 .. pred (fromIntegral maxLength)]
-  forM_ (zip4 indices (padMaybes cs) (padMaybes os') (padMaybes ns')) $ \case
-
-    -- In case we have a corresponding old and new virtual widget, we patch the
-    -- GTK widget.
-    (i, Just w, Just old, Just new) -> case patch old new of
-      Modify modify -> modify w
-      Replace createWidget ->
-        replaceInBox (appendChild box new) box i w =<< createWidget
-      Keep -> return ()
-
-    -- When there is a new object, but there already exists a widget
-    -- in the corresponding place, we need to replace the widget with
-    -- one created from the object.
-    (i, Just w, Nothing, Just new) ->
-      replaceInBox (appendChild box new) box i w =<< create new
-
-    -- When there is a new object, or one that lacks a corresponding GTK
-    -- widget, create and add it.
-    (_i, Nothing, _      , Just n ) -> create n >>= Gtk.containerAdd box
-
-    -- When an object has been removed, remove the GTK widget from the
-    -- container.
-    (_i, Just w , Just _ , Nothing) -> Gtk.containerRemove box w
-
-    -- When there are more old objects than GTK widgets, we can safely
-    -- ignore the old objects.
-    (_i, Nothing, Just _ , Nothing) -> return ()
-
-    -- But, when there are stray GTK widgets without corresponding
-    -- objects, something has gone wrong, and we clean that mess
-    -- up by removing the GTK widgets.
-    (_i, Just w , Nothing, Nothing) -> Gtk.containerRemove box w
-
-    -- No more widgets or objects, we are done.
-    (_i, Nothing, Nothing, Nothing) -> return ()
-
-  Gtk.widgetQueueResize box
-
--- appendCreatedWidgetInBox :: Gtk.Box -> Widget event -> Gtk.Widget -> IO ()
--- appendCreatedWidgetInBox box _ = Gtk.containerAdd box
-
-packCreatedBoxChildInBox :: Gtk.Box -> BoxChild event -> Gtk.Widget -> IO ()
-packCreatedBoxChildInBox box BoxChild {..} widget' =
-  Gtk.boxPackStart box widget' expand fill padding
-
-data BoxChild event = BoxChild { expand :: Bool, fill :: Bool, padding :: Word32, child :: Widget event }
-
-boxChild :: Bool -> Bool -> Word32 -> Widget event -> MarkupOf BoxChild event ()
-boxChild expand fill padding child = widget BoxChild {..}
-
-instance Patchable BoxChild where
-  create = create . child
-  patch b1 b2 = patch (child b1) (child b2)
-
-instance EventSource (BoxChild event) event where
-  subscribe BoxChild{..} = subscribe child
-
-instance Typeable event => PatchableContainer Gtk.Box [BoxChild event] where
-  createChildrenIn box children =
-    forM_ children $ \BoxChild {child = child, ..} -> do
-      widget' <- create child
-      Gtk.boxPackStart box widget' expand fill padding
-  patchChildrenIn widget' oldChildren newChildren =
-    patchInBox packCreatedBoxChildInBox widget' oldChildren newChildren
-
-instance Typeable event => PatchableContainer Gtk.Box (MarkupOf BoxChild event ()) where
-  createChildrenIn box children =
-    createChildrenIn box (runMarkup children)
-  patchChildrenIn widget' oldChildren newChildren =
-    patchChildrenIn widget' (runMarkup oldChildren) (runMarkup newChildren)
-
-instance Typeable event => ContainerEventSource Gtk.Box [BoxChild event] event where
-  subscribeChildren children box cb = do
-    ws <- Gtk.containerGetChildren box
-    foldMap (\(c, w) -> subscribe c w cb) (zip children ws)
-
-instance Typeable event => ContainerEventSource Gtk.Box (MarkupOf BoxChild event ()) event where
-  subscribeChildren children = subscribeChildren (runMarkup children)
-
-instance TypeError (Text "The markup embedded in a Box needs to return " :<>: ShowType ()
-                    :<>: Text ", not " :<>: ShowType [a] :<>: Text "."
-                    :$$: Text "Did you perhaps use ‘mapM’ or ‘for’, instead of ‘mapM_’ or ‘for_’?")
-  => ContainerEventSource Gtk.Box (MarkupOf BoxChild event [a]) event where
-  subscribeChildren = undefined
 
 -- * ScrolledWindow
 

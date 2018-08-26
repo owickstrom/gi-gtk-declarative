@@ -15,6 +15,9 @@ extra-source-files:   CHANGELOG.md
 library
   exposed-modules:      GI.Gtk.Declarative
                       , GI.Gtk.Declarative.Container
+                      , GI.Gtk.Declarative.Container.Box
+                      , GI.Gtk.Declarative.Container.ListBox
+                      , GI.Gtk.Declarative.Container.Patch
                       , GI.Gtk.Declarative.CSS
                       , GI.Gtk.Declarative.EventSource
                       , GI.Gtk.Declarative.Markup

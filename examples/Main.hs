@@ -7,15 +7,17 @@ import System.Environment
 import qualified AddBoxes
 import qualified FileChooserButton
 import qualified Hello
+import qualified ListBox
 
 main :: IO ()
 main =
   let examples = [ ("AddBoxes", AddBoxes.main)
                  , ("FileChooserButton", FileChooserButton.main)
                  , ("Hello", Hello.main)
+                 , ("ListBox", ListBox.main)
                  ]
   in getArgs >>= \case
-    [example] -> 
+    [example] ->
       case lookup example examples of
         Just main' -> main'
         Nothing -> hPutStrLn stderr ("No example available with name: " <> example)
