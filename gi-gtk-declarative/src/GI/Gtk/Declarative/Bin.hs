@@ -43,6 +43,7 @@ instance BinChild Gtk.ScrolledWindow Widget where
 
 instance BinChild Gtk.ListBoxRow Widget where
   getChild = getBinChild Gtk.Widget
+
 --
 -- Bin
 --
@@ -127,6 +128,7 @@ instance (BinChild widget child, Typeable widget, Patchable child, EventSource (
 
 instance a ~ () => FromWidget (Bin widget child) event (MarkupOf (Bin widget child) event a) where
   fromWidget = widget
+
 instance (BinChild widget child, a ~ (), Typeable widget, Patchable child, EventSource (child event) event)
   => FromWidget (Bin widget child) event (Markup event a) where
   fromWidget = widget . Widget
