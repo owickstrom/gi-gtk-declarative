@@ -20,8 +20,8 @@ module GI.Gtk.Declarative.Markup
   , MarkupBuilder
   , MarkupOf
   , Markup
-  , widget
-  , widgets
+  , single
+  , multiple
   , runMarkup
   , FromWidget(..)
   )
@@ -71,11 +71,11 @@ type MarkupOf widget event a = MarkupBuilder widget event a
 
 type Markup event a = MarkupBuilder Widget event a
 
-widget :: widget event -> MarkupOf widget event ()
-widget w = MarkupBuilder (tell [w])
+single :: widget event -> MarkupOf widget event ()
+single w = MarkupBuilder (tell [w])
 
-widgets :: [widget event] -> MarkupOf widget event ()
-widgets = MarkupBuilder . tell
+multiple :: [widget event] -> MarkupOf widget event ()
+multiple = MarkupBuilder . tell
 
 class FromWidget widget event target | target -> event where
   fromWidget :: (Typeable widget, Typeable event) => widget event -> target

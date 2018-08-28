@@ -18,8 +18,8 @@ data Model = Initial | Greeting Text
 data Event = Greet Text
 
 helloView :: Model -> Widget Event
-helloView Initial       = node Label [#label := "Nothing here yet."]
-helloView (Greeting who) = node Label [#label := who]
+helloView Initial       = widget Label [#label := "Nothing here yet."]
+helloView (Greeting who) = widget Label [#label := who]
 
 update' :: Model -> Event -> (Model, IO (Maybe Event))
 update' _ (Greet who) = (Greeting who, return Nothing)

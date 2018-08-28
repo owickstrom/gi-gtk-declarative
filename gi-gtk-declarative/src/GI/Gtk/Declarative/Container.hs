@@ -23,7 +23,6 @@ where
 import           Control.Monad                      (forM_)
 import           Data.Maybe
 import           Data.Typeable
-import           GHC.TypeLits
 import qualified GI.Gtk                             as Gtk
 
 import           GI.Gtk.Declarative.Container.Patch
@@ -92,27 +91,27 @@ instance (Typeable child, Typeable event, EventSource (child event) event)
     subs <- flip foldMap (zip (runMarkup children) childWidgets) $ \(c, w) -> subscribe c w cb
     return (Subscription handlers' <> subs)
 
-instance
-  ( Typeable event
-  , Typeable a
-  , TypeError (Text "The markup embedded in a " :<>: ShowType widget
-                :<>: Text " needs to return " :<>: ShowType ()
-                :<>: Text ", not " :<>: ShowType [a] :<>: Text "."
-                :$$: Text "Did you perhaps use ‘mapM’ or ‘for’, instead of ‘mapM_’ or ‘for_’?")
-  ) => EventSource (Container widget (MarkupOf child event [a]) event) event where
-  subscribe = undefined
-
 --
 -- FromWidget
 --
 
-instance (Typeable widget, Typeable children, Patchable (Container widget children), EventSource (Container widget children event) event)
-  => FromWidget (Container widget children) event (Widget event) where
+instance ( Typeable widget
+         , Typeable children
+         , Patchable (Container widget children)
+         , EventSource (Container widget children event) event
+         ) =>
+         FromWidget (Container widget children) event (Widget event) where
   fromWidget = Widget
 
-instance a ~ () => FromWidget (Container widget children) event (MarkupOf (Container widget children) event a) where
-  fromWidget = widget
+instance a ~ () =>
+         FromWidget (Container widget children) event (MarkupOf (Container widget children) event a) where
+  fromWidget = single
 
-instance (a ~ (), Typeable widget, Typeable children, Patchable (Container widget children), EventSource (Container widget children event) event)
-  => FromWidget (Container widget children) event (Markup event a) where
-  fromWidget = widget . Widget
+instance ( a ~ ()
+         , Typeable widget
+         , Typeable children
+         , Patchable (Container widget children)
+         , EventSource (Container widget children event) event
+         ) =>
+         FromWidget (Container widget children) event (Markup event a) where
+  fromWidget = single . Widget

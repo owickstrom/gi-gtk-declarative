@@ -9,12 +9,12 @@
 {-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeOperators          #-}
 
--- | A 'Node' represents a declarative "leaf" widget, i.e. one that is
+-- | A 'SingleWidget' represents a declarative "leaf" widget, i.e. one that is
 -- not a container with children.
 
-module GI.Gtk.Declarative.Node
-  ( Node
-  , node
+module GI.Gtk.Declarative.SingleWidget
+  ( SingleWidget
+  , widget
   )
 where
 
@@ -27,16 +27,16 @@ import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.Props
 
-data Node widget event where
-  Node
+data SingleWidget widget event where
+  SingleWidget
     :: (Typeable widget, Gtk.IsWidget widget)
     => (Gtk.ManagedPtr widget -> widget)
     -> [PropPair widget event]
-    -> Node widget event
+    -> SingleWidget widget event
 
-instance Patchable (Node widget) where
+instance Patchable (SingleWidget widget) where
   create = \case
-    (Node ctor props) -> do
+    (SingleWidget ctor props) -> do
         let attrOps = concatMap extractAttrConstructOps props
         widget' <- Gtk.new ctor attrOps
 
@@ -45,7 +45,7 @@ instance Patchable (Node widget) where
 
         Gtk.widgetShowAll widget'
         Gtk.toWidget widget'
-  patch (Node (_ :: Gtk.ManagedPtr w1 -> w1) oldProps) (Node (ctor :: Gtk.ManagedPtr w2 -> w2) newProps) =
+  patch (SingleWidget (_ :: Gtk.ManagedPtr w1 -> w1) oldProps) (SingleWidget (ctor :: Gtk.ManagedPtr w2 -> w2) newProps) =
     case eqT @w1 @w2 of
       Just Refl ->
         Modify $ \widget' -> do
@@ -58,30 +58,30 @@ instance Patchable (Node widget) where
 
           Gtk.widgetShowAll w
 
-      Nothing -> Replace (create (Node ctor newProps))
+      Nothing -> Replace (create (SingleWidget ctor newProps))
 
-instance EventSource (Node widget event) event where
-  subscribe (Node ctor props) widget' cb = do
+instance EventSource (SingleWidget widget event) event where
+  subscribe (SingleWidget ctor props) widget' cb = do
     w <- Gtk.unsafeCastTo ctor widget'
     Subscription . catMaybes <$> mapM (addSignalHandler cb w) props
 
-instance Typeable widget => FromWidget (Node widget) event (Widget event) where
+instance Typeable widget => FromWidget (SingleWidget widget) event (Widget event) where
   fromWidget = Widget
 
-instance FromWidget (Node widget) event (MarkupOf (Node widget) event ()) where
-  fromWidget = widget
+instance FromWidget (SingleWidget widget) event (MarkupOf (SingleWidget widget) event ()) where
+  fromWidget = single
 
-instance Typeable widget => FromWidget (Node widget) event (Markup event ()) where
-  fromWidget = widget . Widget
+instance Typeable widget => FromWidget (SingleWidget widget) event (Markup event ()) where
+  fromWidget = single . Widget
 
-node ::
+widget ::
      ( Typeable widget
      , Typeable event
      , Gtk.IsWidget widget
-     , FromWidget (Node widget) event target
+     , FromWidget (SingleWidget widget) event target
      )
   => (Gtk.ManagedPtr widget -> widget)
   -> [PropPair widget event]
   -> target
-node ctor = fromWidget . Node ctor
+widget ctor = fromWidget . SingleWidget ctor
 

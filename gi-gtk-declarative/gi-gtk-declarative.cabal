@@ -21,9 +21,9 @@ library
                       , GI.Gtk.Declarative.CSS
                       , GI.Gtk.Declarative.EventSource
                       , GI.Gtk.Declarative.Markup
-                      , GI.Gtk.Declarative.Node
                       , GI.Gtk.Declarative.Patch
                       , GI.Gtk.Declarative.Props
+                      , GI.Gtk.Declarative.SingleWidget
   build-depends:        base >=4.10 && <4.12
                       , gi-gobject             >= 2    && <3
                       , gi-gtk                 >= 3    && <4

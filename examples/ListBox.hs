@@ -23,9 +23,9 @@ view' Model {..} = container ListBox [] (mapM_ renderGreeting greetings)
   renderGreeting :: Text -> MarkupOf (Bin ListBoxRow Widget) Event ()
   renderGreeting name = do
     bin ListBoxRow [] $
-      node Label [ #label := "The following is in a ListBoxRow:" ]
+      widget Label [ #label := "The following is in a ListBoxRow:" ]
     bin ListBoxRow [] $
-      node Label [ #label := name ]
+      widget Label [ #label := name ]
 
 update' :: Model -> Event -> (Model, IO (Maybe Event))
 update' Model{..} (Greet who) = (Model {greetings = greetings <> [who]}, return Nothing)

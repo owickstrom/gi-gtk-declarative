@@ -29,7 +29,7 @@ import           GI.Gtk.Declarative.Markup
 data BoxChild event = BoxChild { expand :: Bool, fill :: Bool, padding :: Word32, child :: Widget event }
 
 boxChild :: Bool -> Bool -> Word32 -> Widget event -> MarkupOf BoxChild event ()
-boxChild expand fill padding child = widget BoxChild {..}
+boxChild expand fill padding child = single BoxChild {..}
 
 instance Patchable BoxChild where
   create = create . child

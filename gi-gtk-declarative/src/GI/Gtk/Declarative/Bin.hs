@@ -127,11 +127,11 @@ instance (BinChild widget child, Typeable widget, Patchable child, EventSource (
   fromWidget = Widget
 
 instance a ~ () => FromWidget (Bin widget child) event (MarkupOf (Bin widget child) event a) where
-  fromWidget = widget
+  fromWidget = single
 
 instance (BinChild widget child, a ~ (), Typeable widget, Patchable child, EventSource (child event) event)
   => FromWidget (Bin widget child) event (Markup event a) where
-  fromWidget = widget . Widget
+  fromWidget = single . Widget
 
 
 -- | Get a "Gtk.Bin" child, or fail, and cast it to the given widget type.

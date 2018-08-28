@@ -34,16 +34,17 @@ addBoxesView Model {..} =
   renderLane onClick children = boxChild True True 10 $ do
     container Box [] $ do
       boxChild False False 10 $ do
-        node Button [#label := "Add", on #clicked onClick]
+        widget Button [#label := "Add", on #clicked onClick]
       (mapM_ (boxChild False False 0 . renderChild) children)
   renderChild :: Int -> Widget Event
-  renderChild n = node Label [#label := Text.pack ("Box " <> show n)]
+  renderChild n = widget Label [#label := Text.pack ("Box " <> show n)]
 
 update' :: Model -> Event -> (Model, IO (Maybe Event))
 update' model@Model {..} AddLeft =
   (model { lefts = lefts ++ [next], next = succ next }, return Nothing)
 update' model@Model {..} AddRight =
   (model { rights = rights ++ [next], next = succ next }, return Nothing)
+
 main :: IO ()
 main =
   let app = App {view = addBoxesView, update = update', inputs = []}
