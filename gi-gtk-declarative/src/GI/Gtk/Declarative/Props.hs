@@ -1,9 +1,10 @@
 {-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE KindSignatures         #-}
+{-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedLabels       #-}
 {-# LANGUAGE RankNTypes             #-}
@@ -23,21 +24,27 @@ module GI.Gtk.Declarative.Props
   , classes
   , on
   , onM
+  -- Helpers
+  , extractAttrConstructOps
+  , extractAttrSetOps
+  , addClass
+  , removeClass
+  , addSignalHandler
   )
 where
 
-import           Control.Monad                            ( void )
-import qualified Data.GI.Base.Attributes       as GI
-import qualified Data.GI.Base.Signals          as GI
-import qualified Data.HashSet                  as HashSet
-import           Data.Text                                ( Text )
+import           Control.Monad                  (void)
+import           Control.Monad.IO.Class         (MonadIO)
+import qualified Data.GI.Base.Attributes        as GI
+import qualified Data.GI.Base.Signals           as GI
+import qualified Data.HashSet                   as HashSet
+import           Data.Text                      (Text)
 import           Data.Typeable
-import           GHC.TypeLits                             ( KnownSymbol
-                                                          , Symbol
-                                                          )
-import qualified GI.Gtk                        as Gtk
+import           GHC.TypeLits                   (KnownSymbol, Symbol)
+import qualified GI.Gtk                         as Gtk
 
 import           GI.Gtk.Declarative.CSS
+import           GI.Gtk.Declarative.EventSource
 
 infix 5 :=
 
@@ -207,3 +214,44 @@ onM
   -> withWidget
   -> PropPair widget event
 onM signal = OnSignalImpure signal . ImpureCallback
+
+-- * Props helpers
+
+extractAttrConstructOps
+  :: PropPair widget event -> [GI.AttrOp widget 'GI.AttrConstruct]
+extractAttrConstructOps = \case
+  (attr := value) -> pure (attr Gtk.:= value)
+  _               -> mempty
+
+extractAttrSetOps :: PropPair widget event -> [GI.AttrOp widget 'GI.AttrSet]
+extractAttrSetOps = \case
+  (attr := value) -> pure (attr Gtk.:= value)
+  _               -> mempty
+
+addClass :: MonadIO m => Gtk.StyleContext -> PropPair widget event -> m ()
+addClass sc = \case
+  Classes cs -> mapM_ (Gtk.styleContextAddClass sc) cs
+  _          -> pure ()
+
+removeClass :: MonadIO m => Gtk.StyleContext -> PropPair widget event -> m ()
+removeClass sc = \case
+  Classes cs -> mapM_ (Gtk.styleContextRemoveClass sc) cs
+  _          -> pure ()
+
+addSignalHandler
+  :: (Gtk.IsWidget widget, MonadIO m)
+  => (event -> IO ())
+  -> widget
+  -> PropPair widget event
+  -> m (Maybe ConnectedHandler)
+addSignalHandler onEvent widget' = \case
+  OnSignalPure signal handler -> do
+    handlerId <- Gtk.on widget' signal (toGtkCallback handler onEvent)
+    w         <- Gtk.toWidget widget'
+    pure (Just (ConnectedHandler w handlerId))
+  OnSignalImpure signal handler -> do
+    handlerId <- Gtk.on widget' signal (toGtkCallback handler onEvent widget')
+    w         <- Gtk.toWidget widget'
+    pure (Just (ConnectedHandler w handlerId))
+  _ -> pure Nothing
+
