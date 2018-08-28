@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
@@ -19,8 +18,6 @@ module GI.Gtk.Declarative.Node
   )
 where
 
-import           Control.Monad.IO.Class         (MonadIO)
-import qualified Data.GI.Base.Attributes        as GI
 import           Data.Maybe
 import           Data.Typeable
 import qualified GI.Gtk                         as Gtk
@@ -30,55 +27,14 @@ import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.Props
 
-data Node event where
+data Node widget event where
   Node
     :: (Typeable widget, Gtk.IsWidget widget)
     => (Gtk.ManagedPtr widget -> widget)
     -> [PropPair widget event]
-    -> Node event
+    -> Node widget event
 
-instance Functor Node where
-  fmap f (Node ctor props) = (Node ctor (fmap (fmap f) props))
-
-extractAttrConstructOps
-  :: PropPair widget event -> [GI.AttrOp widget 'GI.AttrConstruct]
-extractAttrConstructOps = \case
-  (attr := value) -> pure (attr Gtk.:= value)
-  _               -> []
-
-extractAttrSetOps :: PropPair widget event -> [GI.AttrOp widget 'GI.AttrSet]
-extractAttrSetOps = \case
-  (attr := value) -> pure (attr Gtk.:= value)
-  _               -> []
-
-addClass :: MonadIO m => Gtk.StyleContext -> PropPair widget event -> m ()
-addClass sc = \case
-  Classes cs -> mapM_ (Gtk.styleContextAddClass sc) cs
-  _          -> pure ()
-
-removeClass :: MonadIO m => Gtk.StyleContext -> PropPair widget event -> m ()
-removeClass sc = \case
-  Classes cs -> mapM_ (Gtk.styleContextRemoveClass sc) cs
-  _          -> pure ()
-
-addSignalHandler
-  :: (Gtk.IsWidget widget, MonadIO m)
-  => (event -> IO ())
-  -> widget
-  -> PropPair widget event
-  -> m (Maybe ConnectedHandler)
-addSignalHandler onEvent widget' = \case
-  OnSignalPure signal handler -> do
-    handlerId <- Gtk.on widget' signal (toGtkCallback handler onEvent)
-    w         <- Gtk.toWidget widget'
-    pure (Just (ConnectedHandler w handlerId))
-  OnSignalImpure signal handler -> do
-    handlerId <- Gtk.on widget' signal (toGtkCallback handler onEvent widget')
-    w         <- Gtk.toWidget widget'
-    pure (Just (ConnectedHandler w handlerId))
-  _ -> pure Nothing
-
-instance Patchable Node where
+instance Patchable (Node widget) where
   create = \case
     (Node ctor props) -> do
         let attrOps = concatMap extractAttrConstructOps props
@@ -104,18 +60,28 @@ instance Patchable Node where
 
       Nothing -> Replace (create (Node ctor newProps))
 
-instance EventSource (Node event) event where
+instance EventSource (Node widget event) event where
   subscribe (Node ctor props) widget' cb = do
     w <- Gtk.unsafeCastTo ctor widget'
     Subscription . catMaybes <$> mapM (addSignalHandler cb w) props
+
+instance Typeable widget => FromWidget (Node widget) event (Widget event) where
+  fromWidget = Widget
+
+instance FromWidget (Node widget) event (MarkupOf (Node widget) event ()) where
+  fromWidget = widget
+
+instance Typeable widget => FromWidget (Node widget) event (Markup event ()) where
+  fromWidget = widget . Widget
 
 node ::
      ( Typeable widget
      , Typeable event
      , Gtk.IsWidget widget
-     , FromWidget markup event
+     , FromWidget (Node widget) event target
      )
   => (Gtk.ManagedPtr widget -> widget)
   -> [PropPair widget event]
-  -> markup
-node ctor = fromWidget . Widget . Node ctor
+  -> target
+node ctor = fromWidget . Node ctor
+

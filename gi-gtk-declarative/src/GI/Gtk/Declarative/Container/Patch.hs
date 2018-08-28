@@ -21,22 +21,28 @@ import           Data.Int                  (Int32)
 import           Data.List                 (zip4)
 import qualified GI.Gtk                    as Gtk
 
+import           GI.Gtk.Declarative.Bin
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 
-data CollectionContainer container child event =
-  CollectionContainer { appendChild :: container -> child event -> Gtk.Widget -> IO ()
-                      , replaceChild :: container -> child event -> Int32 -> Gtk.Widget -> Gtk.Widget -> IO ()
-                      }
+
+-- | Describes "Gtk.Container"s and their specialized APIs for appending and replacing
+-- child widgets.
+class IsContainer container child event where
+  appendChild :: container -> child event -> Gtk.Widget -> IO ()
+  replaceChild :: container -> child event -> Int32 -> Gtk.Widget -> Gtk.Widget -> IO ()
 
 patchInContainer
-  :: (Gtk.IsWidget container, Gtk.IsContainer container, Patchable child)
-  => CollectionContainer container child e2
-  -> container
+  :: ( Gtk.IsWidget container
+     , Gtk.IsContainer container
+     , Patchable child
+     , IsContainer container child e2
+     )
+  => container
   -> [child e1]
   -> [child e2]
   -> IO ()
-patchInContainer CollectionContainer {..} container os' ns' = do
+patchInContainer container os' ns' = do
   cs <- Gtk.containerGetChildren container
   let maxLength = maximum [length cs, length os', length ns']
       indices   = [0 .. pred (fromIntegral maxLength)]
@@ -45,10 +51,9 @@ patchInContainer CollectionContainer {..} container os' ns' = do
     -- In case we have a corresponding old and new virtual widget, we patch the
     -- GTK widget.
     (i, Just w, Just old, Just new) -> case patch old new of
-      Modify modify -> modify w
-      Replace createWidget ->
-        replaceChild container new i w =<< createWidget
-      Keep -> return ()
+      Modify  modify       -> modify w
+      Replace createWidget -> replaceChild container new i w =<< createWidget
+      Keep                 -> return ()
 
     -- When there is a new object, but there already exists a widget
     -- in the corresponding place, we need to replace the widget with
@@ -77,6 +82,14 @@ patchInContainer CollectionContainer {..} container os' ns' = do
     (_i, Nothing, Nothing, Nothing) -> return ()
 
   Gtk.widgetQueueResize container
+
+instance IsContainer Gtk.ListBox (Bin Gtk.ListBoxRow child) event where
+  appendChild box _ widget' = Gtk.listBoxInsert box widget' (-1)
+  replaceChild box _ i old new = do
+    Gtk.containerRemove box old
+    Gtk.listBoxInsert box new i
+    Gtk.widgetShowAll box
+
 
 padMaybes :: [a] -> [Maybe a]
 padMaybes xs = map Just xs ++ repeat Nothing

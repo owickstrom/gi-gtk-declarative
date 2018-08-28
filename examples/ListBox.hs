@@ -9,7 +9,7 @@ import           Data.Text                     (Text)
 import           Pipes
 import qualified Pipes.Extras                  as Pipes
 
-import           GI.Gtk                        (Label (..), ListBox (..))
+import           GI.Gtk                        (Label (..), ListBox (..), ListBoxRow(..))
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -18,10 +18,14 @@ data Model = Model { greetings :: [Text] }
 data Event = Greet Text
 
 view' :: Model -> Widget Event
-view' Model {..} = container ListBox [] (mapM_ (listBoxRow False False . renderGreeting) greetings)
+view' Model {..} = container ListBox [] (mapM_ renderGreeting greetings)
  where
-  renderGreeting :: Text -> Widget Event
-  renderGreeting name = node Label [ #label := name ]
+  renderGreeting :: Text -> MarkupOf (Bin ListBoxRow Widget) Event ()
+  renderGreeting name = do
+    bin ListBoxRow [] $
+      node Label [ #label := "The following is in a ListBoxRow:" ]
+    bin ListBoxRow [] $
+      node Label [ #label := name ]
 
 update' :: Model -> Event -> (Model, IO (Maybe Event))
 update' Model{..} (Greet who) = (Model {greetings = greetings <> [who]}, return Nothing)

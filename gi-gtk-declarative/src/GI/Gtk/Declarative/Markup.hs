@@ -77,11 +77,8 @@ widget w = MarkupBuilder (tell [w])
 widgets :: [widget event] -> MarkupOf widget event ()
 widgets = MarkupBuilder . tell
 
-class FromWidget t event | t -> event where
-  fromWidget :: Typeable event => Widget event -> t
+class FromWidget widget event target | target -> event where
+  fromWidget :: (Typeable widget, Typeable event) => widget event -> target
 
-instance FromWidget (MarkupOf Widget event ()) event where
-  fromWidget = widget
-
-instance FromWidget (Widget event) event where
+instance FromWidget Widget event (Widget event) where
   fromWidget = id
