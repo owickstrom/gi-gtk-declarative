@@ -22,13 +22,14 @@ import           Data.List                 (zip4)
 import qualified GI.Gtk                    as Gtk
 
 import           GI.Gtk.Declarative.Bin
+import           GI.Gtk.Declarative.Container.Box
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 
 
 -- | Describes "Gtk.Container"s and their specialized APIs for appending and replacing
 -- child widgets.
-class IsContainer container child event where
+class IsContainer container child event | container -> child where
   appendChild :: container -> child event -> Gtk.Widget -> IO ()
   replaceChild :: container -> child event -> Int32 -> Gtk.Widget -> Gtk.Widget -> IO ()
 
@@ -83,13 +84,22 @@ patchInContainer container os' ns' = do
 
   Gtk.widgetQueueResize container
 
-instance IsContainer Gtk.ListBox (Bin Gtk.ListBoxRow child) event where
+instance IsContainer Gtk.ListBox (Bin Gtk.ListBoxRow Widget) event where
   appendChild box _ widget' = Gtk.listBoxInsert box widget' (-1)
   replaceChild box _ i old new = do
     Gtk.containerRemove box old
     Gtk.listBoxInsert box new i
     Gtk.widgetShowAll box
 
+instance IsContainer Gtk.Box BoxChild event where
+  appendChild box BoxChild {..} widget' =
+    Gtk.boxPackStart box widget' expand fill padding
+
+  replaceChild box boxChild' i old new = do
+    Gtk.containerRemove box old
+    appendChild box boxChild' new
+    Gtk.boxReorderChild box new i
+    Gtk.widgetShowAll box
 
 padMaybes :: [a] -> [Maybe a]
 padMaybes xs = map Just xs ++ repeat Nothing

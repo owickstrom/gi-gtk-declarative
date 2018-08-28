@@ -41,17 +41,17 @@ data GtkContainer widget children event where
     -> GtkContainer widget children event
 
 container
-  :: ( Patchable (GtkContainer widget children)
+  :: ( Patchable (GtkContainer widget (MarkupOf child event ()))
      , Typeable widget
-     , Typeable children
+     , Typeable child
      , Typeable event
      , Gtk.IsWidget widget
      , Gtk.IsContainer widget
-     , FromWidget (GtkContainer widget children) event target
+     , FromWidget (GtkContainer widget (MarkupOf child event ())) event target
      )
   => (Gtk.ManagedPtr widget -> widget)
   -> [PropPair widget event]
-  -> children
+  -> MarkupOf child event ()
   -> target
 container ctor attrs = fromWidget . GtkContainer ctor attrs
 
@@ -60,13 +60,13 @@ container ctor attrs = fromWidget . GtkContainer ctor attrs
 --
 
 instance (Typeable event, Patchable child, IsContainer container child event)
-  => Patchable (GtkContainer container [child event]) where
+  => Patchable (GtkContainer container (MarkupOf child event ())) where
   create (GtkContainer ctor props children) = do
     let attrOps = concatMap extractAttrConstructOps props
     widget' <- Gtk.new ctor attrOps
     sc <- Gtk.widgetGetStyleContext widget'
     mapM_ (addClass sc) props
-    forM_ children $ \child -> do
+    forM_ (runMarkup children) $ \child -> do
       childWidget <- create child
       appendChild widget' child childWidget
     Gtk.toWidget widget'
@@ -77,32 +77,20 @@ instance (Typeable event, Patchable child, IsContainer container child event)
       sc <- Gtk.widgetGetStyleContext widget'
       mapM_ (removeClass sc) oldProps
       mapM_ (addClass sc) newProps
-      patchInContainer containerWidget oldChildren newChildren
-
-instance (Typeable event, Patchable child, IsContainer container child event)
-  => Patchable (GtkContainer container (MarkupOf child event ())) where
-  create (GtkContainer ctor props children) =
-    create (GtkContainer ctor props (runMarkup children))
-  patch (GtkContainer oldCtor oldProps oldChildren) (GtkContainer newCtor newProps newChildren) =
-    patch (GtkContainer oldCtor oldProps (runMarkup oldChildren)) (GtkContainer newCtor newProps (runMarkup newChildren))
+      patchInContainer containerWidget (runMarkup oldChildren) (runMarkup newChildren)
 
 --
 -- EventSource
 --
 
 instance (Typeable child, Typeable event, EventSource (child event) event)
-  => EventSource (GtkContainer widget [child event] event) event where
+  => EventSource (GtkContainer widget (MarkupOf child event ()) event) event where
   subscribe (GtkContainer ctor props children) widget' cb = do
     parentWidget <- Gtk.unsafeCastTo ctor widget'
     handlers' <- catMaybes <$> mapM (addSignalHandler cb parentWidget) props
     childWidgets <- Gtk.containerGetChildren parentWidget
-    subs <- flip foldMap (zip children childWidgets) $ \(c, w) -> subscribe c w cb
+    subs <- flip foldMap (zip (runMarkup children) childWidgets) $ \(c, w) -> subscribe c w cb
     return (Subscription handlers' <> subs)
-
-instance (Typeable child, Typeable event, EventSource (child event) event)
-  => EventSource (GtkContainer widget (MarkupOf child event ()) event) event where
-  subscribe (GtkContainer ctor props children) =
-    subscribe (GtkContainer ctor props (runMarkup children))
 
 instance
   ( Typeable event

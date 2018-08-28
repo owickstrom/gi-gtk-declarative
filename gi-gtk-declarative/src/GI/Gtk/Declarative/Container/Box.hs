@@ -22,21 +22,9 @@ module GI.Gtk.Declarative.Container.Box
 where
 
 import           Data.Word                                ( Word32 )
-import qualified GI.Gtk                        as Gtk
 
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Markup
-import           GI.Gtk.Declarative.Container.Patch
-
-instance IsContainer Gtk.Box BoxChild event where
-  appendChild box BoxChild {..} widget' =
-    Gtk.boxPackStart box widget' expand fill padding
-
-  replaceChild box boxChild' i old new = do
-    Gtk.containerRemove box old
-    appendChild box boxChild' new
-    Gtk.boxReorderChild box new i
-    Gtk.widgetShowAll box
 
 data BoxChild event = BoxChild { expand :: Bool, fill :: Bool, padding :: Word32, child :: Widget event }
 
