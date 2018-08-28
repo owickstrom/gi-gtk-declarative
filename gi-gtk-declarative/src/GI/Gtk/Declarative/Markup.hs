@@ -39,8 +39,7 @@ import           GI.Gtk.Declarative.Patch
 -- checks on different types of widgets when calculating patches.
 data Widget event where
   Widget
-    :: ( Typeable widget
-       , Typeable event
+    :: ( Typeable (widget event)
        , Patchable widget
        , EventSource (widget event) event
        )
