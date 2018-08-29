@@ -4,12 +4,14 @@
 
 module ListBox where
 
+import           Control.Monad                 (forM_)
 import           Data.Function                 ((&))
 import           Data.Text                     (Text)
 import           Pipes
 import qualified Pipes.Extras                  as Pipes
 
-import           GI.Gtk                        (Label (..), ListBox (..), ListBoxRow(..))
+import           GI.Gtk                        (Label (..), ListBox (..),
+                                                ListBoxRow (..))
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -18,13 +20,9 @@ data Model = Model { greetings :: [Text] }
 data Event = Greet Text
 
 view' :: Model -> Widget Event
-view' Model {..} = container ListBox [] (mapM_ renderGreeting greetings)
- where
-  renderGreeting :: Text -> MarkupOf (Bin ListBoxRow Widget) Event ()
-  renderGreeting name = do
-    bin ListBoxRow [] $
-      widget Label [ #label := "The following is in a ListBoxRow:" ]
-    bin ListBoxRow [] $
+view' Model {..} = container ListBox [] $
+  forM_ greetings $ \name ->
+    bin ListBoxRow [ #activatable := False, #selectable := False ] $
       widget Label [ #label := name ]
 
 update' :: Model -> Event -> (Model, IO (Maybe Event))

@@ -26,10 +26,10 @@ import           Data.Typeable
 import qualified GI.GObject                     as GI
 import qualified GI.Gtk                         as Gtk
 
+import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
-import           GI.Gtk.Declarative.Props
 
 
 -- | Supported "Gtk.Bin"s.
@@ -52,7 +52,7 @@ data Bin widget child event where
   Bin
     :: (Typeable widget, Gtk.IsContainer widget, Gtk.IsBin widget, Gtk.IsWidget widget)
     => (Gtk.ManagedPtr widget -> widget)
-    -> [PropPair widget event]
+    -> [Attribute widget event]
     -> child event
     -> Bin widget child event
 
@@ -68,7 +68,7 @@ bin
      , BinChild widget child
      )
   => (Gtk.ManagedPtr widget -> widget)
-  -> [PropPair widget event]
+  -> [Attribute widget event]
   -> child event
   -> target
 bin ctor attrs = fromWidget . Bin ctor attrs
@@ -88,15 +88,15 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
     Gtk.containerAdd widget' =<< create child
     Gtk.toWidget widget'
 
-  patch (Bin _ oldProps oldChild) (Bin ctor newProps newChild) =
+  patch (Bin _ oldAttributes oldChild) (Bin ctor newAttributes newChild) =
     Modify $ \widget' -> do
 
       binWidget <- Gtk.unsafeCastTo ctor widget'
-      Gtk.set binWidget (concatMap extractAttrSetOps newProps)
+      Gtk.set binWidget (concatMap extractAttrSetOps newAttributes)
 
       sc <- Gtk.widgetGetStyleContext binWidget
-      mapM_ (removeClass sc) oldProps
-      mapM_ (addClass sc) newProps
+      mapM_ (removeClass sc) oldAttributes
+      mapM_ (addClass sc) newAttributes
 
       childWidget <- getChild binWidget
 
@@ -144,4 +144,3 @@ getBinChild ctor =
   Gtk.binGetChild
     >=> maybe (fail "expected Bin to have a child") return
     >=> Gtk.unsafeCastTo ctor
-

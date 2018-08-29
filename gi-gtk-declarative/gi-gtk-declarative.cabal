@@ -14,6 +14,7 @@ extra-source-files:   CHANGELOG.md
 
 library
   exposed-modules:      GI.Gtk.Declarative
+                      , GI.Gtk.Declarative.Attributes
                       , GI.Gtk.Declarative.Bin
                       , GI.Gtk.Declarative.Container
                       , GI.Gtk.Declarative.Container.Box
@@ -22,7 +23,6 @@ library
                       , GI.Gtk.Declarative.EventSource
                       , GI.Gtk.Declarative.Markup
                       , GI.Gtk.Declarative.Patch
-                      , GI.Gtk.Declarative.Props
                       , GI.Gtk.Declarative.SingleWidget
   build-depends:        base >=4.10 && <4.12
                       , gi-gobject             >= 2    && <3

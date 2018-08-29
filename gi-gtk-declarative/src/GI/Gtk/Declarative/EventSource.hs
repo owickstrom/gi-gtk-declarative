@@ -1,6 +1,6 @@
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 module GI.Gtk.Declarative.EventSource
   ( ConnectedHandler(..)
   , Subscription(..)
@@ -11,8 +11,9 @@ module GI.Gtk.Declarative.EventSource
 where
 
 import           Control.Monad
-import qualified GI.Gtk                        as Gtk
-import qualified Data.GI.Base.Signals          as GI
+import qualified Data.GI.Base.Signals as GI
+import qualified GI.GObject           as GI
+import qualified GI.Gtk               as Gtk
 
 -- | A handler connected to a 'Subscription'.
 data ConnectedHandler = ConnectedHandler Gtk.Widget GI.SignalHandlerId
@@ -29,7 +30,8 @@ newtype Subscription = Subscription { handlers :: [ConnectedHandler] }
 cancel :: Subscription -> IO ()
 cancel sub =
     -- TODO: Disconnect signals. Doesn't seem like haskell-gi-base supports this. PR time!
-  forM_ (handlers sub) $ \(ConnectedHandler _widget _handlerId) -> return ()
+  forM_ (handlers sub) $ \(ConnectedHandler widget handlerId) ->
+    GI.signalHandlerDisconnect widget handlerId
 
 -- | An 'EventSource' can be subscribed to, with a callback, returning a
 -- 'Subscription'.
