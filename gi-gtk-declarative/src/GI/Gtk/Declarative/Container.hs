@@ -29,13 +29,13 @@ import           GI.Gtk.Declarative.Container.Patch
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
-import           GI.Gtk.Declarative.Props
+import           GI.Gtk.Declarative.Attributes
 
 data Container widget children event where
   Container
     :: (Typeable widget, Gtk.IsWidget widget, Gtk.IsContainer widget)
     => (Gtk.ManagedPtr widget -> widget)
-    -> [PropPair widget event]
+    -> [Attribute widget event]
     -> children
     -> Container widget children event
 
@@ -49,7 +49,7 @@ container
      , FromWidget (Container widget (MarkupOf child event ())) event target
      )
   => (Gtk.ManagedPtr widget -> widget)
-  -> [PropPair widget event]
+  -> [Attribute widget event]
   -> MarkupOf child event ()
   -> target
 container ctor attrs = fromWidget . Container ctor attrs
@@ -69,13 +69,13 @@ instance (Typeable event, Patchable child, IsContainer container child event)
       childWidget <- create child
       appendChild widget' child childWidget
     Gtk.toWidget widget'
-  patch (Container _ oldProps oldChildren) (Container ctor newProps newChildren) =
+  patch (Container _ oldAttributes oldChildren) (Container ctor newAttributes newChildren) =
     Modify $ \widget' -> do
       containerWidget <- Gtk.unsafeCastTo ctor widget'
-      Gtk.set containerWidget (concatMap extractAttrSetOps newProps)
+      Gtk.set containerWidget (concatMap extractAttrSetOps newAttributes)
       sc <- Gtk.widgetGetStyleContext widget'
-      mapM_ (removeClass sc) oldProps
-      mapM_ (addClass sc) newProps
+      mapM_ (removeClass sc) oldAttributes
+      mapM_ (addClass sc) newAttributes
       patchInContainer containerWidget (runMarkup oldChildren) (runMarkup newChildren)
 
 --

@@ -13,14 +13,14 @@
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 
--- | Property lists on declarative objects, supporting the underlying
--- attributes from "Data.GI.Base.Attributes", along with pure and impure event
--- callbacks.
+-- | Attribute lists on declarative objects, supporting the underlying
+-- attributes from "Data.GI.Base.Attributes", along with CSS classes, and pure
+-- and impure event callbacks.
 
-module GI.Gtk.Declarative.Props
+module GI.Gtk.Declarative.Attributes
   ( ToGtkCallback
   , toGtkCallback
-  , PropPair(..)
+  , Attribute(..)
   , classes
   , on
   , onM
@@ -134,7 +134,7 @@ instance ToGtkCallback (ImpureCallback (IO ()) widget)  where
 
 -- * Props
 
-data PropPair widget event where
+data Attribute widget event where
   (:=)
     :: (GI.AttrOpAllowed 'GI.AttrConstruct info widget
       , GI.AttrOpAllowed 'GI.AttrSet info widget
@@ -143,11 +143,11 @@ data PropPair widget event where
       , KnownSymbol attr
       , Typeable attr
       )
-   =>  GI.AttrLabelProxy (attr :: Symbol) -> setValue -> PropPair widget event
+   =>  GI.AttrLabelProxy (attr :: Symbol) -> setValue -> Attribute widget event
   Classes
     :: Gtk.IsWidget widget
     => ClassSet
-    -> PropPair widget event
+    -> Attribute widget event
   OnSignalPure
     :: ( Gtk.GObject widget
        , GI.SignalInfo info
@@ -158,7 +158,7 @@ data PropPair widget event where
        )
     => Gtk.SignalProxy widget info
     -> PureCallback callback event
-    -> PropPair widget event
+    -> Attribute widget event
   OnSignalImpure
     :: ( Gtk.GObject widget
        , GI.SignalInfo info
@@ -169,17 +169,9 @@ data PropPair widget event where
        )
     => Gtk.SignalProxy widget info
     -> ImpureCallback callback widget event
-    -> PropPair widget event
+    -> Attribute widget event
 
-instance Functor (PropPair widget) where
-  fmap f prop =
-    case prop of
-      (attr := value) -> (attr := value)
-      (Classes cs) -> Classes cs
-      OnSignalPure signal callback -> OnSignalPure signal (fmap f callback)
-      OnSignalImpure signal callback -> OnSignalImpure signal (fmap f callback)
-
-classes :: Gtk.IsWidget widget => [Text] -> PropPair widget event
+classes :: Gtk.IsWidget widget => [Text] -> Attribute widget event
 classes = Classes . HashSet.fromList
 
 -- | Publish events, using a pure callback, by subcribing to the specified
@@ -195,7 +187,7 @@ on
      )
   => Gtk.SignalProxy widget info
   -> pure
-  -> PropPair widget event
+  -> Attribute widget event
 on signal = OnSignalPure signal . PureCallback
 
 -- | Publish events, using an impure callback, by subcribing to the specified
@@ -212,28 +204,28 @@ onM
      )
   => Gtk.SignalProxy widget info
   -> withWidget
-  -> PropPair widget event
+  -> Attribute widget event
 onM signal = OnSignalImpure signal . ImpureCallback
 
 -- * Props helpers
 
 extractAttrConstructOps
-  :: PropPair widget event -> [GI.AttrOp widget 'GI.AttrConstruct]
+  :: Attribute widget event -> [GI.AttrOp widget 'GI.AttrConstruct]
 extractAttrConstructOps = \case
   (attr := value) -> pure (attr Gtk.:= value)
   _               -> mempty
 
-extractAttrSetOps :: PropPair widget event -> [GI.AttrOp widget 'GI.AttrSet]
+extractAttrSetOps :: Attribute widget event -> [GI.AttrOp widget 'GI.AttrSet]
 extractAttrSetOps = \case
   (attr := value) -> pure (attr Gtk.:= value)
   _               -> mempty
 
-addClass :: MonadIO m => Gtk.StyleContext -> PropPair widget event -> m ()
+addClass :: MonadIO m => Gtk.StyleContext -> Attribute widget event -> m ()
 addClass sc = \case
   Classes cs -> mapM_ (Gtk.styleContextAddClass sc) cs
   _          -> pure ()
 
-removeClass :: MonadIO m => Gtk.StyleContext -> PropPair widget event -> m ()
+removeClass :: MonadIO m => Gtk.StyleContext -> Attribute widget event -> m ()
 removeClass sc = \case
   Classes cs -> mapM_ (Gtk.styleContextRemoveClass sc) cs
   _          -> pure ()
@@ -242,7 +234,7 @@ addSignalHandler
   :: (Gtk.IsWidget widget, MonadIO m)
   => (event -> IO ())
   -> widget
-  -> PropPair widget event
+  -> Attribute widget event
   -> m (Maybe ConnectedHandler)
 addSignalHandler onEvent widget' = \case
   OnSignalPure signal handler -> do
