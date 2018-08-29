@@ -132,7 +132,7 @@ instance ToGtkCallback (ImpureCallback (IO ()) widget)  where
   type CustomGtkCallback (ImpureCallback (IO ()) widget) = widget -> IO ()
   toGtkCallback (ImpureCallback cb) f w = void (cb w >>= f)
 
--- * Props
+-- * Attributes
 
 data Attribute widget event where
   (:=)
@@ -207,7 +207,7 @@ onM
   -> Attribute widget event
 onM signal = OnSignalImpure signal . ImpureCallback
 
--- * Props helpers
+-- * Attribute helpers
 
 extractAttrConstructOps
   :: Attribute widget event -> [GI.AttrOp widget 'GI.AttrConstruct]
