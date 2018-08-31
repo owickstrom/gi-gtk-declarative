@@ -8,6 +8,7 @@ import qualified AddBoxes
 import qualified FileChooserButton
 import qualified Hello
 import qualified ListBox
+import qualified Functor
 
 main :: IO ()
 main =
@@ -15,6 +16,7 @@ main =
                  , ("FileChooserButton", FileChooserButton.main)
                  , ("Hello", Hello.main)
                  , ("ListBox", ListBox.main)
+                 , ("Functor", Functor.main)
                  ]
   in getArgs >>= \case
     [example] ->

@@ -35,5 +35,5 @@ cancel sub =
 
 -- | An 'EventSource' can be subscribed to, with a callback, returning a
 -- 'Subscription'.
-class EventSource widget event | widget -> event where
-  subscribe :: widget -> Gtk.Widget -> (event -> IO ()) -> IO Subscription
+class EventSource widget where
+  subscribe :: widget event -> Gtk.Widget -> (event -> IO ()) -> IO Subscription

@@ -171,6 +171,13 @@ data Attribute widget event where
     -> ImpureCallback callback widget event
     -> Attribute widget event
 
+instance Functor (Attribute widget) where
+  fmap f = \case
+    (attr := value) -> attr := value
+    (Classes cs) -> Classes cs
+    (OnSignalPure signal cb) -> OnSignalPure signal (fmap f cb)
+    (OnSignalImpure signal cb) -> OnSignalImpure signal (fmap f cb)
+
 classes :: Gtk.IsWidget widget => [Text] -> Attribute widget event
 classes = Classes . HashSet.fromList
 
