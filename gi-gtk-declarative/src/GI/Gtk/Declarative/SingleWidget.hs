@@ -29,10 +29,13 @@ import           GI.Gtk.Declarative.Patch
 
 data SingleWidget widget event where
   SingleWidget
-    :: (Typeable widget, Gtk.IsWidget widget)
+    :: (Typeable widget, Gtk.IsWidget widget, Functor (Attribute widget))
     => (Gtk.ManagedPtr widget -> widget)
     -> [Attribute widget event]
     -> SingleWidget widget event
+
+instance Functor (SingleWidget widget) where
+  fmap f (SingleWidget ctor attrs) = SingleWidget ctor (fmap f <$> attrs)
 
 instance Patchable (SingleWidget widget) where
   create = \case
@@ -61,25 +64,26 @@ instance Patchable (SingleWidget widget) where
 
       Nothing -> Replace (create (SingleWidget ctor newAttributes))
 
-instance EventSource (SingleWidget widget event) event where
+instance EventSource (SingleWidget widget) where
   subscribe (SingleWidget ctor props) widget' cb = do
     w <- Gtk.unsafeCastTo ctor widget'
     Subscription . catMaybes <$> mapM (addSignalHandler cb w) props
 
-instance Typeable widget
+instance (Typeable widget, Functor (SingleWidget widget))
   => FromWidget (SingleWidget widget) event (Widget event) where
   fromWidget = Widget
 
 instance FromWidget (SingleWidget widget) event (MarkupOf (SingleWidget widget) event ()) where
   fromWidget = single
 
-instance Typeable widget
+instance (Typeable widget, Functor (SingleWidget widget))
   => FromWidget (SingleWidget widget) event (Markup event ()) where
   fromWidget = single . Widget
 
 widget ::
      ( Typeable widget
      , Typeable event
+     , Functor (Attribute widget)
      , Gtk.IsWidget widget
      , FromWidget (SingleWidget widget) event target
      )

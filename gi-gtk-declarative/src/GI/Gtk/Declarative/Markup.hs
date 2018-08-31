@@ -39,23 +39,27 @@ import           GI.Gtk.Declarative.Patch
 -- checks on different types of widgets when calculating patches.
 data Widget event where
   Widget
-    :: ( Typeable (widget event)
+    :: ( Typeable widget
        , Patchable widget
-       , EventSource (widget event) event
+       , Functor widget
+       , EventSource widget
        )
     => widget event
     -> Widget event
+
+instance Functor Widget where
+  fmap f (Widget w) = Widget (fmap f w)
 
 -- | 'Widget' is itself patchable, by delegating to the underlying
 -- widget instances.
 instance Patchable Widget where
   create (Widget w) = create w
   patch (Widget (w1 :: t1 e1)) (Widget (w2 :: t2 e2)) =
-    case eqT @(t1 e1) @(t2 e2) of
+    case eqT @t1 @t2 of
       Just Refl -> patch w1 w2
       _         -> Replace (create w2)
 
-instance EventSource (Widget event) event where
+instance EventSource Widget where
   subscribe (Widget w) = subscribe w
 
 -- * Markup

@@ -50,17 +50,27 @@ instance BinChild Gtk.ListBoxRow Widget where
 
 data Bin widget child event where
   Bin
-    :: (Typeable widget, Gtk.IsContainer widget, Gtk.IsBin widget, Gtk.IsWidget widget)
+    :: ( Typeable widget
+       , Gtk.IsContainer widget
+       , Gtk.IsBin widget
+       , Gtk.IsWidget widget
+       , Functor child
+       )
     => (Gtk.ManagedPtr widget -> widget)
     -> [Attribute widget event]
     -> child event
     -> Bin widget child event
 
-bin
-  :: ( Patchable (Bin widget child)
+instance Functor (Bin widget child) where
+  fmap f (Bin ctor attrs child) =
+    Bin ctor (fmap f <$> attrs) (fmap f child)
+
+bin ::
+     ( Patchable (Bin widget child)
      , Typeable widget
      , Typeable child
      , Typeable event
+     , Functor child
      , Gtk.IsContainer widget
      , Gtk.IsBin widget
      , Gtk.IsWidget widget
@@ -111,7 +121,8 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
 -- EventSource
 --
 
-instance (BinChild parent child, EventSource (child event) event) => EventSource (Bin parent child event) event where
+instance (BinChild parent child, EventSource child)
+  => EventSource (Bin parent child) where
   subscribe (Bin ctor props child) widget' cb = do
     binWidget <- Gtk.unsafeCastTo ctor widget'
     handlers' <- catMaybes <$> mapM (addSignalHandler cb binWidget) props
@@ -122,15 +133,26 @@ instance (BinChild parent child, EventSource (child event) event) => EventSource
 -- FromWidget
 --
 
-instance (BinChild widget child, Typeable widget, Patchable child, EventSource (child event) event)
-  => FromWidget (Bin widget child) event (Widget event) where
+instance ( BinChild widget child
+         , Typeable widget
+         , Patchable child
+         , EventSource child
+         , Functor (Bin widget child)
+         ) =>
+         FromWidget (Bin widget child) event (Widget event) where
   fromWidget = Widget
 
 instance a ~ () => FromWidget (Bin widget child) event (MarkupOf (Bin widget child) event a) where
   fromWidget = single
 
-instance (BinChild widget child, a ~ (), Typeable widget, Patchable child, EventSource (child event) event)
-  => FromWidget (Bin widget child) event (Markup event a) where
+instance ( BinChild widget child
+         , a ~ ()
+         , Typeable widget
+         , Patchable child
+         , EventSource child
+         , Functor (Bin widget child)
+         ) =>
+         FromWidget (Bin widget child) event (Markup event a) where
   fromWidget = single . Widget
 
 

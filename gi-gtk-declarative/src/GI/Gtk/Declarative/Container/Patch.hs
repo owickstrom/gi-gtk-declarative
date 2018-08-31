@@ -29,7 +29,7 @@ import           GI.Gtk.Declarative.Patch
 
 -- | Describes "Gtk.Container"s and their specialized APIs for appending and replacing
 -- child widgets.
-class IsContainer container child event | container -> child where
+class IsContainer container child | container -> child where
   appendChild :: container -> child event -> Gtk.Widget -> IO ()
   replaceChild :: container -> child event -> Int32 -> Gtk.Widget -> Gtk.Widget -> IO ()
 
@@ -37,7 +37,7 @@ patchInContainer
   :: ( Gtk.IsWidget container
      , Gtk.IsContainer container
      , Patchable child
-     , IsContainer container child e2
+     , IsContainer container child
      )
   => container
   -> [child e1]
@@ -84,14 +84,14 @@ patchInContainer container os' ns' = do
 
   Gtk.widgetQueueResize container
 
-instance IsContainer Gtk.ListBox (Bin Gtk.ListBoxRow Widget) event where
+instance IsContainer Gtk.ListBox (Bin Gtk.ListBoxRow Widget) where
   appendChild box _ widget' = Gtk.listBoxInsert box widget' (-1)
   replaceChild box _ i old new = do
     Gtk.containerRemove box old
     Gtk.listBoxInsert box new i
     Gtk.widgetShowAll box
 
-instance IsContainer Gtk.Box BoxChild event where
+instance IsContainer Gtk.Box BoxChild where
   appendChild box BoxChild {..} widget' =
     Gtk.boxPackStart box widget' expand fill padding
 
