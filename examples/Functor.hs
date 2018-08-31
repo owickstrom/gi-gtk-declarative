@@ -4,6 +4,7 @@
 
 module Functor where
 
+import           Data.Functor                  (($>))
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
 
@@ -29,8 +30,8 @@ incrDecrView Model {..} =
       widget Label [ #label := Text.pack (show count) ]
     boxChild False False 0 $
       container Box [ #orientation := OrientationHorizontal ] $ do
-        boxChild True True 0 $ fmap (const Decr) (clickyButton "-1")
-        boxChild True True 0 $ fmap (const Incr) (clickyButton "+1")
+        boxChild True True 0 $ clickyButton "-1" $> Decr
+        boxChild True True 0 $ clickyButton "+1" $> Incr
 
 update' :: Model -> Event -> (Model, IO (Maybe Event))
 update' Model{..} Incr = (Model (count + 1), return Nothing)
