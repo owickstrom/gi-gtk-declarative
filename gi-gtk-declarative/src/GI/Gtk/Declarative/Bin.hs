@@ -10,29 +10,28 @@
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
-{-# LANGUAGE UndecidableInstances   #-}
 
--- | Implementations for common "Gtk.Bin"s.
-
+-- | A declarative representation of 'Gtk.Bin' in GTK.
 module GI.Gtk.Declarative.Bin
   ( Bin
   , bin
   )
 where
 
-import           Control.Monad                  ((>=>))
+import           Control.Monad                          ((>=>))
 import           Data.Maybe
 import           Data.Typeable
-import qualified GI.GObject                     as GI
-import qualified GI.Gtk                         as Gtk
+import qualified GI.GObject                             as GI
+import qualified GI.Gtk                                 as Gtk
 
 import           GI.Gtk.Declarative.Attributes
+import           GI.Gtk.Declarative.Attributes.Internal
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 
 
--- | Supported "Gtk.Bin"s.
+-- | Supported 'Gtk.Bin's.
 class BinChild bin (child :: * -> *) | bin -> child where
   getChild :: bin -> IO Gtk.Widget
 
@@ -44,10 +43,8 @@ instance BinChild Gtk.ScrolledWindow Widget where
 instance BinChild Gtk.ListBoxRow Widget where
   getChild = getBinChild Gtk.Widget
 
---
--- Bin
---
-
+-- | Declarative version of a /bin/ widget, i.e. a widget with exactly one
+-- child.
 data Bin widget child event where
   Bin
     :: ( Typeable widget
@@ -65,6 +62,7 @@ instance Functor (Bin widget child) where
   fmap f (Bin ctor attrs child) =
     Bin ctor (fmap f <$> attrs) (fmap f child)
 
+-- | Construct a /bin/ widget, i.e. a widget with exactly one child.
 bin ::
      ( Patchable (Bin widget child)
      , Typeable widget
@@ -77,10 +75,10 @@ bin ::
      , FromWidget (Bin widget child) event target
      , BinChild widget child
      )
-  => (Gtk.ManagedPtr widget -> widget)
-  -> [Attribute widget event]
-  -> child event
-  -> target
+  => (Gtk.ManagedPtr widget -> widget) -- ^ A bin widget constructor from the underlying gi-gtk library.
+  -> [Attribute widget event]          -- ^ List of 'Attribute's.
+  -> child event                       -- ^ The bin's child widget, whose type is decided by the 'BinChild' instance.
+  -> target                            -- ^ The target, whose type is decided by 'FromWidget'.
 bin ctor attrs = fromWidget . Bin ctor attrs
 
 --
@@ -121,13 +119,14 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
 -- EventSource
 --
 
-instance (BinChild parent child, EventSource child)
-  => EventSource (Bin parent child) where
+instance (BinChild parent child, EventSource child) =>
+         EventSource (Bin parent child) where
   subscribe (Bin ctor props child) widget' cb = do
     binWidget <- Gtk.unsafeCastTo ctor widget'
-    handlers' <- catMaybes <$> mapM (addSignalHandler cb binWidget) props
+    handlers' <-
+      mconcat . catMaybes <$> mapM (addSignalHandler cb binWidget) props
     childWidget <- getChild binWidget
-    (<> Subscription handlers') <$> subscribe child childWidget cb
+    (<> handlers') <$> subscribe child childWidget cb
 
 --
 -- FromWidget

@@ -1,7 +1,15 @@
 name:                 gi-gtk-declarative
 version:              0.1.0
-synopsis:             Declarative GTK+ programming in Haskell.
--- description:
+synopsis:             Declarative GTK+ programming in Haskell
+description:          A declarative programming model for GTK+ user
+                      interfaces, implementing support for various widgets
+                      and generalized patching. This library aims to extend the
+                      gi-gtk library as transparently as possible, and to be
+                      a reusable library for multiple application architectures
+                      and styles.
+
+                      See [the project README](https://github.com/owickstrom/gi-gtk-declarative#readme)
+                      for more information.
 license:              MPL-2.0
 license-file:         LICENSE
 author:               Oskar Wickström
@@ -15,6 +23,7 @@ extra-source-files:   CHANGELOG.md
 library
   exposed-modules:      GI.Gtk.Declarative
                       , GI.Gtk.Declarative.Attributes
+                      , GI.Gtk.Declarative.Attributes.Internal
                       , GI.Gtk.Declarative.Bin
                       , GI.Gtk.Declarative.Container
                       , GI.Gtk.Declarative.Container.Box

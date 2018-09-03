@@ -16,13 +16,13 @@
 -- containers.
 module GI.Gtk.Declarative.Markup
   ( Widget(..)
-  , Patchable(..)
-  , MarkupBuilder
+  -- * Markup
   , MarkupOf
   , Markup
   , single
   , multiple
   , runMarkup
+  -- * Widget to Markup conversion
   , FromWidget(..)
   )
 where
@@ -63,23 +63,40 @@ instance EventSource Widget where
   subscribe (Widget w) = subscribe w
 
 -- * Markup
-newtype MarkupBuilder widget event a =
-  MarkupBuilder (Writer [widget event] a)
+
+-- | The declarative markup builder, primarily for using its 'Monad' instance
+-- and do notation to construct adjacent widgets in containers.
+--
+-- It is parameterized with 'widget' and 'event', such that containers can
+-- restrict the type of their children to other types than 'Widget'.
+--
+-- Note that the return type, 'a', is not used in this library. It's a more a
+-- technical necessity to have the 'Monad' instance. You can still use it if
+-- you need to return a value from a markup function, though.
+newtype MarkupOf widget event a =
+  MarkupOf (Writer [widget event] a)
   deriving (Functor, Applicative, Monad)
 
+-- | Run a 'MarkupOf' builder and get its widgets.
 runMarkup :: MarkupOf widget event () -> [widget event]
-runMarkup (MarkupBuilder w) = execWriter w
+runMarkup (MarkupOf w) = execWriter w
 
-type MarkupOf widget event a = MarkupBuilder widget event a
+-- | Handy type alias for the common case of markup containing 'Widget's.
+type Markup event a = MarkupOf Widget event a
 
-type Markup event a = MarkupBuilder Widget event a
-
+-- | Construct markup from a single widget.
 single :: widget event -> MarkupOf widget event ()
-single w = MarkupBuilder (tell [w])
+single w = MarkupOf (tell [w])
 
+-- | Construct markup from multiple widgets.
 multiple :: [widget event] -> MarkupOf widget event ()
-multiple = MarkupBuilder . tell
+multiple = MarkupOf . tell
 
+-- | Convert a widget to a target type. This is deliberately unconstrained in
+-- it's types, and is used by smart constructors to implement return type
+-- polymorphism, so that a smart contructor can return either a 'Widget', or
+-- some specifically typed 'MarkupOf', depending on the context in which it's
+-- used.
 class FromWidget widget event target | target -> event where
   fromWidget :: (Typeable widget, Typeable event) => widget event -> target
 

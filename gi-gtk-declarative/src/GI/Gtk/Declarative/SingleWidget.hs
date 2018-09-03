@@ -9,9 +9,7 @@
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeOperators         #-}
 
--- | A 'SingleWidget' represents a declarative "leaf" widget, i.e. one that is
--- not a container with children.
-
+-- | A declarative representation of 'Gtk.Widget' in GTK without children.
 module GI.Gtk.Declarative.SingleWidget
   ( SingleWidget
   , widget
@@ -23,10 +21,12 @@ import           Data.Typeable
 import qualified GI.Gtk                         as Gtk
 
 import           GI.Gtk.Declarative.Attributes
+import           GI.Gtk.Declarative.Attributes.Internal
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 
+-- | Declarative version of a /leaf/ widget, i.e. a widget without any children.
 data SingleWidget widget event where
   SingleWidget
     :: (Typeable widget, Gtk.IsWidget widget, Functor (Attribute widget))
@@ -67,7 +67,7 @@ instance Patchable (SingleWidget widget) where
 instance EventSource (SingleWidget widget) where
   subscribe (SingleWidget ctor props) widget' cb = do
     w <- Gtk.unsafeCastTo ctor widget'
-    Subscription . catMaybes <$> mapM (addSignalHandler cb w) props
+    mconcat . catMaybes <$> mapM (addSignalHandler cb w) props
 
 instance (Typeable widget, Functor (SingleWidget widget))
   => FromWidget (SingleWidget widget) event (Widget event) where
@@ -80,6 +80,7 @@ instance (Typeable widget, Functor (SingleWidget widget))
   => FromWidget (SingleWidget widget) event (Markup event ()) where
   fromWidget = single . Widget
 
+-- | Construct a /leaf/ widget, i.e. one without any children.
 widget ::
      ( Typeable widget
      , Typeable event
@@ -87,7 +88,7 @@ widget ::
      , Gtk.IsWidget widget
      , FromWidget (SingleWidget widget) event target
      )
-  => (Gtk.ManagedPtr widget -> widget)
-  -> [Attribute widget event]
-  -> target
+  => (Gtk.ManagedPtr widget -> widget) -- ^ A widget constructor from the underlying gi-gtk library.
+  -> [Attribute widget event]          -- ^ List of 'Attribute's.
+  -> target                            -- ^ The target, whose type is decided by 'FromWidget'.
 widget ctor = fromWidget . SingleWidget ctor

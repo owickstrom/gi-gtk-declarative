@@ -11,7 +11,6 @@
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
-{-# LANGUAGE UndecidableInstances   #-}
 
 -- | Implementations for common "Gtk.Container".
 
@@ -27,11 +26,17 @@ import           Data.Typeable
 import qualified GI.Gtk                             as Gtk
 
 import           GI.Gtk.Declarative.Attributes
+import           GI.Gtk.Declarative.Attributes.Internal
 import           GI.Gtk.Declarative.Container.Patch
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 
+-- | Declarative version of a /container/ widget, i.e. a widget with zero
+-- or more child widgets. The type of 'children' is parameterized, and differs
+-- across the supported container widgets, as some containers require specific
+-- types of child widgets. These type relations are decided by 'IsContainer',
+-- and instances can found in "GI.Gtk.Declarative.Container.Patch".
 data Container widget children event where
   Container
     :: ( Typeable widget
@@ -48,6 +53,7 @@ instance Functor (Container widget children) where
   fmap f (Container ctor attrs children) =
     Container ctor (fmap f <$> attrs) (fmap f children)
 
+-- | Construct a /container/ widget, i.e. a widget with zero or more children.
 container
   :: ( Patchable (Container widget (Children child))
      , Typeable widget
@@ -58,10 +64,10 @@ container
      , Gtk.IsContainer widget
      , FromWidget (Container widget (Children child)) event target
      )
-  => (Gtk.ManagedPtr widget -> widget)
-  -> [Attribute widget event]
-  -> MarkupOf child event ()
-  -> target
+  => (Gtk.ManagedPtr widget -> widget) -- ^ A container widget constructor from the underlying gi-gtk library.
+  -> [Attribute widget event]          -- ^ List of 'Attribute's.
+  -> MarkupOf child event ()           -- ^ The container's 'child' widgets, in a 'MarkupOf' builder.
+  -> target                            -- ^ The target, whose type is decided by 'FromWidget'.
 container ctor attrs = fromWidget . Container ctor attrs . toChildren
 
 newtype Children child event = Children { unChildren :: [child event] }
@@ -105,12 +111,12 @@ instance (Typeable child, EventSource child) =>
          EventSource (Container widget (Children child)) where
   subscribe (Container ctor props children) widget' cb = do
     parentWidget <- Gtk.unsafeCastTo ctor widget'
-    handlers' <- catMaybes <$> mapM (addSignalHandler cb parentWidget) props
+    handlers' <- mconcat . catMaybes <$> mapM (addSignalHandler cb parentWidget) props
     childWidgets <- Gtk.containerGetChildren parentWidget
     subs <-
       flip foldMap (zip (unChildren children) childWidgets) $ \(c, w) ->
         subscribe c w cb
-    return (Subscription handlers' <> subs)
+    return (handlers' <> subs)
 
 --
 -- FromWidget

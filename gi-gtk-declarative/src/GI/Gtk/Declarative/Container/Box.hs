@@ -12,10 +12,8 @@
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
-{-# LANGUAGE UndecidableInstances   #-}
 
 -- | Implementation of 'Gtk.Box' as a declarative container.
-
 module GI.Gtk.Declarative.Container.Box
   ( BoxChild(..)
   , boxChild
@@ -25,8 +23,10 @@ where
 import           Data.Word                      (Word32)
 
 import           GI.Gtk.Declarative.EventSource
+import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.Markup
 
+-- | Described a child widget to be added with 'boxAppend' to a 'Box'.
 data BoxChild event = BoxChild
   { expand  :: Bool
   , fill    :: Bool
@@ -35,7 +35,13 @@ data BoxChild event = BoxChild
   }
   deriving (Functor)
 
-boxChild :: Bool -> Bool -> Word32 -> Widget event -> MarkupOf BoxChild event ()
+-- | Construct a box child with the given 'boxAppend' parameters.
+boxChild
+  :: Bool
+  -> Bool
+  -> Word32
+  -> Widget event
+  -> MarkupOf BoxChild event ()
 boxChild expand fill padding child = single BoxChild {..}
 
 instance Patchable BoxChild where

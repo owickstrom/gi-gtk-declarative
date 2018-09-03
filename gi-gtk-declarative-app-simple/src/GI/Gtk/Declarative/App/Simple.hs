@@ -1,5 +1,8 @@
 {-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE RecordWildCards #-}
+
+-- | A simple application architecture style inspired by PureScript's Pux
+-- framework.
 module GI.Gtk.Declarative.App.Simple
   ( App(..)
   , runInWindow
@@ -7,24 +10,30 @@ module GI.Gtk.Declarative.App.Simple
   )
 where
 
-import           Data.Int
-import           Data.Text                                ( Text )
-import           Data.Typeable
 import           Control.Concurrent
 import           Control.Monad
-import           Pipes
-import           Pipes.Concurrent
-import qualified GI.Gdk                        as Gdk
-import qualified GI.GLib.Constants             as GLib
-import qualified GI.Gtk as Gtk
+import           Data.Int
+import           Data.Text                      (Text)
+import           Data.Typeable
+import qualified GI.Gdk                         as Gdk
+import qualified GI.GLib.Constants              as GLib
+import qualified GI.Gtk                         as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.EventSource
+import           Pipes
+import           Pipes.Concurrent
 
-data App model event =
+data App state event =
   App
-    { update :: model -> event -> (model, IO (Maybe event))
-    , view :: model -> Widget event
+    { update :: state -> event -> (state, IO (Maybe event))
+    -- ^ The update function of an applications reduces the current state and
+    -- a new event to a new state, along with an IO action that may return a
+    -- new event.
+    , view   :: state -> Widget event
+    -- ^ The view renders a state value as a 'Widget', parameterized by the
+    -- 'App's event type.
     , inputs :: [Producer event IO ()]
+    -- ^ Inputs are pipes 'Producer's that feed events into the application.
     }
 
 publishEvent :: MVar event -> event -> IO ()
@@ -45,7 +54,10 @@ publishInputEvents :: MVar event -> Consumer event IO ()
 publishInputEvents nextEvent =
   forever (await >>= liftIO . (putMVar nextEvent))
 
-runInWindow :: Typeable event => Gtk.Window -> App model event -> model -> IO ()
+-- | Run an 'App' in a 'Gtk.Window' that has already been set up. This IO action
+-- will loop, so run it in a separate thread using 'forkIO' if you're calling
+-- it before the GTK main loop.
+runInWindow :: Typeable event => Gtk.Window -> App state event -> state -> IO ()
 runInWindow window App {..} initialModel = do
   let firstMarkup = view initialModel
   nextEvent    <- newEmptyMVar
@@ -77,12 +89,15 @@ runInWindow window App {..} initialModel = do
     -- Finally, we loop.
     loop newMarkup nextEvent sub newModel
 
+-- | Initialize GTK, set up a new window, and run the application in it. This
+-- is a convenience function. If you need more flexibility, you should use
+-- 'runInWindow' instead.
 run
   :: Typeable event
   => Text
   -> Maybe (Int32, Int32)
-  -> App model event
-  -> model
+  -> App state event
+  -> state
   -> IO ()
 run title size app initialModel = do
   void $ Gtk.init Nothing
