@@ -28,6 +28,29 @@ aims to extend the
 packages as transparently as possible, not having to reimplement or
 manually wrap large parts of existing GTK+ widgets.
 
+## The Simple.App Architecture
+
+In addition to `gi-gtk-declarative` (the markup library), there's an even more
+experimental application architecture in the style of
+[Pux](https://github.com/alexmingoia/purescript-pux), in
+`gi-gtk-declarative-app-simple`. You might use it if you don't want to set up
+your own main loop with `gi-gtk`, and figure out how all of that works.
+
+## Examples
+
+There are some examples in [examples/](examples/), using the
+`GI.Gtk.Declarative.App.Simple` architecture, which also showcase
+`GI.Gtk.Declarative` (the markup library.)
+
+As an example, to run the `examples/Hello.hs` example, follow these steps
+(assuming you have a recent version of Cabal):
+
+``` shell
+cabal new-run example Hello
+```
+
+You might also build in a Cabal sandbox, using Stack, or with Nix.
+
 ## Status
 
 **EXPERIMENTAL!** Do not bet your business on this quite yet.
@@ -43,21 +66,6 @@ As this package relies heavily on `OverloadedLabels` and the
 described in the haskell-gi package
 documentation](https://github.com/haskell-gi/haskell-gi), i.e. you
 cannot compile this package with GHC 8.2.x.
-
-## Example
-
-There is currently one example available in
-[examples/Hello.hs](examples/Hello.hs). More to come soon, hopefully.
-
-To run the `Hello.hs` example, follow these steps (assuming you have a
-recent version of Cabal):
-
-``` shell
-cabal new-build
-cabal new-run gi-gtk-declarative-example-hello
-```
-
-You might also build in a Cabal sandbox, using Stack, or with Nix.
 
 ## License
 
