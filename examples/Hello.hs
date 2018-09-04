@@ -13,16 +13,16 @@ import           GI.Gtk                        (Label (..))
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
-data Model = Initial | Greeting Text
+data State = Initial | Greeting Text
 
 data Event = Greet Text
 
-helloView :: Model -> Widget Event
+helloView :: State -> Widget Event
 helloView Initial       = widget Label [#label := "Nothing here yet."]
 helloView (Greeting who) = widget Label [#label := who]
 
-update' :: Model -> Event -> (Model, IO (Maybe Event))
-update' _ (Greet who) = (Greeting who, return Nothing)
+update' :: State -> Event -> Continuation State Event
+update' _ (Greet who) = Continue (Greeting who) (return Nothing)
 
 main :: IO ()
 main = run "Hello" (Just (640, 480)) app Initial
@@ -34,5 +34,3 @@ main = run "Hello" (Just (640, 480)) app Initial
       & (>-> Pipes.delay 1.0)
 
     app = App {view = helloView, update = update', inputs = [greetings]}
-
-

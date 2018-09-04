@@ -16,10 +16,10 @@ import           GI.Gtk.Declarative.App.Simple
 
 data Event = AddLeft | AddRight
 
-data Model = Model { lefts :: [Int], rights :: [Int], next :: Int }
+data State = State { lefts :: [Int], rights :: [Int], next :: Int }
 
-addBoxesView :: Model -> Widget Event
-addBoxesView Model {..} =
+addBoxesView :: State -> Widget Event
+addBoxesView State {..} =
   bin
       ScrolledWindow
       [ #hscrollbarPolicy := PolicyTypeAutomatic
@@ -39,13 +39,13 @@ addBoxesView Model {..} =
   renderChild :: Int -> Widget Event
   renderChild n = widget Label [#label := Text.pack ("Box " <> show n)]
 
-update' :: Model -> Event -> (Model, IO (Maybe Event))
-update' model@Model {..} AddLeft =
-  (model { lefts = lefts ++ [next], next = succ next }, return Nothing)
-update' model@Model {..} AddRight =
-  (model { rights = rights ++ [next], next = succ next }, return Nothing)
+update' :: State -> Event -> Continuation State Event
+update' state@State {..} AddLeft =
+  Continue state {lefts = lefts ++ [next], next = succ next} (return Nothing)
+update' state@State {..} AddRight =
+  Continue state {rights = rights ++ [next], next = succ next} (return Nothing)
 
 main :: IO ()
 main =
   let app = App {view = addBoxesView, update = update', inputs = []}
-  in  run "AddBoxes" (Just (640, 480)) app (Model [1] [2] 3)
+  in  run "AddBoxes" (Just (640, 480)) app (State [1] [2] 3)

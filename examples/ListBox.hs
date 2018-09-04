@@ -15,21 +15,22 @@ import           GI.Gtk                        (Label (..), ListBox (..),
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
-data Model = Model { greetings :: [Text] }
+data State = State { greetings :: [Text] }
 
 data Event = Greet Text
 
-view' :: Model -> Widget Event
-view' Model {..} = container ListBox [] $
+view' :: State -> Widget Event
+view' State {..} = container ListBox [] $
   forM_ greetings $ \name ->
     bin ListBoxRow [ #activatable := False, #selectable := False ] $
       widget Label [ #label := name ]
 
-update' :: Model -> Event -> (Model, IO (Maybe Event))
-update' Model{..} (Greet who) = (Model {greetings = greetings <> [who]}, return Nothing)
+update' :: State -> Event -> Continuation State Event
+update' State{..} (Greet who) =
+  Continue State {greetings = greetings <> [who]} (pure Nothing)
 
 main :: IO ()
-main = run "Hello" (Just (640, 480)) app (Model [])
+main = run "Hello" (Just (640, 480)) app (State [])
   where
     greetings =
       cycle ["Joe", "Mike"]

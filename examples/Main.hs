@@ -1,14 +1,15 @@
 {-# LANGUAGE LambdaCase #-}
 module Main where
 
-import System.IO
-import System.Environment
+import           System.Environment
+import           System.IO
 
 import qualified AddBoxes
+import qualified Exit
 import qualified FileChooserButton
+import qualified Functor
 import qualified Hello
 import qualified ListBox
-import qualified Functor
 
 main :: IO ()
 main =
@@ -17,6 +18,7 @@ main =
                  , ("Hello", Hello.main)
                  , ("ListBox", ListBox.main)
                  , ("Functor", Functor.main)
+                 , ("Exit", Exit.main)
                  ]
   in getArgs >>= \case
     [example] ->

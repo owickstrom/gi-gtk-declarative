@@ -13,6 +13,7 @@ cabal-version:        >=1.10
 executable example
   main-is:              Main.hs
   other-modules:        AddBoxes
+                      , Exit
                       , FileChooserButton
                       , Functor
                       , Hello

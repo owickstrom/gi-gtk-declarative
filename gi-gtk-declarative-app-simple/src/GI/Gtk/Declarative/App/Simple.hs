@@ -5,6 +5,7 @@
 -- framework.
 module GI.Gtk.Declarative.App.Simple
   ( App(..)
+  , Continuation(..)
   , runInWindow
   , run
   )
@@ -25,10 +26,10 @@ import           Pipes.Concurrent
 
 data App state event =
   App
-    { update :: state -> event -> (state, IO (Maybe event))
-    -- ^ The update function of an applications reduces the current state and
-    -- a new event to a new state, along with an IO action that may return a
-    -- new event.
+    { update :: state -> event -> Continuation state event
+    -- ^ The update function of an application reduces the current state and
+    -- a new event to a 'Continutation', which decides if and how to continue
+    -- the loop.
     , view   :: state -> Widget event
     -- ^ The view renders a state value as a 'Widget', parameterized by the
     -- 'App's event type.
@@ -36,30 +37,21 @@ data App state event =
     -- ^ Inputs are pipes 'Producer's that feed events into the application.
     }
 
-publishEvent :: MVar event -> event -> IO ()
-publishEvent mvar = void . tryPutMVar mvar
-
-mergeProducers :: [Producer a IO ()] -> Producer a IO ()
-mergeProducers producers = do
-  (output, input) <- liftIO $ spawn unbounded
-  _               <- liftIO $ mapM (fork output) producers
-  fromInput input
- where
-  fork :: Output a -> Producer a IO () -> IO ()
-  fork output producer = void $ forkIO $ do
-    runEffect $ producer >-> toOutput output
-    performGC
-
-publishInputEvents :: MVar event -> Consumer event IO ()
-publishInputEvents nextEvent =
-  forever (await >>= liftIO . (putMVar nextEvent))
+-- | The result of applying the 'update' function, deciding how to continue.
+data Continuation state event
+  = Continue state
+             (IO (Maybe event))
+  -- | ^ Continue with the given state, and with an IO action that may return a
+  -- new event.
+  | Exit
+  -- | ^ Exit the application.
 
 -- | Run an 'App' in a 'Gtk.Window' that has already been set up. This IO action
 -- will loop, so run it in a separate thread using 'forkIO' if you're calling
 -- it before the GTK main loop.
 runInWindow :: Typeable event => Gtk.Window -> App state event -> state -> IO ()
-runInWindow window App {..} initialModel = do
-  let firstMarkup = view initialModel
+runInWindow window App {..} initialState = do
+  let firstMarkup = view initialState
   nextEvent    <- newEmptyMVar
   subscription <- runUI $ do
     widget' <- Gtk.toWidget =<< create firstMarkup
@@ -68,26 +60,29 @@ runInWindow window App {..} initialModel = do
     subscribe firstMarkup widget' (publishEvent nextEvent)
   void . forkIO $
     runEffect (mergeProducers inputs >-> publishInputEvents nextEvent)
-  loop firstMarkup nextEvent subscription initialModel
+  loop firstMarkup nextEvent subscription initialState
  where
   loop oldMarkup nextEvent oldSubscription oldModel = do
     event <- takeMVar nextEvent
-    let (newModel, action) = update oldModel event
-        newMarkup          = view newModel
+    case update oldModel event of
+      Continue newModel action -> do
+        let newMarkup          = view newModel
 
-    sub <- runUI (patchContainer window oldMarkup newMarkup nextEvent) >>= \case
-      Just newSubscription -> cancel oldSubscription *> pure newSubscription
-      Nothing              -> pure oldSubscription
+        sub <- runUI (patchContainer window oldMarkup newMarkup nextEvent) >>= \case
+          Just newSubscription -> cancel oldSubscription *> pure newSubscription
+          Nothing              -> pure oldSubscription
 
-    -- Make sure the MVar is empty.
-    void (tryTakeMVar nextEvent)
+        -- Make sure the MVar is empty.
+        void (tryTakeMVar nextEvent)
 
-    -- If the action returned by the update function produced an event, then
-    -- we write that as the nextEvent to use directly.
-    void . forkIO $ action >>= maybe (return ()) (putMVar nextEvent)
+        -- If the action returned by the update function produced an event, then
+        -- we write that as the nextEvent to use directly.
+        void . forkIO $ action >>= maybe (return ()) (putMVar nextEvent)
 
-    -- Finally, we loop.
-    loop newMarkup nextEvent sub newModel
+        -- Finally, we loop.
+        loop newMarkup nextEvent sub newModel
+      Exit ->
+        return ()
 
 -- | Initialize GTK, set up a new window, and run the application in it. This
 -- is a convenience function. If you need more flexibility, you should use
@@ -99,7 +94,7 @@ run
   -> App state event
   -> state
   -> IO ()
-run title size app initialModel = do
+run title size app initialState = do
   void $ Gtk.init Nothing
   window <- Gtk.windowNew Gtk.WindowTypeToplevel
   void (Gtk.onWidgetDestroy window Gtk.mainQuit)
@@ -107,7 +102,10 @@ run title size app initialModel = do
   case size of
     Just (width, height) -> Gtk.windowResize window width height
     Nothing              -> return ()
-  void . forkIO $ runInWindow window app initialModel
+  void . forkIO $ do
+    runInWindow window app initialState
+    -- In case the run loop exits, quit the main GTK loop.
+    Gtk.mainQuit
   Gtk.main
 
 patchContainer
@@ -132,6 +130,24 @@ patchContainer w o1 o2 nextEvent = case patch o1 o2 of
     Gtk.widgetShowAll w
     Just <$> subscribe o2 newWidget (publishEvent nextEvent)
   Keep -> return Nothing
+
+publishEvent :: MVar event -> event -> IO ()
+publishEvent mvar = void . tryPutMVar mvar
+
+mergeProducers :: [Producer a IO ()] -> Producer a IO ()
+mergeProducers producers = do
+  (output, input) <- liftIO $ spawn unbounded
+  _               <- liftIO $ mapM (fork output) producers
+  fromInput input
+ where
+  fork :: Output a -> Producer a IO () -> IO ()
+  fork output producer = void $ forkIO $ do
+    runEffect $ producer >-> toOutput output
+    performGC
+
+publishInputEvents :: MVar event -> Consumer event IO ()
+publishInputEvents nextEvent =
+  forever (await >>= liftIO . (putMVar nextEvent))
 
 runUI :: IO a -> IO a
 runUI f = do
