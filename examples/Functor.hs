@@ -38,6 +38,9 @@ update' State{..} Incr = Continue (State (count + 1)) (return Nothing)
 update' State{..} Decr = Continue (State (count - 1)) (return Nothing)
 
 main :: IO ()
-main = run "Hello" (Just (640, 480)) app (State 0)
-  where
-    app = App {view = incrDecrView, update = update', inputs = []}
+main =
+  run
+    "Hello"
+    (Just (640, 480))
+    App
+    {view = incrDecrView, update = update', inputs = [], initialState = State 0}

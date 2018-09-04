@@ -43,5 +43,13 @@ update' (Started (Just path)) ButtonClicked = Continue (Done path) (return Nothi
 update' s _ = Continue s (return Nothing)
 
 main :: IO ()
-main = run "File Chooser Button" (Just (640, 480)) app (Started Nothing)
-  where app = App {view = view', update = update', inputs = []}
+main =
+  run
+    "File Chooser Button"
+    (Just (640, 480))
+    App
+    { view = view'
+    , update = update'
+    , inputs = []
+    , initialState = Started Nothing
+    }

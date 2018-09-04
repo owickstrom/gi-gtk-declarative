@@ -1,6 +1,7 @@
 name:                 gi-gtk-declarative-app-simple
 version:              0.1.0
-synopsis:             Declarative GTK+ programming in Haskell inspired by the Elm architecture.
+synopsis:             Declarative GTK+ programming in Haskell in the style of
+                      [Pux](https://github.com/alexmingoia/purescript-pux).
 -- description:
 license:              MPL-2.0
 license-file:         LICENSE

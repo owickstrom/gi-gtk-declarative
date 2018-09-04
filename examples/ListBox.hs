@@ -30,12 +30,19 @@ update' State{..} (Greet who) =
   Continue State {greetings = greetings <> [who]} (pure Nothing)
 
 main :: IO ()
-main = run "Hello" (Just (640, 480)) app (State [])
+main =
+  run
+    "Hello"
+    (Just (640, 480))
+    App
+    { view = view'
+    , update = update'
+    , inputs = [greetings]
+    , initialState = State []
+    }
   where
     greetings =
       cycle ["Joe", "Mike"]
       & map (\n -> (Greet ("Hello, " <> n)))
       & Pipes.each
       & (>-> Pipes.delay 1.0)
-
-    app = App {view = view', update = update', inputs = [greetings]}

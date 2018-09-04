@@ -24,6 +24,7 @@ import           GI.Gtk.Declarative.EventSource
 import           Pipes
 import           Pipes.Concurrent
 
+-- | Describes an state reducer application.
 data App state event =
   App
     { update :: state -> event -> Continuation state event
@@ -35,22 +36,23 @@ data App state event =
     -- 'App's event type.
     , inputs :: [Producer event IO ()]
     -- ^ Inputs are pipes 'Producer's that feed events into the application.
+    , initialState :: state
+    -- ^ The initial state value of the state reduction loop.
     }
 
 -- | The result of applying the 'update' function, deciding how to continue.
-data Continuation state event
-  = Continue state
-             (IO (Maybe event))
-  -- | ^ Continue with the given state, and with an IO action that may return a
+data Continuation state event =
+  -- Continue with the given state, and with an IO action that may return a
   -- new event.
+  Continue state (IO (Maybe event))
+  -- | Exit the application.
   | Exit
-  -- | ^ Exit the application.
 
 -- | Run an 'App' in a 'Gtk.Window' that has already been set up. This IO action
 -- will loop, so run it in a separate thread using 'forkIO' if you're calling
 -- it before the GTK main loop.
-runInWindow :: Typeable event => Gtk.Window -> App state event -> state -> IO ()
-runInWindow window App {..} initialState = do
+runInWindow :: Typeable event => Gtk.Window -> App state event -> IO ()
+runInWindow window App {..} = do
   let firstMarkup = view initialState
   nextEvent    <- newEmptyMVar
   subscription <- runUI $ do
@@ -92,9 +94,8 @@ run
   => Text
   -> Maybe (Int32, Int32)
   -> App state event
-  -> state
   -> IO ()
-run title size app initialState = do
+run title size app = do
   void $ Gtk.init Nothing
   window <- Gtk.windowNew Gtk.WindowTypeToplevel
   void (Gtk.onWidgetDestroy window Gtk.mainQuit)
@@ -103,7 +104,7 @@ run title size app initialState = do
     Just (width, height) -> Gtk.windowResize window width height
     Nothing              -> return ()
   void . forkIO $ do
-    runInWindow window app initialState
+    runInWindow window app
     -- In case the run loop exits, quit the main GTK loop.
     Gtk.mainQuit
   Gtk.main

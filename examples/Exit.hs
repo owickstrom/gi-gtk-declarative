@@ -30,11 +30,13 @@ countDown = threadDelay oneSec $> Just CountDownExit
 
 update' :: State -> Event -> Continuation State Event
 update' Running ExitApplication = Continue (ExitingIn 3) countDown
-update' Running _ = Continue Running (pure Nothing)
-update' (ExitingIn 1) _ = Exit
-update' (ExitingIn sec) _ = Continue (ExitingIn (pred sec)) countDown
+update' Running _               = Continue Running (pure Nothing)
+update' (ExitingIn 1) _         = Exit
+update' (ExitingIn sec) _       = Continue (ExitingIn (pred sec)) countDown
 
 main :: IO ()
-main = run "Hello" (Just (640, 480)) app Running
-  where
-    app = App {view = view', update = update', inputs = []}
+main =
+  run
+    "Hello"
+    (Just (640, 480))
+    App {view = view', update = update', inputs = [], initialState = Running}

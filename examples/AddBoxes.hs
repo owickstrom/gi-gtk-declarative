@@ -47,5 +47,12 @@ update' state@State {..} AddRight =
 
 main :: IO ()
 main =
-  let app = App {view = addBoxesView, update = update', inputs = []}
-  in  run "AddBoxes" (Just (640, 480)) app (State [1] [2] 3)
+  run
+    "AddBoxes"
+    (Just (640, 480))
+    App
+    { view = addBoxesView
+    , update = update'
+    , inputs = []
+    , initialState = State [1] [2] 3
+    }

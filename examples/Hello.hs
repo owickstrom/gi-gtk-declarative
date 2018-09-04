@@ -25,12 +25,19 @@ update' :: State -> Event -> Continuation State Event
 update' _ (Greet who) = Continue (Greeting who) (return Nothing)
 
 main :: IO ()
-main = run "Hello" (Just (640, 480)) app Initial
+main =
+  run
+    "Hello"
+    (Just (640, 480))
+    App
+    { view = helloView
+    , update = update'
+    , inputs = [greetings]
+    , initialState = Initial
+    }
   where
     greetings =
       cycle ["Joe", "Mike"]
       & map (\n -> (Greet ("Hello, " <> n)))
       & Pipes.each
       & (>-> Pipes.delay 1.0)
-
-    app = App {view = helloView, update = update', inputs = [greetings]}
