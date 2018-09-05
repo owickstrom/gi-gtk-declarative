@@ -5,7 +5,7 @@
 -- framework.
 module GI.Gtk.Declarative.App.Simple
   ( App(..)
-  , Continuation(..)
+  , Transition(..)
   , runInWindow
   , run
   )
@@ -27,10 +27,10 @@ import           Pipes.Concurrent
 -- | Describes an state reducer application.
 data App state event =
   App
-    { update :: state -> event -> Continuation state event
+    { update :: state -> event -> Transition state event
     -- ^ The update function of an application reduces the current state and
-    -- a new event to a 'Continutation', which decides if and how to continue
-    -- the loop.
+    -- a new event to a 'Transition', which decides if and how to transition
+    -- to the next state.
     , view   :: state -> Widget event
     -- ^ The view renders a state value as a 'Widget', parameterized by the
     -- 'App's event type.
@@ -40,11 +40,12 @@ data App state event =
     -- ^ The initial state value of the state reduction loop.
     }
 
--- | The result of applying the 'update' function, deciding how to continue.
-data Continuation state event =
-  -- Continue with the given state, and with an IO action that may return a
+-- | The result of applying the 'update' function, deciding if and how to
+-- transition to the next state.
+data Transition state event =
+  -- Transition to the given state, and with an IO action that may return a
   -- new event.
-  Continue state (IO (Maybe event))
+  Transition state (IO (Maybe event))
   -- | Exit the application.
   | Exit
 
@@ -67,7 +68,7 @@ runInWindow window App {..} = do
   loop oldMarkup nextEvent oldSubscription oldModel = do
     event <- takeMVar nextEvent
     case update oldModel event of
-      Continue newModel action -> do
+      Transition newModel action -> do
         let newMarkup          = view newModel
 
         sub <- runUI (patchContainer window oldMarkup newMarkup nextEvent) >>= \case
@@ -91,9 +92,9 @@ runInWindow window App {..} = do
 -- 'runInWindow' instead.
 run
   :: Typeable event
-  => Text
-  -> Maybe (Int32, Int32)
-  -> App state event
+  => Text                 -- ^ Window title
+  -> Maybe (Int32, Int32) -- ^ Optional window size
+  -> App state event      -- ^ Application to run
   -> IO ()
 run title size app = do
   void $ Gtk.init Nothing

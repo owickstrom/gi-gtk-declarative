@@ -25,9 +25,9 @@ view' State {..} = container ListBox [] $
     bin ListBoxRow [ #activatable := False, #selectable := False ] $
       widget Label [ #label := name ]
 
-update' :: State -> Event -> Continuation State Event
+update' :: State -> Event -> Transition State Event
 update' State{..} (Greet who) =
-  Continue State {greetings = greetings <> [who]} (pure Nothing)
+  Transition State {greetings = greetings <> [who]} (pure Nothing)
 
 main :: IO ()
 main =

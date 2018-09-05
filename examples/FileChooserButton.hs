@@ -37,10 +37,10 @@ view' (Started currentFile) =
       , on #clicked ButtonClicked
       ]
 
-update' :: State -> Event -> Continuation State Event
-update' (Started _) (FileSelectionChanged p) = Continue (Started p) (return Nothing)
-update' (Started (Just path)) ButtonClicked = Continue (Done path) (return Nothing)
-update' s _ = Continue s (return Nothing)
+update' :: State -> Event -> Transition State Event
+update' (Started _) (FileSelectionChanged p) = Transition (Started p) (return Nothing)
+update' (Started (Just path)) ButtonClicked = Transition (Done path) (return Nothing)
+update' s _ = Transition s (return Nothing)
 
 main :: IO ()
 main =

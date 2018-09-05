@@ -39,11 +39,11 @@ addBoxesView State {..} =
   renderChild :: Int -> Widget Event
   renderChild n = widget Label [#label := Text.pack ("Box " <> show n)]
 
-update' :: State -> Event -> Continuation State Event
+update' :: State -> Event -> Transition State Event
 update' state@State {..} AddLeft =
-  Continue state {lefts = lefts ++ [next], next = succ next} (return Nothing)
+  Transition state {lefts = lefts ++ [next], next = succ next} (return Nothing)
 update' state@State {..} AddRight =
-  Continue state {rights = rights ++ [next], next = succ next} (return Nothing)
+  Transition state {rights = rights ++ [next], next = succ next} (return Nothing)
 
 main :: IO ()
 main =

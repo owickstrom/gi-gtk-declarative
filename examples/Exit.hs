@@ -28,11 +28,11 @@ countDown = threadDelay oneSec $> Just CountDownExit
     oneSec :: Int
     oneSec = 1000000
 
-update' :: State -> Event -> Continuation State Event
-update' Running ExitApplication = Continue (ExitingIn 3) countDown
-update' Running _               = Continue Running (pure Nothing)
+update' :: State -> Event -> Transition State Event
+update' Running ExitApplication = Transition (ExitingIn 3) countDown
+update' Running _               = Transition Running (pure Nothing)
 update' (ExitingIn 1) _         = Exit
-update' (ExitingIn sec) _       = Continue (ExitingIn (pred sec)) countDown
+update' (ExitingIn sec) _       = Transition (ExitingIn (pred sec)) countDown
 
 main :: IO ()
 main =
