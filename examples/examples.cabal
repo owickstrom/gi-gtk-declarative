@@ -18,6 +18,7 @@ executable example
                       , Functor
                       , Hello
                       , ListBox
+                      , Window
   build-depends:        base >=4.10 && <4.12
                       , gi-gobject
                       , gi-glib

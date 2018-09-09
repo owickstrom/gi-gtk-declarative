@@ -10,6 +10,7 @@ import qualified FileChooserButton
 import qualified Functor
 import qualified Hello
 import qualified ListBox
+import qualified Window
 
 main :: IO ()
 main =
@@ -19,6 +20,7 @@ main =
                  , ("ListBox", ListBox.main)
                  , ("Functor", Functor.main)
                  , ("Exit", Exit.main)
+                 , ("Window", Window.main)
                  ]
   in getArgs >>= \case
     [example] ->
