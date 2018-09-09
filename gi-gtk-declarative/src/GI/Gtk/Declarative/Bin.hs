@@ -46,6 +46,9 @@ instance BinChild Gtk.ListBoxRow Widget where
 instance BinChild Gtk.Window Widget where
   getChild = getBinChild Gtk.Widget
 
+instance BinChild Gtk.Dialog Widget where
+  getChild = getBinChild Gtk.Widget
+
 -- | Declarative version of a /bin/ widget, i.e. a widget with exactly one
 -- child.
 data Bin widget child event where
