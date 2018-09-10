@@ -27,6 +27,7 @@ import qualified GI.Gtk                             as Gtk
 
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Attributes.Internal
+import           GI.Gtk.Declarative.Children
 import           GI.Gtk.Declarative.Container.Patch
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Markup
@@ -69,12 +70,6 @@ container
   -> MarkupOf child event ()           -- ^ The container's 'child' widgets, in a 'MarkupOf' builder.
   -> target                            -- ^ The target, whose type is decided by 'FromWidget'.
 container ctor attrs = fromWidget . Container ctor attrs . toChildren
-
-newtype Children child event = Children { unChildren :: [child event] }
-  deriving (Functor)
-
-toChildren :: MarkupOf child event () -> Children child event
-toChildren = Children . runMarkup
 
 --
 -- Patchable

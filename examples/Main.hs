@@ -11,6 +11,7 @@ import qualified Functor
 import qualified Hello
 import qualified ListBox
 import qualified Window
+import qualified Dialog
 
 main :: IO ()
 main =
@@ -21,6 +22,7 @@ main =
                  , ("Functor", Functor.main)
                  , ("Exit", Exit.main)
                  , ("Window", Window.main)
+                 , ("Dialog", Dialog.main)
                  ]
   in getArgs >>= \case
     [example] ->
