@@ -13,8 +13,9 @@
 
 -- | A declarative representation of 'Gtk.Bin' in GTK.
 module GI.Gtk.Declarative.Bin
-  ( Bin
+  ( Bin (..)
   , bin
+  , BinChild
   )
 where
 
@@ -47,6 +48,9 @@ instance BinChild Gtk.Window Widget where
   getChild = getBinChild Gtk.Widget
 
 instance BinChild Gtk.Dialog Widget where
+  getChild = getBinChild Gtk.Widget
+
+instance BinChild Gtk.MenuItem Widget where
   getChild = getBinChild Gtk.Widget
 
 -- | Declarative version of a /bin/ widget, i.e. a widget with exactly one
@@ -160,6 +164,8 @@ instance ( BinChild widget child
          FromWidget (Bin widget child) event (Markup event a) where
   fromWidget = single . Widget
 
+instance FromWidget (Bin widget child) event (Bin widget child event) where
+  fromWidget = id
 
 -- | Get a "Gtk.Bin" child, or fail, and cast it to the given widget type.
 getBinChild

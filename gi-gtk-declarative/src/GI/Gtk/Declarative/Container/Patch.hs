@@ -99,6 +99,9 @@ patchInContainer container os' ns' = do
 
   Gtk.widgetQueueResize container
 
+padMaybes :: [a] -> [Maybe a]
+padMaybes xs = map Just xs ++ repeat Nothing
+
 instance IsContainer Gtk.ListBox (Bin Gtk.ListBoxRow Widget) where
   appendChild box _ widget' = Gtk.listBoxInsert box widget' (-1)
   replaceChild box _ i old new = do
@@ -115,6 +118,3 @@ instance IsContainer Gtk.Box BoxChild where
     appendChild box boxChild' new
     Gtk.boxReorderChild box new i
     Gtk.widgetShowAll box
-
-padMaybes :: [a] -> [Maybe a]
-padMaybes xs = map Just xs ++ repeat Nothing

@@ -17,6 +17,7 @@
 module GI.Gtk.Declarative.Container
   ( Container
   , container
+  , Children
   )
 where
 
@@ -144,3 +145,6 @@ instance ( a ~ ()
          ) =>
          FromWidget (Container widget children) event (Markup event a) where
   fromWidget = single . Widget
+
+instance FromWidget (Container widget children) event (Container widget children event) where
+  fromWidget = id
