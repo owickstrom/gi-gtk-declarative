@@ -102,6 +102,7 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
 
     sc <- Gtk.widgetGetStyleContext widget'
     mapM_ (addClass sc) props
+    mapM_ (applyAfterCreated widget') props
 
     Gtk.containerAdd widget' =<< create child
     Gtk.toWidget widget'

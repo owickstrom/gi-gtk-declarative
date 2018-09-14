@@ -4,7 +4,8 @@
 -- | Internal helpers for applying attributes and signal handlers to GTK+
 -- widgets.
 module GI.Gtk.Declarative.Attributes.Internal
-  ( extractAttrConstructOps
+  ( applyAfterCreated
+  , extractAttrConstructOps
   , extractAttrSetOps
   , addClass
   , removeClass
@@ -18,6 +19,11 @@ import           Control.Monad.IO.Class         (MonadIO)
 
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.EventSource
+
+applyAfterCreated :: widget -> Attribute widget event -> IO ()
+applyAfterCreated widget = \case
+  (AfterCreated f) -> f widget
+  _                -> return ()
 
 extractAttrConstructOps
   :: Attribute widget event -> [GI.AttrOp widget 'GI.AttrConstruct]

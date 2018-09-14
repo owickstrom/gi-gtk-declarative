@@ -45,6 +45,7 @@ instance Patchable (SingleWidget widget) where
 
         sc <- Gtk.widgetGetStyleContext widget'
         mapM_ (addClass sc) props
+        mapM_ (applyAfterCreated widget') props
 
         Gtk.widgetShowAll widget'
         Gtk.toWidget widget'
