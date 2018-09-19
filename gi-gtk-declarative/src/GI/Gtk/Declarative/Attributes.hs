@@ -19,8 +19,8 @@
 
 module GI.Gtk.Declarative.Attributes
   ( Attribute(..)
-  -- *
   , classes
+  , afterCreated
   -- * Event Handling
   , on
   , onM
@@ -91,6 +91,10 @@ data Attribute widget event where
     => Gtk.SignalProxy widget info
     -> ImpureCallback callback widget event
     -> Attribute widget event
+  -- | Provide a callback to modify the widget after it's been created.
+  AfterCreated
+    :: (widget -> IO ())
+    -> Attribute widget event
 
 -- | Attributes have a 'Functor' instance that maps events in all event
 -- callbacks.
@@ -100,6 +104,7 @@ instance Functor (Attribute widget) where
     Classes cs -> Classes cs
     OnSignalPure signal cb -> OnSignalPure signal (fmap f cb)
     OnSignalImpure signal cb -> OnSignalImpure signal (fmap f cb)
+    AfterCreated cb -> AfterCreated cb
 
 -- | Define the CSS classes for the underlying widget's style context. For these
 -- classes to have any effect, this requires a 'Gtk.CssProvider' with CSS files
@@ -140,6 +145,10 @@ onM
   -> withWidget
   -> Attribute widget event
 onM signal = OnSignalImpure signal . ImpureCallback
+
+-- | Provide a callback to modify the widget after it's been created.
+afterCreated :: (widget -> IO ()) -> Attribute widget event
+afterCreated = AfterCreated
 
 -- * Pure Callbacks
 

@@ -91,6 +91,7 @@ instance (Patchable child, IsContainer container child) =>
     forM_ (unChildren children) $ \child -> do
       childWidget <- create child
       appendChild widget' child childWidget
+    mapM_ (applyAfterCreated widget') props
     Gtk.toWidget widget'
   patch (Container _ oldAttributes oldChildren) (Container ctor newAttributes newChildren) =
     Modify $ \widget' -> do
