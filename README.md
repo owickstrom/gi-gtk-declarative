@@ -1,6 +1,9 @@
-# gi-gtk-declarative
-
-*Declarative GTK+ programming in Haskell.*
+<div align="center">
+  <h1>gi-gtk-declarative</h1>
+  <p>Declarative GTK+ programming in Haskell</p>
+  <p><a href="https://travis-ci.org/owickstrom/gi-gtk-declarative"><img src="https://travis-ci.org/owickstrom/gi-gtk-declarative.svg?branch=master" alt="Build Status"></a>
+  </p>
+</div>
 
 ## Motivation & Goal
 
