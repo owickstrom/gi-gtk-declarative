@@ -7,16 +7,24 @@ import           Control.Monad      (void)
 import           GI.Gtk             (Label (..), Window (..))
 import qualified GI.Gtk             as Gtk
 import           GI.Gtk.Declarative
+import           GI.Gtk.Declarative.EventSource (subscribe)
 
-myWindow :: Widget ()
+data Event = Closed
+
+myWindow :: Widget Event
 myWindow =
-  bin Window [#defaultWidth := 400, #defaultHeight := 300] $
-    widget Label [#label := "Nothing here yet."]
+  bin
+    Window
+    [ on #deleteEvent (const (Closed, True))
+    , #defaultWidth := 400, #defaultHeight := 300
+    , #title := "Closable Window"
+    ]
+    $ widget Label [#label := "You can close me."]
 
 main :: IO ()
 main = do
   void $ Gtk.init Nothing
   window <- create myWindow
+  _ <- subscribe myWindow window $ \Closed -> Gtk.mainQuit
   #showAll window
-  void (Gtk.onWidgetDestroy window Gtk.mainQuit)
   Gtk.main

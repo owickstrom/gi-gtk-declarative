@@ -158,6 +158,7 @@ afterCreated = AfterCreated
 -- the range.
 type family ToPureCallback gtkCallback event where
   ToPureCallback (IO ()) event = event
+  ToPureCallback (IO a) event = (event, a)
   ToPureCallback (a -> b) event = a -> ToPureCallback b event
 
 -- | A 'PureCallback' holds a pure callback, as defined by 'ToPureCallback'.
@@ -173,8 +174,14 @@ data PureCallback callback event where
 instance Functor (PureCallback (IO ())) where
   fmap f (PureCallback e) = PureCallback (f e)
 
+instance Functor (PureCallback (IO Bool)) where
+  fmap f (PureCallback e) = PureCallback (f (fst e), snd e)
+
 instance Functor (PureCallback (x -> IO ())) where
   fmap f (PureCallback g) = PureCallback (f . g)
+
+instance Functor (PureCallback (x -> IO Bool)) where
+  fmap f (PureCallback g) = PureCallback $ (\x -> let (a, r) = g x in (f a, r))
 
 instance Functor (PureCallback (x -> y -> IO ())) where
   fmap f (PureCallback g) = PureCallback (\x -> f . g x)
@@ -223,9 +230,19 @@ instance ToGtkCallback (PureCallback (IO ())) where
   type CustomGtkCallback (PureCallback (IO ())) = IO ()
   toGtkCallback (PureCallback cb) f = void (f cb)
 
+instance ToGtkCallback (PureCallback (IO Bool)) where
+  type CustomGtkCallback (PureCallback (IO Bool)) = IO Bool
+  toGtkCallback (PureCallback (e, r)) f = f e *> return r
+
 instance ToGtkCallback (PureCallback (x -> IO ())) where
   type CustomGtkCallback (PureCallback (x -> IO ())) = x -> IO ()
   toGtkCallback (PureCallback cb) f x = void (f (cb x))
+
+instance ToGtkCallback (PureCallback (x -> IO Bool)) where
+  type CustomGtkCallback (PureCallback (x -> IO Bool)) = x -> IO Bool
+  toGtkCallback (PureCallback cb) f x =
+    let (e, r) = cb x
+    in f e *> return r
 
 instance ToGtkCallback (PureCallback (x -> y -> IO ()))  where
   type CustomGtkCallback (PureCallback (x -> y -> IO ())) = x -> y -> IO ()
