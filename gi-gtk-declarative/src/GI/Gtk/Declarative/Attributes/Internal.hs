@@ -1,6 +1,6 @@
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE LambdaCase             #-}
+{-# LANGUAGE DataKinds  #-}
+{-# LANGUAGE GADTs      #-}
+{-# LANGUAGE LambdaCase #-}
 
 -- | Internal helpers for applying attributes and signal handlers to GTK+
 -- widgets.
@@ -11,14 +11,16 @@ module GI.Gtk.Declarative.Attributes.Internal
   , addClass
   , removeClass
   , addSignalHandler
-  ) where
+  )
+where
 
-import qualified Data.GI.Base.Attributes        as GI
-import qualified GI.GObject           as GI
-import qualified GI.Gtk                         as Gtk
-import           Control.Monad.IO.Class         (MonadIO)
+import           Control.Monad.IO.Class                             (MonadIO)
+import qualified Data.GI.Base.Attributes                            as GI
+import qualified GI.GObject                                         as GI
+import qualified GI.Gtk                                             as Gtk
 
 import           GI.Gtk.Declarative.Attributes
+import           GI.Gtk.Declarative.Attributes.Internal.Conversions
 import           GI.Gtk.Declarative.EventSource
 
 applyAfterCreated :: widget -> Attribute widget event -> IO ()
@@ -63,4 +65,3 @@ addSignalHandler onEvent widget' = \case
     w         <- Gtk.toWidget widget'
     pure (Just (fromCancellation (GI.signalHandlerDisconnect w handlerId)))
   _ -> pure Nothing
-
