@@ -55,11 +55,11 @@ addSignalHandler
   -> m (Maybe Subscription)
 addSignalHandler onEvent widget' = \case
   OnSignalPure signal handler -> do
-    handlerId <- Gtk.on widget' signal (toGtkCallback handler onEvent)
+    handlerId <- Gtk.on widget' signal (toGtkCallback handler widget' onEvent)
     w         <- Gtk.toWidget widget'
     pure (Just (fromCancellation (GI.signalHandlerDisconnect w handlerId)))
   OnSignalImpure signal handler -> do
-    handlerId <- Gtk.on widget' signal (toGtkCallback handler onEvent widget')
+    handlerId <- Gtk.on widget' signal (toGtkCallback handler widget' onEvent)
     w         <- Gtk.toWidget widget'
     pure (Just (fromCancellation (GI.signalHandlerDisconnect w handlerId)))
   _ -> pure Nothing

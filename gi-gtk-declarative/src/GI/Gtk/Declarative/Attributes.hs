@@ -31,11 +31,12 @@ module GI.Gtk.Declarative.Attributes
   )
 where
 
-import           Control.Monad           (void, (>=>))
+import           Control.Monad           (void)
+import           Data.Functor.Identity
 import qualified Data.GI.Base.Attributes as GI
 import qualified Data.GI.Base.Signals    as GI
 import qualified Data.HashSet            as HashSet
-import           Data.Text               (Text)
+import qualified Data.Text               as T
 import           Data.Typeable
 import           GHC.TypeLits            (KnownSymbol, Symbol)
 import qualified GI.Gtk                  as Gtk
@@ -73,7 +74,7 @@ data Attribute widget event where
     :: ( Gtk.GObject widget
        , GI.SignalInfo info
        , gtkCallback ~ GI.HaskellCallbackType info
-       , ToGtkCallback (Callback gtkCallback widget Pure) gtkCallback
+       , ToGtkCallback gtkCallback widget Pure
        )
     => Gtk.SignalProxy widget info
     -> Callback gtkCallback widget Pure event
@@ -84,7 +85,7 @@ data Attribute widget event where
     :: ( Gtk.GObject widget
        , GI.SignalInfo info
        , gtkCallback ~ GI.HaskellCallbackType info
-       , ToGtkCallback (Callback gtkCallback widget Impure) (widget -> gtkCallback)
+       , ToGtkCallback gtkCallback widget Impure
        )
     => Gtk.SignalProxy widget info
     -> Callback gtkCallback widget Impure event
@@ -108,7 +109,7 @@ instance Functor (Attribute widget) where
 -- classes to have any effect, this requires a 'Gtk.CssProvider' with CSS files
 -- loaded, to be added to the GDK screen. You probably want to do this in your
 -- entry point when setting up GTK.
-classes :: Gtk.IsWidget widget => [Text] -> Attribute widget event
+classes :: Gtk.IsWidget widget => [T.Text] -> Attribute widget event
 classes = Classes . HashSet.fromList
 
 -- | Emit events, using a pure callback, by subcribing to the specified
@@ -117,9 +118,9 @@ on
   :: ( Gtk.GObject widget
      , GI.SignalInfo info
      , gtkCallback ~ GI.HaskellCallbackType info
-     , ToGtkCallback (Callback gtkCallback widget Pure) gtkCallback
+     , ToGtkCallback gtkCallback widget Pure
      , ToCallback gtkCallback widget Pure event
-     , userCallback ~ UserCallbackType gtkCallback widget Pure event
+     , userCallback ~ UserCallback gtkCallback widget Pure event
      )
   => Gtk.SignalProxy widget info
   -> userCallback
@@ -132,9 +133,9 @@ onM
   :: ( Gtk.GObject widget
      , GI.SignalInfo info
      , gtkCallback ~ GI.HaskellCallbackType info
-     , ToGtkCallback (Callback gtkCallback widget Impure) (widget -> gtkCallback)
+     , ToGtkCallback gtkCallback widget Impure
      , ToCallback gtkCallback widget Impure event
-     , userCallback ~ UserCallbackType gtkCallback widget Impure event
+     , userCallback ~ UserCallback gtkCallback widget Impure event
      )
   => Gtk.SignalProxy widget info
   -> userCallback -- (Callback gtkCallback widget Impure event)
@@ -150,66 +151,94 @@ afterCreated = AfterCreated
 -- | A 'Callback' can be either 'Pure' or 'Impure'.
 data Purity = Pure | Impure
 
+data CallbackReturn m gtkReturn event where
+  OnlyEvent :: m e -> CallbackReturn m () e
+  ReturnAndEvent :: m (Bool, e) -> CallbackReturn m Bool e
+
+instance Functor m => Functor (CallbackReturn m gtkCallback) where
+  fmap f = \case
+    OnlyEvent e -> OnlyEvent (fmap f e)
+    ReturnAndEvent mr -> ReturnAndEvent (fmap (fmap f) mr)
+
 -- | A callback type that encodes the user callback in a way that we can have
 -- a 'Functor' instance for arbitrary-arity callbacks.
 data Callback gtkCallback widget (purity :: Purity) event where
-  PureEvent :: e -> Callback (IO ()) w Pure e
-  ReturnAndEvent :: Bool -> e -> Callback (IO Bool) w Pure e
-  ImpureEvent :: (w -> IO e) -> Callback (IO ()) w Impure e
+  PureCallback :: CallbackReturn Identity ret e -> Callback (IO ret) w Pure e
+  ImpureCallback :: (w -> CallbackReturn IO ret e) -> Callback (IO ret) w Impure e
   CallbackFunction :: (a -> Callback b w p e) -> Callback (a -> b) w p e
 
 instance Functor (Callback gtkCallback widget purity) where
   fmap f = \case
-    PureEvent e -> PureEvent (f e)
-    ImpureEvent e -> ImpureEvent (fmap (fmap f) e)
-    ReturnAndEvent r e -> ReturnAndEvent r (f e)
+    PureCallback r -> PureCallback (fmap f r)
+    ImpureCallback r -> ImpureCallback (fmap (fmap f) r)
     CallbackFunction cb -> CallbackFunction (\a -> fmap f (cb a))
 
 -- | Convert from a GTK+ callback type to a user callback type (the ones
 -- you'd apply 'on' and 'onM' with) based on the given widget, purity, and event
 -- types.
-type family UserCallbackType gtkCallback widget (purity :: Purity) event where
-  UserCallbackType (IO ()) widget Pure event = event
-  UserCallbackType (IO Bool) widget Pure event = (Bool, event)
-  UserCallbackType (IO ()) widget Impure event = widget -> IO event
-  UserCallbackType (a -> b) widget purity event = a -> UserCallbackType b widget purity event
+type family UserCallback gtkCallback widget (purity :: Purity) event where
+  UserCallback (IO ())   widget Pure   event = event
+  UserCallback (IO Bool) widget Pure   event = (Bool, event)
+  UserCallback (IO ())   widget Impure event = widget -> IO event
+  UserCallback (IO Bool) widget Impure event = widget -> IO (Bool, event)
+  UserCallback (a -> b)  widget purity event = a -> UserCallback b widget purity event
 
--- | Convert from a user callback type to a 'Callback'.
+-- | Internal class for converting user callbacks to 'Callback' values.
 class ToCallback gtkCallback widget purity event where
+  -- | Convert from a user callback type to a 'Callback'.
   toCallback
-    :: UserCallbackType gtkCallback widget purity event
+    :: UserCallback gtkCallback widget purity event
     -> Callback gtkCallback widget purity event
 
 instance ToCallback (IO ()) widget Pure event where
-  toCallback = PureEvent
+  toCallback = PureCallback . OnlyEvent . pure
 
 instance ToCallback (IO Bool) widget Pure event where
-  toCallback = uncurry ReturnAndEvent
+  toCallback = PureCallback . ReturnAndEvent . pure
 
-instance ToCallback  (IO ()) widget Impure event where
-  toCallback = ImpureEvent
+instance ToCallback (IO ()) widget Impure event where
+  toCallback cb = ImpureCallback (OnlyEvent . cb)
+
+instance ToCallback (IO Bool) widget Impure event where
+  toCallback cb = ImpureCallback (ReturnAndEvent . cb)
 
 instance (ToCallback b widget purity event)
   => ToCallback (a -> b) widget purity event where
   toCallback f = CallbackFunction (toCallback . f)
 
+
 -- * GTK+ Callback Conversions
 
--- | Internal class for converting user callbacks to gi-gtk callbacks.
-class ToGtkCallback userCallback gtkCallback where
-  -- | Converts a user callback, i.e. a pure or an impure callback, back to a
-  -- GTK+ callback.
-  toGtkCallback :: userCallback event -> (event -> IO ()) -> gtkCallback
+-- | Internal class for converting 'Callback's to gi-gtk callbacks.
+class ToGtkCallback gtkCallback widget purity where
+  -- | Converts a 'Callback', i.e. the internal encoding of a pure or an impure
+  -- callback, back to a GTK+ callback. Impure callbacks will also receive a
+  -- 'widget' as the last argument.
+  toGtkCallback
+    :: Callback gtkCallback widget purity event
+    -> widget
+    -> (event -> IO ())
+    -> gtkCallback
 
-instance ToGtkCallback (Callback (IO ()) widget Pure) (IO ()) where
-  toGtkCallback (PureEvent e) f = void (f e)
+instance ToGtkCallback (IO ()) widget Pure where
+  toGtkCallback (PureCallback (OnlyEvent e)) _ f = void (f (runIdentity e))
 
-instance ToGtkCallback (Callback (IO ()) widget Impure) (widget -> IO ()) where
-  toGtkCallback (ImpureEvent me) f = me >=> f
+instance ToGtkCallback (IO Bool) widget Pure where
+  toGtkCallback (PureCallback (ReturnAndEvent re)) _ f =
+    let (r, e) = runIdentity re
+    in f e *> return r
 
-instance ToGtkCallback (Callback (IO Bool) widget Pure) (IO Bool) where
-  toGtkCallback (ReturnAndEvent r e) f = f e *> return r
+instance ToGtkCallback (IO ()) widget Impure where
+  toGtkCallback (ImpureCallback r) w f =
+    let OnlyEvent me = r w
+    in me >>= f
 
-instance ToGtkCallback (Callback y widget purity) y
-  => ToGtkCallback (Callback (x -> y) widget purity) (x -> y) where
-  toGtkCallback (CallbackFunction cb) f x = toGtkCallback (cb x) f
+instance ToGtkCallback (IO Bool) widget Impure where
+  toGtkCallback (ImpureCallback r) w f = do
+    let ReturnAndEvent re = r w
+    (r', e) <- re
+    f e
+    return r'
+
+instance ToGtkCallback y widget purity => ToGtkCallback (x -> y) widget purity where
+  toGtkCallback (CallbackFunction cb) f w x = toGtkCallback (cb x) f w
