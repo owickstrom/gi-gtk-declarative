@@ -14,10 +14,11 @@ module GI.Gtk.Declarative.Attributes.Internal
   )
 where
 
-import           Control.Monad.IO.Class                             (MonadIO)
-import qualified Data.GI.Base.Attributes                            as GI
-import qualified GI.GObject                                         as GI
-import qualified GI.Gtk                                             as Gtk
+import           Control.Monad                            ( (>=>) )
+import           Control.Monad.IO.Class                   ( MonadIO )
+import qualified Data.GI.Base.Attributes       as GI
+import qualified GI.GObject                    as GI
+import qualified GI.Gtk                        as Gtk
 
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Attributes.Internal.Conversions
@@ -55,13 +56,16 @@ addSignalHandler
   -> widget
   -> Attribute widget event
   -> m (Maybe Subscription)
-addSignalHandler onEvent widget' = \case
-  OnSignalPure signal handler -> do
-    handlerId <- Gtk.on widget' signal (toGtkCallback handler widget' onEvent)
-    w         <- Gtk.toWidget widget'
+addSignalHandler onEvent widget' = listenToSignal >=> \case
+  Just cb -> setupCancellation cb
+  Nothing -> pure Nothing
+ where
+  listenToSignal = \case
+    OnSignalPure signal callback ->
+      Just <$> Gtk.on widget' signal (toGtkCallback callback widget' onEvent)
+    OnSignalImpure signal callback ->
+      Just <$> Gtk.on widget' signal (toGtkCallback callback widget' onEvent)
+    _ -> pure Nothing
+  setupCancellation handlerId = do
+    w <- Gtk.toWidget widget'
     pure (Just (fromCancellation (GI.signalHandlerDisconnect w handlerId)))
-  OnSignalImpure signal handler -> do
-    handlerId <- Gtk.on widget' signal (toGtkCallback handler widget' onEvent)
-    w         <- Gtk.toWidget widget'
-    pure (Just (fromCancellation (GI.signalHandlerDisconnect w handlerId)))
-  _ -> pure Nothing
