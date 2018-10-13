@@ -11,7 +11,7 @@
 
 -- | Attribute lists on declarative objects, supporting the underlying
 -- attributes from "Data.GI.Base.Attributes", along with CSS class lists, and
--- pure and impure event callbacks.
+-- pure and impure event EventHandlers.
 
 module GI.Gtk.Declarative.Attributes
   ( Attribute(..)
@@ -20,8 +20,8 @@ module GI.Gtk.Declarative.Attributes
   -- * Event Handling
   , on
   , onM
-  -- * Callbacks
-  , Callback(..)
+  -- * EventHandlers
+  , EventHandler(..)
   )
 where
 
@@ -34,7 +34,7 @@ import           GHC.TypeLits                                       (KnownSymbol
                                                                      Symbol)
 import qualified GI.Gtk                                             as Gtk
 
-import           GI.Gtk.Declarative.Attributes.Internal.Callback
+import           GI.Gtk.Declarative.Attributes.Internal.EventHandler
 import           GI.Gtk.Declarative.Attributes.Internal.Conversions
 import           GI.Gtk.Declarative.CSS
 
@@ -63,7 +63,7 @@ data Attribute widget event where
     :: Gtk.IsWidget widget
     => ClassSet
     -> Attribute widget event
-  -- | Emit events using a pure callback. Use the 'on' function, instead of this
+  -- | Emit events using a pure EventHandler. Use the 'on' function, instead of this
   -- constructor directly.
   OnSignalPure
     :: ( Gtk.GObject widget
@@ -72,9 +72,9 @@ data Attribute widget event where
        , ToGtkCallback gtkCallback Pure
        )
     => Gtk.SignalProxy widget info
-    -> Callback gtkCallback widget Pure event
+    -> EventHandler gtkCallback widget Pure event
     -> Attribute widget event
-  -- | Emit events using a pure callback. Use the 'on' function, instead of this
+  -- | Emit events using a pure EventHandler. Use the 'on' function, instead of this
   -- constructor directly.
   OnSignalImpure
     :: ( Gtk.GObject widget
@@ -83,22 +83,22 @@ data Attribute widget event where
        , ToGtkCallback gtkCallback Impure
        )
     => Gtk.SignalProxy widget info
-    -> Callback gtkCallback widget Impure event
+    -> EventHandler gtkCallback widget Impure event
     -> Attribute widget event
-  -- | Provide a callback to modify the widget after it's been created.
+  -- | Provide a EventHandler to modify the widget after it's been created.
   AfterCreated
     :: (widget -> IO ())
     -> Attribute widget event
 
 -- | Attributes have a 'Functor' instance that maps events in all event
--- callbacks.
+-- EventHandlers.
 instance Functor (Attribute widget) where
   fmap f = \case
     attr := value -> attr := value
     Classes cs -> Classes cs
-    OnSignalPure signal cb -> OnSignalPure signal (fmap f cb)
-    OnSignalImpure signal cb -> OnSignalImpure signal (fmap f cb)
-    AfterCreated cb -> AfterCreated cb
+    OnSignalPure signal eh -> OnSignalPure signal (fmap f eh)
+    OnSignalImpure signal eh -> OnSignalImpure signal (fmap f eh)
+    AfterCreated eh -> AfterCreated eh
 
 -- | Define the CSS classes for the underlying widget's style context. For these
 -- classes to have any effect, this requires a 'Gtk.CssProvider' with CSS files
@@ -107,36 +107,36 @@ instance Functor (Attribute widget) where
 classes :: Gtk.IsWidget widget => [T.Text] -> Attribute widget event
 classes = Classes . HashSet.fromList
 
--- | Emit events, using a pure callback, by subcribing to the specified
+-- | Emit events, using a pure EventHandler, by subcribing to the specified
 -- signal.
 on
   :: ( Gtk.GObject widget
      , GI.SignalInfo info
      , gtkCallback ~ GI.HaskellCallbackType info
      , ToGtkCallback gtkCallback Pure
-     , ToCallback gtkCallback widget Pure
-     , userCallback ~ UserCallback gtkCallback widget Pure event
+     , ToEventHandler gtkCallback widget Pure
+     , userEventHandler ~ UserEventHandler gtkCallback widget Pure event
      )
   => Gtk.SignalProxy widget info
-  -> userCallback
+  -> userEventHandler
   -> Attribute widget event
-on signal = OnSignalPure signal . toCallback
+on signal = OnSignalPure signal . toEventHandler
 
--- | Emit events, using an impure callback receiving the 'widget' and returning
+-- | Emit events, using an impure EventHandler receiving the 'widget' and returning
 -- an 'IO' action of 'event', by subcribing to the specified signal.
 onM
   :: ( Gtk.GObject widget
      , GI.SignalInfo info
      , gtkCallback ~ GI.HaskellCallbackType info
      , ToGtkCallback gtkCallback Impure
-     , ToCallback gtkCallback widget Impure
-     , userCallback ~ UserCallback gtkCallback widget Impure event
+     , ToEventHandler gtkCallback widget Impure
+     , userEventHandler ~ UserEventHandler gtkCallback widget Impure event
      )
   => Gtk.SignalProxy widget info
-  -> userCallback
+  -> userEventHandler
   -> Attribute widget event
-onM signal = OnSignalImpure signal . toCallback
+onM signal = OnSignalImpure signal . toEventHandler
 
--- | Provide a callback to modify the widget after it's been created.
+-- | Provide a EventHandler to modify the widget after it's been created.
 afterCreated :: (widget -> IO ()) -> Attribute widget event
 afterCreated = AfterCreated

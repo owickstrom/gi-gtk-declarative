@@ -57,14 +57,14 @@ addSignalHandler
   -> Attribute widget event
   -> m (Maybe Subscription)
 addSignalHandler onEvent widget' = listenToSignal >=> \case
-  Just cb -> setupCancellation cb
+  Just eh -> setupCancellation eh
   Nothing -> pure Nothing
  where
   listenToSignal = \case
-    OnSignalPure signal callback ->
-      Just <$> Gtk.on widget' signal (toGtkCallback callback widget' onEvent)
-    OnSignalImpure signal callback ->
-      Just <$> Gtk.on widget' signal (toGtkCallback callback widget' onEvent)
+    OnSignalPure signal handler ->
+      Just <$> Gtk.on widget' signal (toGtkCallback handler widget' onEvent)
+    OnSignalImpure signal handler ->
+      Just <$> Gtk.on widget' signal (toGtkCallback handler widget' onEvent)
     _ -> pure Nothing
   setupCancellation handlerId = do
     w <- Gtk.toWidget widget'

@@ -24,7 +24,7 @@ library
   exposed-modules:      GI.Gtk.Declarative
                       , GI.Gtk.Declarative.Attributes
                       , GI.Gtk.Declarative.Attributes.Internal
-                      , GI.Gtk.Declarative.Attributes.Internal.Callback
+                      , GI.Gtk.Declarative.Attributes.Internal.EventHandler
                       , GI.Gtk.Declarative.Attributes.Internal.Conversions
                       , GI.Gtk.Declarative.Bin
                       , GI.Gtk.Declarative.Container
