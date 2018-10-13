@@ -21,9 +21,9 @@ import           Data.Functor.Identity
 -- | A 'EventHandler' can be either pure or impure.
 data Purity = Pure | Impure
 
--- | The two supported types of return values in user EventHandlers are encoded
+-- | The two supported types of return values in user event handlers are encoded
 -- by the 'EventHandlerReturn' type; either you can return only an 'event', or if
--- the underlying GTK+ signal handler needs to return a 'Bool', you return
+-- the underlying GTK+ callback needs to return a 'Bool', you return
 -- a @(Bool, event)@ tuple.
 data EventHandlerReturn m gtkReturn event where
   OnlyEvent :: m e -> EventHandlerReturn m () e
@@ -34,8 +34,8 @@ instance Functor m => Functor (EventHandlerReturn m gtkEventHandler) where
     OnlyEvent e -> OnlyEvent (fmap f e)
     ReturnAndEvent mr -> ReturnAndEvent (fmap (fmap f) mr)
 
--- | A EventHandler type that encodes the user EventHandler in a way that we can have
--- a 'Functor' instance for arbitrary-arity EventHandlers.
+-- | Encodes the user event handler in such a way that we can have
+-- a 'Functor' instance for arity-polymorphic event handlers.
 data EventHandler gtkEventHandler widget (purity :: Purity) event where
   PureEventHandler :: EventHandlerReturn Identity ret e -> EventHandler (IO ret) w Pure e
   ImpureEventHandler :: (w -> EventHandlerReturn IO ret e) -> EventHandler (IO ret) w Impure e
@@ -47,19 +47,19 @@ instance Functor (EventHandler gtkEventHandler widget purity) where
     ImpureEventHandler r -> ImpureEventHandler (fmap (fmap f) r)
     EventHandlerFunction eh -> EventHandlerFunction (\a -> fmap f (eh a))
 
--- | Convert from a GTK+ handler type to a user event handler type (the ones
+-- | Convert from a GTK+ callback type to a user event handler type (the ones
 -- you'd apply 'on' and 'onM' with) based on the given widget, purity, and event
 -- types.
-type family UserEventHandler gtkEventHandler widget (purity :: Purity) event where
+type family UserEventHandler gtkCallback widget (purity :: Purity) event where
   UserEventHandler (IO ())   widget Pure   event = event
   UserEventHandler (IO Bool) widget Pure   event = (Bool, event)
   UserEventHandler (IO ())   widget Impure event = widget -> IO event
   UserEventHandler (IO Bool) widget Impure event = widget -> IO (Bool, event)
   UserEventHandler (a -> b)  widget purity event = a -> UserEventHandler b widget purity event
 
--- | Internal class for converting user EventHandlers to 'EventHandler' values.
+-- | Internal class for converting user event handlers to encoded 'EventHandler' values.
 class ToEventHandler gtkEventHandler widget purity where
-  -- | Convert from a user EventHandler type to a 'EventHandler'.
+  -- | Convert from a user event handler to an 'EventHandler'.
   toEventHandler
     :: UserEventHandler gtkEventHandler widget purity event
     -> EventHandler gtkEventHandler widget purity event

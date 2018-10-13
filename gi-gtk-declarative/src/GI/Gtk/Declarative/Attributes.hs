@@ -63,7 +63,7 @@ data Attribute widget event where
     :: Gtk.IsWidget widget
     => ClassSet
     -> Attribute widget event
-  -- | Emit events using a pure EventHandler. Use the 'on' function, instead of this
+  -- | Emit events using a pure event handler. Use the 'on' function, instead of this
   -- constructor directly.
   OnSignalPure
     :: ( Gtk.GObject widget
@@ -74,7 +74,7 @@ data Attribute widget event where
     => Gtk.SignalProxy widget info
     -> EventHandler gtkCallback widget Pure event
     -> Attribute widget event
-  -- | Emit events using a pure EventHandler. Use the 'on' function, instead of this
+  -- | Emit events using a pure event handler. Use the 'on' function, instead of this
   -- constructor directly.
   OnSignalImpure
     :: ( Gtk.GObject widget
@@ -85,13 +85,13 @@ data Attribute widget event where
     => Gtk.SignalProxy widget info
     -> EventHandler gtkCallback widget Impure event
     -> Attribute widget event
-  -- | Provide a EventHandler to modify the widget after it's been created.
+  -- | Provide a callback to modify the widget after it's been created.
   AfterCreated
     :: (widget -> IO ())
     -> Attribute widget event
 
--- | Attributes have a 'Functor' instance that maps events in all event
--- EventHandlers.
+-- | Attributes have a 'Functor' instance that maps events in all
+-- event handler.
 instance Functor (Attribute widget) where
   fmap f = \case
     attr := value -> attr := value
@@ -107,7 +107,7 @@ instance Functor (Attribute widget) where
 classes :: Gtk.IsWidget widget => [T.Text] -> Attribute widget event
 classes = Classes . HashSet.fromList
 
--- | Emit events, using a pure EventHandler, by subcribing to the specified
+-- | Emit events, using a pure event handler, by subcribing to the specified
 -- signal.
 on
   :: ( Gtk.GObject widget
@@ -122,7 +122,7 @@ on
   -> Attribute widget event
 on signal = OnSignalPure signal . toEventHandler
 
--- | Emit events, using an impure EventHandler receiving the 'widget' and returning
+-- | Emit events, using an impure event handler receiving the 'widget' and returning
 -- an 'IO' action of 'event', by subcribing to the specified signal.
 onM
   :: ( Gtk.GObject widget
