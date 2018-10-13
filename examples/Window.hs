@@ -15,7 +15,7 @@ myWindow :: Widget Event
 myWindow =
   bin
     Window
-    [ on #deleteEvent (const (Closed, True))
+    [ on #deleteEvent (const (True, Closed))
     , #defaultWidth := 400, #defaultHeight := 300
     , #title := "Closable Window"
     ]

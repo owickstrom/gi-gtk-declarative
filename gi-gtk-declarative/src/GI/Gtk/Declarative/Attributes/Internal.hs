@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE LambdaCase             #-}
 
 -- | Internal helpers for applying attributes and signal handlers to GTK+

@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE TypeApplications        #-}
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
