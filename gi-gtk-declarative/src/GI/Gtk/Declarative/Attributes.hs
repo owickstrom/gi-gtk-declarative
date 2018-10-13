@@ -69,7 +69,7 @@ data Attribute widget event where
     :: ( Gtk.GObject widget
        , GI.SignalInfo info
        , gtkCallback ~ GI.HaskellCallbackType info
-       , ToGtkCallback gtkCallback widget Pure
+       , ToGtkCallback gtkCallback Pure
        )
     => Gtk.SignalProxy widget info
     -> Callback gtkCallback widget Pure event
@@ -80,7 +80,7 @@ data Attribute widget event where
     :: ( Gtk.GObject widget
        , GI.SignalInfo info
        , gtkCallback ~ GI.HaskellCallbackType info
-       , ToGtkCallback gtkCallback widget Impure
+       , ToGtkCallback gtkCallback Impure
        )
     => Gtk.SignalProxy widget info
     -> Callback gtkCallback widget Impure event
@@ -113,7 +113,7 @@ on
   :: ( Gtk.GObject widget
      , GI.SignalInfo info
      , gtkCallback ~ GI.HaskellCallbackType info
-     , ToGtkCallback gtkCallback widget Pure
+     , ToGtkCallback gtkCallback Pure
      , ToCallback gtkCallback widget Pure
      , userCallback ~ UserCallback gtkCallback widget Pure event
      )
@@ -128,12 +128,12 @@ onM
   :: ( Gtk.GObject widget
      , GI.SignalInfo info
      , gtkCallback ~ GI.HaskellCallbackType info
-     , ToGtkCallback gtkCallback widget Impure
+     , ToGtkCallback gtkCallback Impure
      , ToCallback gtkCallback widget Impure
      , userCallback ~ UserCallback gtkCallback widget Impure event
      )
   => Gtk.SignalProxy widget info
-  -> userCallback -- (Callback gtkCallback widget Impure event)
+  -> userCallback
   -> Attribute widget event
 onM signal = OnSignalImpure signal . toCallback
 
