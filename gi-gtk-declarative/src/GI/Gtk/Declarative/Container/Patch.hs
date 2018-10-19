@@ -107,7 +107,6 @@ instance IsContainer Gtk.ListBox (Bin Gtk.ListBoxRow Widget) where
   replaceChild box _ i old new = do
     Gtk.containerRemove box old
     Gtk.listBoxInsert box new i
-    Gtk.widgetShowAll box
 
 instance IsContainer Gtk.Box BoxChild where
   appendChild box BoxChild {..} widget' =
@@ -117,4 +116,3 @@ instance IsContainer Gtk.Box BoxChild where
     Gtk.containerRemove box old
     appendChild box boxChild' new
     Gtk.boxReorderChild box new i
-    Gtk.widgetShowAll box

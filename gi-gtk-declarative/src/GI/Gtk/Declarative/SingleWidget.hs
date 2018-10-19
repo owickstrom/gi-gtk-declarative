@@ -47,7 +47,7 @@ instance Patchable (SingleWidget widget) where
         mapM_ (addClass sc) props
         mapM_ (applyAfterCreated widget') props
 
-        Gtk.widgetShowAll widget'
+        Gtk.widgetShow widget'
         Gtk.toWidget widget'
   patch (SingleWidget (_    :: Gtk.ManagedPtr w1 -> w1) oldAttributes)
         (SingleWidget (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes) =
@@ -60,8 +60,6 @@ instance Patchable (SingleWidget widget) where
           sc <- Gtk.widgetGetStyleContext widget'
           mapM_ (removeClass sc) oldAttributes
           mapM_ (addClass sc) newAttributes
-
-          Gtk.widgetShowAll w
 
       Nothing -> Replace (create (SingleWidget ctor newAttributes))
 
