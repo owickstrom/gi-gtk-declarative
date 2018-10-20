@@ -48,20 +48,20 @@ instance Patchable (SingleWidget widget) where
         mapM_ (applyAfterCreated widget') props
 
         Gtk.widgetShow widget'
-        Gtk.toWidget widget'
-  patch (SingleWidget (_    :: Gtk.ManagedPtr w1 -> w1) oldAttributes)
+        w <- Gtk.toWidget widget'
+        return (ShadowWidget (ShadowStateTop w sc))
+  patch shadowState
+        (SingleWidget (_    :: Gtk.ManagedPtr w1 -> w1) oldAttributes)
         (SingleWidget (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes) =
-    case eqT @w1 @w2 of
-      Just Refl ->
-        Modify $ \widget' -> do
-          w <- Gtk.unsafeCastTo ctor widget'
-          Gtk.set w (concatMap extractAttrSetOps newAttributes)
-
-          sc <- Gtk.widgetGetStyleContext widget'
-          mapM_ (removeClass sc) oldAttributes
-          mapM_ (addClass sc) newAttributes
-
-      Nothing -> Replace (create (SingleWidget ctor newAttributes))
+    case (shadowState, eqT @w1 @w2) of
+      (ShadowWidget top, Just Refl) -> Modify $ do
+        w <- Gtk.unsafeCastTo ctor (shadowStateWidget top)
+        Gtk.set w (concatMap extractAttrSetOps newAttributes)
+        let sc = shadowStateStyleContext top
+        mapM_ (removeClass sc) oldAttributes
+        mapM_ (addClass sc) newAttributes
+        return (ShadowWidget top)
+      (_, _) -> Replace (create (SingleWidget ctor newAttributes))
 
 instance EventSource (SingleWidget widget) where
   subscribe (SingleWidget ctor props) widget' cb = do

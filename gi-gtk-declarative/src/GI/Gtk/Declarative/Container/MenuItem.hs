@@ -67,13 +67,15 @@ subMenu ::
   -> MarkupOf MenuItem event ()
 subMenu label = single . SubMenu label . container Gtk.Menu []
 
-newSubMenuItem ::
-     Gtk.IsWidget w => Text -> IO w -> IO Gtk.Widget
+newSubMenuItem :: Text -> IO ShadowState -> IO ShadowState
 newSubMenuItem label createSubMenu = do
   menuItem' <- Gtk.menuItemNewWithLabel label
-  subMenuWidget <- Gtk.unsafeCastTo Gtk.Menu =<< createSubMenu
+  sc <- Gtk.widgetGetStyleContext menuItem'
+  subMenuState <- createSubMenu
+  subMenuWidget <- Gtk.unsafeCastTo Gtk.Menu (shadowStateTopWidget subMenuState)
   Gtk.menuItemSetSubmenu menuItem' (Just subMenuWidget)
-  Gtk.toWidget menuItem'
+  w <- Gtk.toWidget menuItem'
+  return (ShadowBin (ShadowStateTop w sc) subMenuState)
 
 instance Patchable MenuItem where
   create =
@@ -81,24 +83,21 @@ instance Patchable MenuItem where
       MenuItem item -> create item
       SubMenu label subMenu' ->
         newSubMenuItem label (create subMenu')
-  patch (MenuItem (c1 :: Bin i1 Widget e1)) (MenuItem (c2 :: Bin i2 Widget e2)) =
+  patch state (MenuItem (c1 :: Bin i1 Widget e1)) (MenuItem (c2 :: Bin i2 Widget e2)) =
     case eqT @i1 @i2 of
-      Just Refl -> patch c1 c2
+      Just Refl -> patch state c1 c2
       Nothing   -> Replace (create c2)
-  patch (SubMenu l1 c1) (SubMenu l2 c2)
+  patch (ShadowBin top childState) (SubMenu l1 c1) (SubMenu l2 c2)
     -- TODO: case for l1 /= l2
     | l1 == l2 =
-      case patch c1 c2 of
+      case patch childState c1 c2 of
         Modify modify ->
-          Modify $ \w -> do
-            subMenuItem <- Gtk.unsafeCastTo Gtk.MenuItem w
-            Just subMenu' <- Gtk.menuItemGetSubmenu subMenuItem
-            modify subMenu'
+          Modify (ShadowBin top <$> modify)
         Replace newSubMenu ->
           Replace (newSubMenuItem l2 newSubMenu)
         Keep -> Keep
 
-  patch _ b2 = Replace (create b2)
+  patch _ _ b2 = Replace (create b2)
 
 instance EventSource MenuItem where
   subscribe (MenuItem item) widget' cb = subscribe item widget' cb

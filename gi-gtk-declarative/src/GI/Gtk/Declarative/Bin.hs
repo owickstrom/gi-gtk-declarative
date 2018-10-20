@@ -103,28 +103,31 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
     sc <- Gtk.widgetGetStyleContext widget'
     mapM_ (addClass sc) props
     mapM_ (applyAfterCreated widget') props
+    childState <- create child
+    Gtk.containerAdd widget' (shadowStateWidget (shadowStateTop childState))
+    w <- Gtk.toWidget widget'
+    return (ShadowBin (ShadowStateTop w sc) childState)
 
-    Gtk.containerAdd widget' =<< create child
-    Gtk.toWidget widget'
+  patch (ShadowBin top child) (Bin _ oldAttributes oldChild) (Bin ctor newAttributes newChild) =
+    Modify $ do
 
-  patch (Bin _ oldAttributes oldChild) (Bin ctor newAttributes newChild) =
-    Modify $ \widget' -> do
-
-      binWidget <- Gtk.unsafeCastTo ctor widget'
+      binWidget <- Gtk.unsafeCastTo ctor (shadowStateWidget top)
       Gtk.set binWidget (concatMap extractAttrSetOps newAttributes)
-
-      sc <- Gtk.widgetGetStyleContext binWidget
+      let sc = shadowStateStyleContext top
       mapM_ (removeClass sc) oldAttributes
       mapM_ (addClass sc) newAttributes
 
       childWidget <- getChild binWidget
 
-      case patch oldChild newChild of
-        Modify modify -> modify childWidget
+      case patch child oldChild newChild of
+        Modify modify -> ShadowBin top <$> modify
         Replace createNew -> do
           Gtk.containerRemove binWidget childWidget
-          Gtk.containerAdd binWidget =<< createNew
-        Keep -> return ()
+          childState <- createNew
+          Gtk.containerAdd binWidget (shadowStateWidget (shadowStateTop childState))
+          return (ShadowBin top childState)
+        Keep -> return (ShadowBin top child)
+  patch _ _ new = Replace (create new)
 
 --
 -- EventSource

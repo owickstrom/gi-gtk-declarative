@@ -19,7 +19,7 @@ module GI.Gtk.Declarative.Container
   )
 where
 
-import           Control.Monad                      (forM_)
+import           Control.Monad                      (forM)
 import           Data.Maybe
 import           Data.Typeable
 import qualified GI.Gtk                             as Gtk
@@ -86,22 +86,27 @@ instance (Patchable child, IsContainer container child) =>
     widget' <- Gtk.new ctor attrOps
     sc <- Gtk.widgetGetStyleContext widget'
     mapM_ (addClass sc) props
-    forM_ (unChildren children) $ \child -> do
-      childWidget <- create child
-      appendChild widget' child childWidget
+    childStates <-
+      forM (unChildren children) $ \child -> do
+        childState <- create child
+        appendChild widget' child (shadowStateTopWidget childState)
+        return childState
     mapM_ (applyAfterCreated widget') props
-    Gtk.toWidget widget'
-  patch (Container _ oldAttributes oldChildren) (Container ctor newAttributes newChildren) =
-    Modify $ \widget' -> do
-      containerWidget <- Gtk.unsafeCastTo ctor widget'
+    w <- Gtk.toWidget widget'
+    return (ShadowContainer (ShadowStateTop w sc) childStates)
+  patch (ShadowContainer top childStates) (Container _ oldAttributes oldChildren) (Container ctor newAttributes newChildren) =
+    Modify $ do
+      containerWidget <- Gtk.unsafeCastTo ctor (shadowStateWidget top)
       Gtk.set containerWidget (concatMap extractAttrSetOps newAttributes)
-      sc <- Gtk.widgetGetStyleContext widget'
+      let sc = shadowStateStyleContext top
       mapM_ (removeClass sc) oldAttributes
       mapM_ (addClass sc) newAttributes
       patchInContainer
+        (ShadowContainer top childStates)
         containerWidget
         (unChildren oldChildren)
         (unChildren newChildren)
+  patch _ _ new = Replace (create new)
 
 --
 -- EventSource

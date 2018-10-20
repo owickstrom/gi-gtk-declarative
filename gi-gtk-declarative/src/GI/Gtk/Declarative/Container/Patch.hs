@@ -14,9 +14,13 @@
 {-# LANGUAGE TypeOperators          #-}
 
 -- | This module implements the patch algorithm for containers.
-module GI.Gtk.Declarative.Container.Patch (IsContainer(..), patchInContainer) where
+module GI.Gtk.Declarative.Container.Patch
+  ( IsContainer(..)
+  , patchInContainer
+  )
+where
 
-import           Control.Monad                    (forM_)
+import           Control.Monad                    (forM)
 import           Data.Int                         (Int32)
 import           Data.List                        (zip4)
 import qualified GI.Gtk                           as Gtk
@@ -54,50 +58,76 @@ patchInContainer
      , Patchable child
      , IsContainer container child
      )
-  => container
+  => ShadowState
+  -> container
   -> [child e1]
   -> [child e2]
-  -> IO ()
-patchInContainer container os' ns' = do
-  cs <- Gtk.containerGetChildren container
-  let maxLength = maximum [length cs, length os', length ns']
+  -> IO ShadowState
+patchInContainer (ShadowContainer top children) container os' ns' = do
+  let maxLength = maximum [length children, length os', length ns']
       indices   = [0 .. pred (fromIntegral maxLength)]
-  forM_ (zip4 indices (padMaybes cs) (padMaybes os') (padMaybes ns')) $ \case
+  newChildren <-
+    forM (zip4 indices (padMaybes children) (padMaybes os') (padMaybes ns'))
+      $ \case
 
-    -- In case we have a corresponding old and new declarative widget, we patch
-    -- the GTK widget.
-    (i, Just w, Just old, Just new) -> case patch old new of
-      Modify  modify       -> modify w
-      Replace createWidget -> replaceChild container new i w =<< createWidget
-      Keep                 -> return ()
+          -- In case we have a corresponding old and new declarative widget, we patch
+          -- the GTK widget.
+          (i, Just child, Just old, Just new) -> case patch child old new of
+            Modify  modify       -> modify >> return [child]
+            Replace createWidget -> do
+              newChild <- createWidget
+              replaceChild container
+                           new
+                           i
+                           (shadowStateTopWidget child)
+                           (shadowStateTopWidget newChild)
+              return [newChild]
+            Keep -> return [child]
 
-    -- When there is a new declarative widget, but there already exists a GTK
-    -- widget in the corresponding place, we need to replace the GTK widget with
-    -- one created from the declarative widget.
-    (i, Just w, Nothing, Just new) ->
-      replaceChild container new i w =<< create new
+          -- When there is a new declarative widget, but there already exists a GTK
+          -- widget in the corresponding place, we need to replace the GTK widget with
+          -- one created from the declarative widget.
+          (i, Just child, Nothing, Just new) -> do
+            newChild <- create new
+            replaceChild container
+                         new
+                         i
+                         (shadowStateTopWidget child)
+                         (shadowStateTopWidget newChild)
+            return [newChild]
 
-    -- When there is a new declarative widget, or one that lacks a corresponding
-    -- GTK widget, create and add it.
-    (_i, Nothing, _      , Just n ) -> create n >>= appendChild container n
+          -- When there is a new declarative widget, or one that lacks a corresponding
+          -- GTK widget, create and add it.
+          (_i, Nothing, _, Just n) -> do
+            newChild <- create n
+            appendChild container n (shadowStateTopWidget newChild)
+            return [newChild]
 
-    -- When an declarative widget has been removed, remove the GTK widget from
-    -- the container.
-    (_i, Just w , Just _ , Nothing) -> Gtk.containerRemove container w
+          -- When a declarative widget has been removed, remove the GTK widget from
+          -- the container.
+          (_i, Just child, Just _, Nothing) -> do
+            Gtk.containerRemove container (shadowStateTopWidget child)
+            return []
 
-    -- When there are more old declarative widgets than GTK widgets, we can
-    -- safely ignore the old declarative widgets.
-    (_i, Nothing, Just _ , Nothing) -> return ()
+          -- When there are more old declarative widgets than GTK widgets, we can
+          -- safely ignore the old declarative widgets.
+          (_i, Nothing   , Just _ , Nothing) -> return []
 
-    -- But, when there are stray GTK widgets without corresponding
-    -- declarative widgets, something has gone wrong, and we clean that up by
-    -- removing the GTK widgets.
-    (_i, Just w , Nothing, Nothing) -> Gtk.containerRemove container w
+          -- But, when there are stray GTK widgets without corresponding
+          -- declarative widgets, something has gone wrong, and we clean that up by
+          -- removing the GTK widgets.
+          (_i, Just child, Nothing, Nothing) -> do
+            Gtk.containerRemove container (shadowStateTopWidget child)
+            -- TODO: destroy 'child' somehow?
+            return []
 
-    -- No more GTK widgets or declarative widgets, we are done.
-    (_i, Nothing, Nothing, Nothing) -> return ()
+          -- No more GTK widgets or declarative widgets, we are done.
+          (_i, Nothing, Nothing, Nothing) -> return []
 
   Gtk.widgetQueueResize container
+  return (ShadowContainer top (mconcat newChildren))
+patchInContainer _ _ _ _ =
+  error "Cannot patch container with non-container shadow state."
 
 padMaybes :: [a] -> [Maybe a]
 padMaybes xs = map Just xs ++ repeat Nothing
@@ -111,7 +141,6 @@ instance IsContainer Gtk.ListBox (Bin Gtk.ListBoxRow Widget) where
 instance IsContainer Gtk.Box BoxChild where
   appendChild box BoxChild {..} widget' =
     Gtk.boxPackStart box widget' expand fill padding
-
   replaceChild box boxChild' i old new = do
     Gtk.containerRemove box old
     appendChild box boxChild' new

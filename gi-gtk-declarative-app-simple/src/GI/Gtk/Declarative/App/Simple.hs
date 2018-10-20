@@ -14,11 +14,11 @@ where
 import           Control.Concurrent
 import           Control.Monad
 import           Data.Int
-import           Data.Text                      (Text)
+import           Data.Text                      ( Text )
 import           Data.Typeable
-import qualified GI.Gdk                         as Gdk
-import qualified GI.GLib.Constants              as GLib
-import qualified GI.Gtk                         as Gtk
+import qualified GI.Gdk                        as Gdk
+import qualified GI.GLib.Constants             as GLib
+import qualified GI.Gtk                        as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.EventSource
 import           Pipes
@@ -55,25 +55,32 @@ data Transition state event =
 runInWindow :: Typeable event => Gtk.Window -> App state event -> IO ()
 runInWindow window App {..} = do
   let firstMarkup = view initialState
-  nextEvent    <- newEmptyMVar
-  subscription <- runUI $ do
-    widget' <- Gtk.toWidget =<< create firstMarkup
+  nextEvent                  <- newEmptyMVar
+  (firstState, subscription) <- runUI $ do
+    firstState <- create firstMarkup
+    widget'    <- Gtk.toWidget (shadowStateTopWidget firstState)
     Gtk.containerAdd window widget'
     Gtk.widgetShowAll window
-    subscribe firstMarkup widget' (publishEvent nextEvent)
-  void . forkIO $
-    runEffect (mergeProducers inputs >-> publishInputEvents nextEvent)
-  loop firstMarkup nextEvent subscription initialState
+    sub <- subscribe firstMarkup widget' (publishEvent nextEvent)
+    return (firstState, sub)
+  void . forkIO $ runEffect
+    (mergeProducers inputs >-> publishInputEvents nextEvent)
+  loop firstState firstMarkup nextEvent subscription initialState
  where
-  loop oldMarkup nextEvent oldSubscription oldModel = do
+  loop oldState oldMarkup nextEvent oldSubscription oldModel = do
     event <- takeMVar nextEvent
     case update oldModel event of
       Transition newModel action -> do
-        let newMarkup          = view newModel
+        let newMarkup = view newModel
 
-        sub <- runUI (patchContainer window oldMarkup newMarkup nextEvent) >>= \case
-          Just newSubscription -> cancel oldSubscription *> pure newSubscription
-          Nothing              -> pure oldSubscription
+        (newState, sub) <-
+          runUI (patchContainer window oldState oldMarkup newMarkup nextEvent)
+            >>= \case
+                  (newState, Just newSubscription) -> do
+                    cancel oldSubscription
+                    pure (newState, newSubscription)
+                  (newState, Nothing) ->
+                    pure (newState, oldSubscription)
 
         -- Make sure the MVar is empty.
         void (tryTakeMVar nextEvent)
@@ -83,9 +90,8 @@ runInWindow window App {..} = do
         void . forkIO $ action >>= maybe (return ()) (putMVar nextEvent)
 
         -- Finally, we loop.
-        loop newMarkup nextEvent sub newModel
-      Exit ->
-        return ()
+        loop newState newMarkup nextEvent sub newModel
+      Exit -> return ()
 
 -- | Initialize GTK, set up a new window, and run the application in it. This
 -- is a convenience function. If you need more flexibility, you should use
@@ -104,34 +110,36 @@ run title size app = do
   case size of
     Just (width, height) -> Gtk.windowResize window width height
     Nothing              -> return ()
-  void . forkIO $ do
-    runInWindow window app
-    -- In case the run loop exits, quit the main GTK loop.
-    Gtk.mainQuit
+  void
+    . forkIO
+    $ do
+        runInWindow window app
+        -- In case the run loop exits, quit the main GTK loop.
+        Gtk.mainQuit
   Gtk.main
 
 patchContainer
   :: Typeable event
   => Gtk.Window
+  -> ShadowState
   -> Widget event
   -> Widget event
   -> MVar event
-  -> IO (Maybe Subscription)
-patchContainer w o1 o2 nextEvent = case patch o1 o2 of
-  Modify f -> Gtk.containerGetChildren w >>= \case
-    []      -> return Nothing
-    (c : _) -> do
-      widget' <- Gtk.toWidget c
-      f widget'
-      Gtk.widgetShowAll w
-      Just <$> subscribe o2 widget' (publishEvent nextEvent)
+  -> IO (ShadowState, Maybe Subscription)
+patchContainer w state o1 o2 nextEvent = case patch state o1 o2 of
+  Modify ma -> do
+    newState <- ma
+    -- Gtk.widgetShowAll w
+    sub <- subscribe o2 (shadowStateTopWidget newState) (publishEvent nextEvent)
+    return (newState, Just sub)
   Replace createNew -> do
     Gtk.containerForall w (Gtk.containerRemove w)
-    newWidget <- createNew
-    Gtk.containerAdd w newWidget
+    newState <- createNew
+    Gtk.containerAdd w (shadowStateTopWidget newState)
     Gtk.widgetShowAll w
-    Just <$> subscribe o2 newWidget (publishEvent nextEvent)
-  Keep -> return Nothing
+    sub <- subscribe o2 (shadowStateTopWidget newState) (publishEvent nextEvent)
+    return (newState, Just sub)
+  Keep -> return (state, Nothing)
 
 publishEvent :: MVar event -> event -> IO ()
 publishEvent mvar = void . tryPutMVar mvar
@@ -148,8 +156,7 @@ mergeProducers producers = do
     performGC
 
 publishInputEvents :: MVar event -> Consumer event IO ()
-publishInputEvents nextEvent =
-  forever (await >>= liftIO . (putMVar nextEvent))
+publishInputEvents nextEvent = forever (await >>= liftIO . (putMVar nextEvent))
 
 runUI :: IO a -> IO a
 runUI f = do
