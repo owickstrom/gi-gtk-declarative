@@ -29,6 +29,7 @@ import           GI.Gtk.Declarative.Bin
 import           GI.Gtk.Declarative.Container.Box
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
+import           GI.Gtk.Declarative.State
 
 
 -- | Describes supported GTK+ containers and their specialized APIs for
@@ -58,12 +59,12 @@ patchInContainer
      , Patchable child
      , IsContainer container child
      )
-  => ShadowState
+  => StateTree
   -> container
   -> [child e1]
   -> [child e2]
-  -> IO ShadowState
-patchInContainer (ShadowContainer top children) container os' ns' = do
+  -> IO StateTree
+patchInContainer (StateTreeContainer top children) container os' ns' = do
   let maxLength = maximum [length children, length os', length ns']
       indices   = [0 .. pred (fromIntegral maxLength)]
   newChildren <-
@@ -79,8 +80,8 @@ patchInContainer (ShadowContainer top children) container os' ns' = do
               replaceChild container
                            new
                            i
-                           (shadowStateTopWidget child)
-                           (shadowStateTopWidget newChild)
+                           (stateTreeNodeWidget child)
+                           (stateTreeNodeWidget newChild)
               return [newChild]
             Keep -> return [child]
 
@@ -92,21 +93,21 @@ patchInContainer (ShadowContainer top children) container os' ns' = do
             replaceChild container
                          new
                          i
-                         (shadowStateTopWidget child)
-                         (shadowStateTopWidget newChild)
+                         (stateTreeNodeWidget child)
+                         (stateTreeNodeWidget newChild)
             return [newChild]
 
           -- When there is a new declarative widget, or one that lacks a corresponding
           -- GTK widget, create and add it.
           (_i, Nothing, _, Just n) -> do
             newChild <- create n
-            appendChild container n (shadowStateTopWidget newChild)
+            appendChild container n (stateTreeNodeWidget newChild)
             return [newChild]
 
           -- When a declarative widget has been removed, remove the GTK widget from
           -- the container.
           (_i, Just child, Just _, Nothing) -> do
-            Gtk.containerRemove container (shadowStateTopWidget child)
+            Gtk.containerRemove container (stateTreeNodeWidget child)
             return []
 
           -- When there are more old declarative widgets than GTK widgets, we can
@@ -117,7 +118,7 @@ patchInContainer (ShadowContainer top children) container os' ns' = do
           -- declarative widgets, something has gone wrong, and we clean that up by
           -- removing the GTK widgets.
           (_i, Just child, Nothing, Nothing) -> do
-            Gtk.containerRemove container (shadowStateTopWidget child)
+            Gtk.containerRemove container (stateTreeNodeWidget child)
             -- TODO: destroy 'child' somehow?
             return []
 
@@ -125,7 +126,7 @@ patchInContainer (ShadowContainer top children) container os' ns' = do
           (_i, Nothing, Nothing, Nothing) -> return []
 
   Gtk.widgetQueueResize container
-  return (ShadowContainer top (mconcat newChildren))
+  return (StateTreeContainer top (mconcat newChildren))
 patchInContainer _ _ _ _ =
   error "Cannot patch container with non-container shadow state."
 

@@ -25,6 +25,7 @@ import           GI.Gtk.Declarative.Attributes.Internal
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
+import           GI.Gtk.Declarative.State
 
 -- | Declarative version of a /leaf/ widget, i.e. a widget without any children.
 data SingleWidget widget event where
@@ -49,18 +50,18 @@ instance Patchable (SingleWidget widget) where
 
         Gtk.widgetShow widget'
         w <- Gtk.toWidget widget'
-        return (ShadowWidget (ShadowStateTop w sc))
-  patch shadowState
+        return (StateTreeWidget (StateTreeNode w sc))
+  patch stateTree
         (SingleWidget (_    :: Gtk.ManagedPtr w1 -> w1) oldAttributes)
         (SingleWidget (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes) =
-    case (shadowState, eqT @w1 @w2) of
-      (ShadowWidget top, Just Refl) -> Modify $ do
-        w <- Gtk.unsafeCastTo ctor (shadowStateWidget top)
+    case (stateTree, eqT @w1 @w2) of
+      (StateTreeWidget top, Just Refl) -> Modify $ do
+        w <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
         Gtk.set w (concatMap extractAttrSetOps newAttributes)
-        let sc = shadowStateStyleContext top
+        let sc = stateTreeStyleContext top
         mapM_ (removeClass sc) oldAttributes
         mapM_ (addClass sc) newAttributes
-        return (ShadowWidget top)
+        return (StateTreeWidget top)
       (_, _) -> Replace (create (SingleWidget ctor newAttributes))
 
 instance EventSource (SingleWidget widget) where

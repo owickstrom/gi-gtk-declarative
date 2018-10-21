@@ -1,0 +1,786 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="1200" height="454" onload="init(evt)" viewBox="0 0 1200 454" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
+<!-- NOTES:  -->
+<defs >
+	<linearGradient id="background" y1="0" y2="1" x1="0" x2="0" >
+		<stop stop-color="#eeeeee" offset="5%" />
+		<stop stop-color="#eeeeb0" offset="95%" />
+	</linearGradient>
+</defs>
+<style type="text/css">
+	.func_g:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+	var details, searchbtn, matchedtxt, svg;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+	}
+
+	// mouse-over for info
+	function s(node) {		// show
+		info = g_to_text(node);
+		details.nodeValue = "Function: " + info;
+	}
+	function c() {			// clear
+		details.nodeValue = ' ';
+	}
+
+	// ctrl-F for search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+	})
+
+	// functions
+	function find_child(parent, name, attr) {
+		var children = parent.childNodes;
+		for (var i=0; i<children.length;i++) {
+			if (children[i].tagName == name)
+				return (attr != undefined) ? children[i].attributes[attr].value : children[i];
+		}
+		return;
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_"+attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_"+attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_"+attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes["width"].value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes["x"].value = parseFloat(r.attributes["x"].value) +3;
+
+		// Smaller than this size won't fit anything
+		if (w < 2*12*0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		// Fit in full text width
+		if (/^ *$/.test(txt) || t.getSubStringLength(0, txt.length) < w)
+			return;
+
+		for (var x=txt.length-2; x>0; x--) {
+			if (t.getSubStringLength(0, x+2) <= w) {
+				t.textContent = txt.substring(0,x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for(var i=0, c=e.childNodes; i<c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes["x"] != undefined) {
+				orig_save(e, "x");
+				e.attributes["x"].value = (parseFloat(e.attributes["x"].value) - x - 10) * ratio + 10;
+				if(e.tagName == "text") e.attributes["x"].value = find_child(e.parentNode, "rect", "x") + 3;
+			}
+			if (e.attributes["width"] != undefined) {
+				orig_save(e, "width");
+				e.attributes["width"].value = parseFloat(e.attributes["width"].value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for(var i=0, c=e.childNodes; i<c.length; i++) {
+			zoom_child(c[i], x-10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes["x"] != undefined) {
+				orig_save(e, "x");
+				e.attributes["x"].value = 10;
+			}
+			if (e.attributes["width"] != undefined) {
+				orig_save(e, "width");
+				e.attributes["width"].value = parseInt(svg.width.baseVal.value) - (10*2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for(var i=0, c=e.childNodes; i<c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr["width"].value);
+		var xmin = parseFloat(attr["x"].value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr["y"].value);
+		var ratio = (svg.width.baseVal.value - 2*10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		var unzoombtn = document.getElementById("unzoom");
+		unzoombtn.style["opacity"] = "1.0";
+
+		var el = document.getElementsByTagName("g");
+		for(var i=0;i<el.length;i++){
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a["x"].value);
+			var ew = parseFloat(a["width"].value);
+			// Is it an ancestor
+			if (0 == 0) {
+				var upstack = parseFloat(a["y"].value) > ymin;
+			} else {
+				var upstack = parseFloat(a["y"].value) < ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex <= xmin && (ex+ew+fudge) >= xmax) {
+					e.style["opacity"] = "0.5";
+					zoom_parent(e);
+					e.onclick = function(e){unzoom(); zoom(this);};
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.style["display"] = "none";
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex < xmin || ex + fudge >= xmax) {
+					e.style["display"] = "none";
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					e.onclick = function(e){zoom(this);};
+					update_text(e);
+				}
+			}
+		}
+	}
+	function unzoom() {
+		var unzoombtn = document.getElementById("unzoom");
+		unzoombtn.style["opacity"] = "0.0";
+
+		var el = document.getElementsByTagName("g");
+		for(i=0;i<el.length;i++) {
+			el[i].style["display"] = "block";
+			el[i].style["opacity"] = "1";
+			zoom_reset(el[i]);
+			update_text(el[i]);
+		}
+	}
+
+	// search
+	function reset_search() {
+		var el = document.getElementsByTagName("rect");
+		for (var i=0; i < el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)", "");
+			if (term != null) {
+				search(term)
+			}
+		} else {
+			reset_search();
+			searching = 0;
+			searchbtn.style["opacity"] = "0.1";
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.style["opacity"] = "0.0";
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		var re = new RegExp(term);
+		var el = document.getElementsByTagName("g");
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			if (e.attributes["class"].value != "func_g")
+				continue;
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (rect == null) {
+				// the rect might be wrapped in an anchor
+				// if nameattr href is being used
+				if (rect = find_child(e, "a")) {
+				    rect = find_child(r, "rect");
+				}
+			}
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes["width"].value);
+			if (w > maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes["x"].value);
+				orig_save(rect, "fill");
+				rect.attributes["fill"].value =
+				    "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w > matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+
+		searchbtn.style["opacity"] = "1.0";
+		searchbtn.firstChild.nodeValue = "Reset Search"
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x >= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.style["opacity"] = "1.0";
+		pct = 100 * count / maxwidth;
+		if (pct == 100)
+			pct = "100"
+		else
+			pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+	function searchover(e) {
+		searchbtn.style["opacity"] = "1.0";
+	}
+	function searchout(e) {
+		if (searching) {
+			searchbtn.style["opacity"] = "1.0";
+		} else {
+			searchbtn.style["opacity"] = "0.1";
+		}
+	}
+]]>
+</script>
+<rect x="0.0" y="0" width="1200.0" height="454.0" fill="url(#background)"  />
+<text text-anchor="middle" x="600.00" y="24" font-size="17" font-family="Verdana" fill="rgb(0,0,0)"  >Flame Graph</text>
+<text text-anchor="" x="10.00" y="437" font-size="12" font-family="Verdana" fill="rgb(0,0,0)" id="details" > </text>
+<text text-anchor="" x="10.00" y="24" font-size="12" font-family="Verdana" fill="rgb(0,0,0)" id="unzoom" onclick="unzoom()" style="opacity:0.0;cursor:pointer" >Reset Zoom</text>
+<text text-anchor="" x="1090.00" y="24" font-size="12" font-family="Verdana" fill="rgb(0,0,0)" id="search" onmouseover="searchover()" onmouseout="searchout()" onclick="search_prompt()" style="opacity:0.1;cursor:pointer" >Search</text>
+<text text-anchor="" x="1090.00" y="437" font-size="12" font-family="Verdana" fill="rgb(0,0,0)" id="matched" > </text>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.ManagedPtr.newManagedPtr (28 samples, 2.80%)</title><rect x="1138.1" y="101" width="33.0" height="15.0" fill="rgb(238,151,38)" rx="2" ry="2" />
+<text text-anchor="" x="1141.08" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Da..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.olsRegress (111 samples, 11.10%)</title><rect x="67.8" y="165" width="131.0" height="15.0" fill="rgb(253,134,46)" rx="2" ry="2" />
+<text text-anchor="" x="70.82" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Statistics.Regre..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Aeson.Types.ToJSON.genericToJSON (1 samples, 0.10%)</title><rect x="1173.5" y="229" width="1.2" height="15.0" fill="rgb(237,5,47)" rx="2" ry="2" />
+<text text-anchor="" x="1176.48" y="239.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Math.RootFinding.ridders.go (1 samples, 0.10%)</title><rect x="208.2" y="149" width="1.2" height="15.0" fill="rgb(228,60,53)" rx="2" ry="2" />
+<text text-anchor="" x="211.24" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Criterion.Monad.withConfig (954 samples, 95.40%)</title><rect x="48.9" y="277" width="1125.8" height="15.0" fill="rgb(225,84,25)" rx="2" ry="2" />
+<text text-anchor="" x="51.94" y="287.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Criterion.Monad.withConfig</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>GI.Gtk.Declarative.Container.Box.child (9 samples, 0.90%)</title><rect x="1046.0" y="149" width="10.7" height="15.0" fill="rgb(247,15,21)" rx="2" ry="2" />
+<text text-anchor="" x="1049.04" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>MAIN.MAIN (988 samples, 98.80%)</title><rect x="10.0" y="389" width="1165.8" height="15.0" fill="rgb(206,38,17)" rx="2" ry="2" />
+<text text-anchor="" x="13.00" y="399.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >MAIN.MAIN</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.rSquare.p (35 samples, 3.50%)</title><rect x="154.0" y="101" width="41.3" height="15.0" fill="rgb(243,51,19)" rx="2" ry="2" />
+<text text-anchor="" x="156.96" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Sta..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.Algorithms.qr.\ (10 samples, 1.00%)</title><rect x="99.7" y="85" width="11.8" height="15.0" fill="rgb(244,37,24)" rx="2" ry="2" />
+<text text-anchor="" x="102.68" y="95.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.Attributes.set (3 samples, 0.30%)</title><rect x="272.0" y="165" width="3.5" height="15.0" fill="rgb(229,42,43)" rx="2" ry="2" />
+<text text-anchor="" x="274.96" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.ManagedPtr.withManagedPtr (175 samples, 17.50%)</title><rect x="276.7" y="149" width="206.5" height="15.0" fill="rgb(229,147,11)" rx="2" ry="2" />
+<text text-anchor="" x="279.68" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.GI.Base.ManagedPtr.wit..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.rSquare.p.\ (9 samples, 0.90%)</title><rect x="184.6" y="85" width="10.7" height="15.0" fill="rgb(233,79,33)" rx="2" ry="2" />
+<text text-anchor="" x="187.64" y="95.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>UNKNOWN (12 samples, 1.20%)</title><rect x="1175.8" y="389" width="14.2" height="15.0" fill="rgb(238,74,36)" rx="2" ry="2" />
+<text text-anchor="" x="1178.84" y="399.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Math.RootFinding.ridders.go.fn (1 samples, 0.10%)</title><rect x="208.2" y="133" width="1.2" height="15.0" fill="rgb(218,167,25)" rx="2" ry="2" />
+<text text-anchor="" x="211.24" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.bootstrapRegress.est.w (1 samples, 0.10%)</title><rect x="202.3" y="149" width="1.2" height="15.0" fill="rgb(242,88,23)" rx="2" ry="2" />
+<text text-anchor="" x="205.34" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.Algorithms.qr (10 samples, 1.00%)</title><rect x="99.7" y="101" width="11.8" height="15.0" fill="rgb(214,13,52)" rx="2" ry="2" />
+<text text-anchor="" x="102.68" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Math.RootFinding.ridders (1 samples, 0.10%)</title><rect x="208.2" y="165" width="1.2" height="15.0" fill="rgb(210,174,19)" rx="2" ry="2" />
+<text text-anchor="" x="211.24" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.norm (2 samples, 0.20%)</title><rect x="109.1" y="53" width="2.4" height="15.0" fill="rgb(214,203,24)" rx="2" ry="2" />
+<text text-anchor="" x="112.12" y="63.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>GI.GLib.Callbacks.wrap_SourceFunc (35 samples, 3.50%)</title><rect x="572.9" y="149" width="41.3" height="15.0" fill="rgb(246,77,31)" rx="2" ry="2" />
+<text text-anchor="" x="575.86" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >GI...</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Sample.KernelDensity.kde_.t_star.\ (1 samples, 0.10%)</title><rect x="208.2" y="117" width="1.2" height="15.0" fill="rgb(208,229,22)" rx="2" ry="2" />
+<text text-anchor="" x="211.24" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Criterion.Measurement.Types.measure (2 samples, 0.20%)</title><rect x="203.5" y="213" width="2.4" height="15.0" fill="rgb(243,229,19)" rx="2" ry="2" />
+<text text-anchor="" x="206.52" y="223.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.Utils.maybeReleaseFunPtr (1 samples, 0.10%)</title><rect x="613.0" y="133" width="1.2" height="15.0" fill="rgb(216,64,52)" rx="2" ry="2" />
+<text text-anchor="" x="615.98" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.ManagedPtr.newManagedPtr' (1 samples, 0.10%)</title><rect x="1174.7" y="325" width="1.1" height="15.0" fill="rgb(229,150,14)" rx="2" ry="2" />
+<text text-anchor="" x="1177.66" y="335.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.ManagedPtr.unsafeManagedPtrCastPtr (4 samples, 0.40%)</title><rect x="478.5" y="117" width="4.7" height="15.0" fill="rgb(248,97,26)" rx="2" ry="2" />
+<text text-anchor="" x="481.46" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Resampling.estimate (1 samples, 0.10%)</title><rect x="205.9" y="133" width="1.2" height="15.0" fill="rgb(232,210,15)" rx="2" ry="2" />
+<text text-anchor="" x="208.88" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Sample.KernelDensity.kde_.t_star (1 samples, 0.10%)</title><rect x="208.2" y="181" width="1.2" height="15.0" fill="rgb(252,120,42)" rx="2" ry="2" />
+<text text-anchor="" x="211.24" y="191.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.bootstrapRegress.\.preds (10 samples, 1.00%)</title><rect x="54.8" y="165" width="11.8" height="15.0" fill="rgb(236,82,50)" rx="2" ry="2" />
+<text text-anchor="" x="57.84" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Criterion.Measurement.Types.whnfIO (813 samples, 81.30%)</title><rect x="211.8" y="197" width="959.3" height="15.0" fill="rgb(229,106,39)" rx="2" ry="2" />
+<text text-anchor="" x="214.78" y="207.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Criterion.Measurement.Types.whnfIO</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Criterion.Main.defaultMain (954 samples, 95.40%)</title><rect x="48.9" y="357" width="1125.8" height="15.0" fill="rgb(234,149,24)" rx="2" ry="2" />
+<text text-anchor="" x="51.94" y="367.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Criterion.Main.defaultMain</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.ManagedPtr.newManagedPtr' (29 samples, 2.90%)</title><rect x="1136.9" y="117" width="34.2" height="15.0" fill="rgb(247,186,18)" rx="2" ry="2" />
+<text text-anchor="" x="1139.90" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Da..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.unsafeIndex (8 samples, 0.80%)</title><rect x="130.4" y="101" width="9.4" height="15.0" fill="rgb(218,199,6)" rx="2" ry="2" />
+<text text-anchor="" x="133.36" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.ManagedPtr.touchManagedPtr (1 samples, 0.10%)</title><rect x="1087.3" y="133" width="1.2" height="15.0" fill="rgb(212,6,41)" rx="2" ry="2" />
+<text text-anchor="" x="1090.34" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.unsafeIndex (8 samples, 0.80%)</title><rect x="185.8" y="69" width="9.5" height="15.0" fill="rgb(250,144,18)" rx="2" ry="2" />
+<text text-anchor="" x="188.82" y="79.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.Algorithms.innerProduct.\ (3 samples, 0.30%)</title><rect x="105.6" y="37" width="3.5" height="15.0" fill="rgb(239,88,24)" rx="2" ry="2" />
+<text text-anchor="" x="108.58" y="47.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.bootstrapRegress (130 samples, 13.00%)</title><rect x="50.1" y="197" width="153.4" height="15.0" fill="rgb(226,105,16)" rx="2" ry="2" />
+<text text-anchor="" x="53.12" y="207.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Statistics.Regressi..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.bootstrapRegress.est (3 samples, 0.30%)</title><rect x="198.8" y="149" width="3.5" height="15.0" fill="rgb(207,124,44)" rx="2" ry="2" />
+<text text-anchor="" x="201.80" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Sample.KernelDensity.kde_.t_star.go (1 samples, 0.10%)</title><rect x="208.2" y="101" width="1.2" height="15.0" fill="rgb(231,47,31)" rx="2" ry="2" />
+<text text-anchor="" x="211.24" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.transpose.\ (20 samples, 2.00%)</title><rect x="76.1" y="101" width="23.6" height="15.0" fill="rgb(240,143,1)" rx="2" ry="2" />
+<text text-anchor="" x="79.08" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >S..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Scientific.fromFloatDigits (1 samples, 0.10%)</title><rect x="1173.5" y="213" width="1.2" height="15.0" fill="rgb(241,221,33)" rx="2" ry="2" />
+<text text-anchor="" x="1176.48" y="223.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Resampling.resample.\ (2 samples, 0.20%)</title><rect x="205.9" y="197" width="2.3" height="15.0" fill="rgb(227,172,27)" rx="2" ry="2" />
+<text text-anchor="" x="208.88" y="207.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.ManagedPtr.newManagedPtr (1 samples, 0.10%)</title><rect x="1174.7" y="309" width="1.1" height="15.0" fill="rgb(254,107,11)" rx="2" ry="2" />
+<text text-anchor="" x="1177.66" y="319.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Resampling.resample.\.loop (2 samples, 0.20%)</title><rect x="205.9" y="181" width="2.3" height="15.0" fill="rgb(232,179,51)" rx="2" ry="2" />
+<text text-anchor="" x="208.88" y="191.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.bootstrapRegress.r2 (1 samples, 0.10%)</title><rect x="202.3" y="181" width="1.2" height="15.0" fill="rgb(224,5,54)" rx="2" ry="2" />
+<text text-anchor="" x="205.34" y="191.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>System.IO.CodePage.withCodePage (954 samples, 95.40%)</title><rect x="48.9" y="309" width="1125.8" height="15.0" fill="rgb(223,83,35)" rx="2" ry="2" />
+<text text-anchor="" x="51.94" y="319.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >System.IO.CodePage.withCodePage</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.transpose.\.(...) (1 samples, 0.10%)</title><rect x="129.2" y="101" width="1.2" height="15.0" fill="rgb(212,101,1)" rx="2" ry="2" />
+<text text-anchor="" x="132.18" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>System.IO.CodePage.withCP65001 (954 samples, 95.40%)</title><rect x="48.9" y="325" width="1125.8" height="15.0" fill="rgb(242,110,41)" rx="2" ry="2" />
+<text text-anchor="" x="51.94" y="335.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >System.IO.CodePage.withCP65001</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.rSquare (50 samples, 5.00%)</title><rect x="139.8" y="149" width="59.0" height="15.0" fill="rgb(206,36,0)" rx="2" ry="2" />
+<text text-anchor="" x="142.80" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Statis..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.Algorithms.innerProduct (3 samples, 0.30%)</title><rect x="105.6" y="53" width="3.5" height="15.0" fill="rgb(219,175,18)" rx="2" ry="2" />
+<text text-anchor="" x="108.58" y="63.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>GI.Gtk.Declarative.Patch.stateTreeWidget (1 samples, 0.10%)</title><rect x="1090.9" y="165" width="1.2" height="15.0" fill="rgb(246,76,13)" rx="2" ry="2" />
+<text text-anchor="" x="1093.88" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Sample.varianceUnbiased (1 samples, 0.10%)</title><rect x="205.9" y="101" width="1.2" height="15.0" fill="rgb(224,44,38)" rx="2" ry="2" />
+<text text-anchor="" x="208.88" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.ManagedPtr.unsafeManagedPtrGetPtr (6 samples, 0.60%)</title><rect x="476.1" y="133" width="7.1" height="15.0" fill="rgb(241,198,13)" rx="2" ry="2" />
+<text text-anchor="" x="479.10" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.transpose (24 samples, 2.40%)</title><rect x="111.5" y="133" width="28.3" height="15.0" fill="rgb(247,67,45)" rx="2" ry="2" />
+<text text-anchor="" x="114.48" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >S..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.rSquare.t (3 samples, 0.30%)</title><rect x="195.3" y="133" width="3.5" height="15.0" fill="rgb(227,95,16)" rx="2" ry="2" />
+<text text-anchor="" x="198.26" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.rSquare.r.\ (42 samples, 4.20%)</title><rect x="145.7" y="117" width="49.6" height="15.0" fill="rgb(252,102,19)" rx="2" ry="2" />
+<text text-anchor="" x="148.70" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Stati..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>GI.Gdk.Functions.threadsAddIdle (111 samples, 11.10%)</title><rect x="483.2" y="165" width="131.0" height="15.0" fill="rgb(208,176,15)" rx="2" ry="2" />
+<text text-anchor="" x="486.18" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >GI.Gdk.Functions..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Criterion.Measurement.runBenchmark (817 samples, 81.70%)</title><rect x="209.4" y="213" width="964.1" height="15.0" fill="rgb(216,111,8)" rx="2" ry="2" />
+<text text-anchor="" x="212.42" y="223.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Criterion.Measurement.runBenchmark</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.unsafeIndex (8 samples, 0.80%)</title><rect x="90.2" y="85" width="9.5" height="15.0" fill="rgb(230,124,19)" rx="2" ry="2" />
+<text text-anchor="" x="93.24" y="95.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.ManagedPtr.unsafeCastTo (176 samples, 17.60%)</title><rect x="275.5" y="165" width="207.7" height="15.0" fill="rgb(236,146,19)" rx="2" ry="2" />
+<text text-anchor="" x="278.50" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.GI.Base.ManagedPtr.uns..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.ManagedPtr.newObject (35 samples, 3.50%)</title><rect x="1129.8" y="133" width="41.3" height="15.0" fill="rgb(243,13,52)" rx="2" ry="2" />
+<text text-anchor="" x="1132.82" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Dat..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Sample.KernelDensity.kde_ (1 samples, 0.10%)</title><rect x="208.2" y="197" width="1.2" height="15.0" fill="rgb(222,73,51)" rx="2" ry="2" />
+<text text-anchor="" x="211.24" y="207.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Criterion.Main.runMode (954 samples, 95.40%)</title><rect x="48.9" y="293" width="1125.8" height="15.0" fill="rgb(223,180,15)" rx="2" ry="2" />
+<text text-anchor="" x="51.94" y="303.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Criterion.Main.runMode</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.bootstrapRegress.est.w (3 samples, 0.30%)</title><rect x="198.8" y="133" width="3.5" height="15.0" fill="rgb(228,202,13)" rx="2" ry="2" />
+<text text-anchor="" x="201.80" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Resampling.resample (2 samples, 0.20%)</title><rect x="205.9" y="213" width="2.3" height="15.0" fill="rgb(209,99,33)" rx="2" ry="2" />
+<text text-anchor="" x="208.88" y="223.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Criterion.Internal.runOne (817 samples, 81.70%)</title><rect x="209.4" y="229" width="964.1" height="15.0" fill="rgb(231,103,5)" rx="2" ry="2" />
+<text text-anchor="" x="212.42" y="239.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Criterion.Internal.runOne</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.transpose (24 samples, 2.40%)</title><rect x="71.4" y="117" width="28.3" height="15.0" fill="rgb(223,140,34)" rx="2" ry="2" />
+<text text-anchor="" x="74.36" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >S..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.ManagedPtr.newObject (129 samples, 12.90%)</title><rect x="323.9" y="133" width="152.2" height="15.0" fill="rgb(246,27,22)" rx="2" ry="2" />
+<text text-anchor="" x="326.88" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.GI.Base.Manage..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Sample.KernelDensity.kde_.t_star.f (1 samples, 0.10%)</title><rect x="208.2" y="85" width="1.2" height="15.0" fill="rgb(214,74,11)" rx="2" ry="2" />
+<text text-anchor="" x="211.24" y="95.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>GI.Gtk.Objects.Widget.widgetQueueResize (29 samples, 2.90%)</title><rect x="1056.7" y="149" width="34.2" height="15.0" fill="rgb(222,155,23)" rx="2" ry="2" />
+<text text-anchor="" x="1059.66" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >GI..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Sample.KernelDensity.kde (1 samples, 0.10%)</title><rect x="208.2" y="213" width="1.2" height="15.0" fill="rgb(208,180,29)" rx="2" ry="2" />
+<text text-anchor="" x="211.24" y="223.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Sample.mean (1 samples, 0.10%)</title><rect x="197.6" y="101" width="1.2" height="15.0" fill="rgb(206,27,48)" rx="2" ry="2" />
+<text text-anchor="" x="200.62" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Main.main (955 samples, 95.50%)</title><rect x="48.9" y="373" width="1126.9" height="15.0" fill="rgb(212,63,23)" rx="2" ry="2" />
+<text text-anchor="" x="51.94" y="383.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Main.main</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.bootstrapRegress.\.resp (1 samples, 0.10%)</title><rect x="66.6" y="165" width="1.2" height="15.0" fill="rgb(219,113,1)" rx="2" ry="2" />
+<text text-anchor="" x="69.64" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.bootstrapRegress.coeffs (3 samples, 0.30%)</title><rect x="198.8" y="181" width="3.5" height="15.0" fill="rgb(211,76,35)" rx="2" ry="2" />
+<text text-anchor="" x="201.80" y="191.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.Algorithms.qr.\.\ (9 samples, 0.90%)</title><rect x="100.9" y="69" width="10.6" height="15.0" fill="rgb(230,166,1)" rx="2" ry="2" />
+<text text-anchor="" x="103.86" y="79.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Criterion.Analysis.analyseSample (135 samples, 13.50%)</title><rect x="50.1" y="229" width="159.3" height="15.0" fill="rgb(212,116,38)" rx="2" ry="2" />
+<text text-anchor="" x="53.12" y="239.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Criterion.Analysis.a..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.ManagedPtr.newManagedPtr' (118 samples, 11.80%)</title><rect x="336.9" y="117" width="139.2" height="15.0" fill="rgb(253,56,14)" rx="2" ry="2" />
+<text text-anchor="" x="339.86" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.GI.Base.Mana..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.ManagedPtr.newManagedPtr (116 samples, 11.60%)</title><rect x="339.2" y="101" width="136.9" height="15.0" fill="rgb(253,190,12)" rx="2" ry="2" />
+<text text-anchor="" x="342.22" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data.GI.Base.Mana..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Resampling.resample.\.loop.\ (1 samples, 0.10%)</title><rect x="205.9" y="165" width="1.2" height="15.0" fill="rgb(237,2,39)" rx="2" ry="2" />
+<text text-anchor="" x="208.88" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>all (1,000 samples, 100%)</title><rect x="10.0" y="405" width="1180.0" height="15.0" fill="rgb(214,168,37)" rx="2" ry="2" />
+<text text-anchor="" x="13.00" y="415.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Function.sort (1 samples, 0.10%)</title><rect x="202.3" y="133" width="1.2" height="15.0" fill="rgb(238,142,19)" rx="2" ry="2" />
+<text text-anchor="" x="205.34" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>GI.Gtk.Objects.Bin.binGetChild (67 samples, 6.70%)</title><rect x="1092.1" y="165" width="79.0" height="15.0" fill="rgb(229,160,28)" rx="2" ry="2" />
+<text text-anchor="" x="1095.06" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >GI.Gtk.Ob..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Resampling.resample.ests' (1 samples, 0.10%)</title><rect x="205.9" y="149" width="1.2" height="15.0" fill="rgb(220,33,18)" rx="2" ry="2" />
+<text text-anchor="" x="208.88" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.rSquare.r (47 samples, 4.70%)</title><rect x="139.8" y="133" width="55.5" height="15.0" fill="rgb(212,207,19)" rx="2" ry="2" />
+<text text-anchor="" x="142.80" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Stati..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.olsRegress.mxpreds (24 samples, 2.40%)</title><rect x="111.5" y="149" width="28.3" height="15.0" fill="rgb(215,94,5)" rx="2" ry="2" />
+<text text-anchor="" x="114.48" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >S..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Criterion.Measurement.getGCStatistics (2 samples, 0.20%)</title><rect x="1171.1" y="197" width="2.4" height="15.0" fill="rgb(251,54,51)" rx="2" ry="2" />
+<text text-anchor="" x="1174.12" y="207.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.ManagedPtr.newObject (1 samples, 0.10%)</title><rect x="1174.7" y="341" width="1.1" height="15.0" fill="rgb(219,162,34)" rx="2" ry="2" />
+<text text-anchor="" x="1177.66" y="351.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.transpose.\ (19 samples, 1.90%)</title><rect x="117.4" y="117" width="22.4" height="15.0" fill="rgb(246,132,15)" rx="2" ry="2" />
+<text text-anchor="" x="120.38" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >S..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.multiplyV (2 samples, 0.20%)</title><rect x="69.0" y="117" width="2.4" height="15.0" fill="rgb(248,221,45)" rx="2" ry="2" />
+<text text-anchor="" x="72.00" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Sample.stdDev (1 samples, 0.10%)</title><rect x="205.9" y="117" width="1.2" height="15.0" fill="rgb(237,211,30)" rx="2" ry="2" />
+<text text-anchor="" x="208.88" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.ols (36 samples, 3.60%)</title><rect x="69.0" y="133" width="42.5" height="15.0" fill="rgb(224,97,1)" rx="2" ry="2" />
+<text text-anchor="" x="72.00" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Sta..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Vector.Algorithms.Intro.sort (1 samples, 0.10%)</title><rect x="202.3" y="117" width="1.2" height="15.0" fill="rgb(237,15,36)" rx="2" ry="2" />
+<text text-anchor="" x="205.34" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Aeson.encode (1 samples, 0.10%)</title><rect x="1173.5" y="245" width="1.2" height="15.0" fill="rgb(224,95,9)" rx="2" ry="2" />
+<text text-anchor="" x="1176.48" y="255.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.bootstrapRegress.\ (126 samples, 12.60%)</title><rect x="50.1" y="181" width="148.7" height="15.0" fill="rgb(244,42,31)" rx="2" ry="2" />
+<text text-anchor="" x="53.12" y="191.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Statistics.Regress..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.bootstrapRegress.est (1 samples, 0.10%)</title><rect x="202.3" y="165" width="1.2" height="15.0" fill="rgb(225,228,2)" rx="2" ry="2" />
+<text text-anchor="" x="205.34" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Matrix.transpose.\.(...) (2 samples, 0.20%)</title><rect x="87.9" y="85" width="2.3" height="15.0" fill="rgb(246,153,7)" rx="2" ry="2" />
+<text text-anchor="" x="90.88" y="95.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Main.testPatch (811 samples, 81.10%)</title><rect x="214.1" y="181" width="957.0" height="15.0" fill="rgb(231,191,4)" rx="2" ry="2" />
+<text text-anchor="" x="217.14" y="191.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Main.testPatch</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.rSquare.t.\ (2 samples, 0.20%)</title><rect x="196.4" y="117" width="2.4" height="15.0" fill="rgb(226,81,27)" rx="2" ry="2" />
+<text text-anchor="" x="199.44" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.olsRegress.coeffs (36 samples, 3.60%)</title><rect x="69.0" y="149" width="42.5" height="15.0" fill="rgb(228,30,26)" rx="2" ry="2" />
+<text text-anchor="" x="72.00" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Sta..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Criterion.Internal.runAndAnalyseOne (952 samples, 95.20%)</title><rect x="50.1" y="245" width="1123.4" height="15.0" fill="rgb(228,213,49)" rx="2" ry="2" />
+<text text-anchor="" x="53.12" y="255.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Criterion.Internal.runAndAnalyseOne</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.Utils.convertIfNonNull (42 samples, 4.20%)</title><rect x="1121.6" y="149" width="49.5" height="15.0" fill="rgb(251,35,41)" rx="2" ry="2" />
+<text text-anchor="" x="1124.56" y="159.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Data..</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.ols.(...) (10 samples, 1.00%)</title><rect x="99.7" y="117" width="11.8" height="15.0" fill="rgb(209,228,44)" rx="2" ry="2" />
+<text text-anchor="" x="102.68" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.GI.Base.ManagedPtr.unsafeManagedPtrCastPtr (2 samples, 0.20%)</title><rect x="1088.5" y="133" width="2.4" height="15.0" fill="rgb(250,166,14)" rx="2" ry="2" />
+<text text-anchor="" x="1091.52" y="143.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Data.Vector.Algorithms.Intro.sort (3 samples, 0.30%)</title><rect x="198.8" y="101" width="3.5" height="15.0" fill="rgb(225,169,47)" rx="2" ry="2" />
+<text text-anchor="" x="201.80" y="111.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Function.sort (3 samples, 0.30%)</title><rect x="198.8" y="117" width="3.5" height="15.0" fill="rgb(231,145,10)" rx="2" ry="2" />
+<text text-anchor="" x="201.80" y="127.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>GI.Gtk.Objects.Widget.widgetGetStyleContext (1 samples, 0.10%)</title><rect x="1174.7" y="357" width="1.1" height="15.0" fill="rgb(235,6,30)" rx="2" ry="2" />
+<text text-anchor="" x="1177.66" y="367.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Criterion.Analysis.regress (130 samples, 13.00%)</title><rect x="50.1" y="213" width="153.4" height="15.0" fill="rgb(239,82,38)" rx="2" ry="2" />
+<text text-anchor="" x="53.12" y="223.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Criterion.Analysis...</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Criterion.Main.defaultMainWith (954 samples, 95.40%)</title><rect x="48.9" y="341" width="1125.8" height="15.0" fill="rgb(208,181,13)" rx="2" ry="2" />
+<text text-anchor="" x="51.94" y="351.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Criterion.Main.defaultMainWith</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Resampling.resampleVector (1 samples, 0.10%)</title><rect x="207.1" y="165" width="1.1" height="15.0" fill="rgb(233,105,32)" rx="2" ry="2" />
+<text text-anchor="" x="210.06" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.bootstrapRegress.\.n (1 samples, 0.10%)</title><rect x="53.7" y="165" width="1.1" height="15.0" fill="rgb(222,212,22)" rx="2" ry="2" />
+<text text-anchor="" x="56.66" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Criterion.Internal.runAndAnalyse (954 samples, 95.40%)</title><rect x="48.9" y="261" width="1125.8" height="15.0" fill="rgb(254,20,20)" rx="2" ry="2" />
+<text text-anchor="" x="51.94" y="271.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >Criterion.Internal.runAndAnalyse</text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>Statistics.Regression.bootstrapRegress.coeffs.\ (3 samples, 0.30%)</title><rect x="198.8" y="165" width="3.5" height="15.0" fill="rgb(221,86,34)" rx="2" ry="2" />
+<text text-anchor="" x="201.80" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  ></text>
+</g>
+<g class="func_g" onmouseover="s(this)" onmouseout="c()" onclick="zoom(this)">
+<title>GI.Gtk.Declarative.Container.Patch.patchInContainer (404 samples, 40.40%)</title><rect x="614.2" y="165" width="476.7" height="15.0" fill="rgb(221,140,28)" rx="2" ry="2" />
+<text text-anchor="" x="617.16" y="175.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)"  >GI.Gtk.Declarative.Container.Patch.patchInContainer</text>
+</g>
+</svg>

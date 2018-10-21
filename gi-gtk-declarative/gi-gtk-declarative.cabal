@@ -36,6 +36,7 @@ library
                       , GI.Gtk.Declarative.Markup
                       , GI.Gtk.Declarative.Patch
                       , GI.Gtk.Declarative.SingleWidget
+                      , GI.Gtk.Declarative.State
   build-depends:        base >=4.10 && <4.12
                       , gi-gobject             >= 2    && <3
                       , gi-gtk                 >= 3    && <4
@@ -61,4 +62,4 @@ benchmark gi-gtk-declarative-benchmark
                  , gi-gtk-declarative
                  , random
                  , text
-  ghc-options:     -Wall -O2 -rtsopts -with-rtsopts=-N -threaded
+  ghc-options:     -Wall -O2 -rtsopts -with-rtsopts=-N -threaded -prof

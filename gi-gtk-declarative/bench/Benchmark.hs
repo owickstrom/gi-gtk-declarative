@@ -15,6 +15,7 @@ import           GI.Gtk                         ( Box(..)
                                                 )
 import qualified GI.Gtk                        as Gtk
 import           GI.Gtk.Declarative
+import           GI.Gtk.Declarative.State
 
 testView :: [Int] -> Widget ()
 testView ns = bin Window [] $ container Box [] $ forM_ ns $ \n ->
@@ -36,7 +37,7 @@ main = do
   _      <- Gtk.init Nothing
   let initialView = testView [1 .. 100]
   initialState <- create initialView
-  #showAll (shadowStateTopWidget initialState)
+  #showAll (stateTreeNodeWidget initialState)
   _ <- forkOS $ do
     defaultMain
       [ bgroup

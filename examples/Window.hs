@@ -9,6 +9,7 @@ import           GI.Gtk                         ( Label(..)
                                                 )
 import qualified GI.Gtk                        as Gtk
 import           GI.Gtk.Declarative
+import           GI.Gtk.Declarative.State
 import           GI.Gtk.Declarative.EventSource ( subscribe )
 
 data Event = Closed
@@ -28,6 +29,6 @@ main :: IO ()
 main = do
   void $ Gtk.init Nothing
   state <- create myWindow
-  _ <- subscribe myWindow (shadowStateTopWidget state) $ \Closed -> Gtk.mainQuit
-  #showAll (shadowStateTopWidget state)
+  _ <- subscribe myWindow (stateTreeNodeWidget state) $ \Closed -> Gtk.mainQuit
+  #showAll (stateTreeNodeWidget state)
   Gtk.main

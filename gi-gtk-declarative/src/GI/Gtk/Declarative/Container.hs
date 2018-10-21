@@ -30,6 +30,7 @@ import           GI.Gtk.Declarative.Container.Patch
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
+import           GI.Gtk.Declarative.State
 
 -- | Declarative version of a /container/ widget, i.e. a widget with zero
 -- or more child widgets. The type of 'children' is parameterized, and differs
@@ -89,20 +90,20 @@ instance (Patchable child, IsContainer container child) =>
     childStates <-
       forM (unChildren children) $ \child -> do
         childState <- create child
-        appendChild widget' child (shadowStateTopWidget childState)
+        appendChild widget' child (stateTreeNodeWidget childState)
         return childState
     mapM_ (applyAfterCreated widget') props
     w <- Gtk.toWidget widget'
-    return (ShadowContainer (ShadowStateTop w sc) childStates)
-  patch (ShadowContainer top childStates) (Container _ oldAttributes oldChildren) (Container ctor newAttributes newChildren) =
+    return (StateTreeContainer (StateTreeNode w sc) childStates)
+  patch (StateTreeContainer top childStates) (Container _ oldAttributes oldChildren) (Container ctor newAttributes newChildren) =
     Modify $ do
-      containerWidget <- Gtk.unsafeCastTo ctor (shadowStateWidget top)
+      containerWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
       Gtk.set containerWidget (concatMap extractAttrSetOps newAttributes)
-      let sc = shadowStateStyleContext top
+      let sc = stateTreeStyleContext top
       mapM_ (removeClass sc) oldAttributes
       mapM_ (addClass sc) newAttributes
       patchInContainer
-        (ShadowContainer top childStates)
+        (StateTreeContainer top childStates)
         containerWidget
         (unChildren oldChildren)
         (unChildren newChildren)

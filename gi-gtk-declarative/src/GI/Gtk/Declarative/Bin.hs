@@ -4,7 +4,6 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedLabels       #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
@@ -30,6 +29,7 @@ import           GI.Gtk.Declarative.Attributes.Internal
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
+import           GI.Gtk.Declarative.State
 
 
 -- | Supported 'Gtk.Bin's.
@@ -104,29 +104,29 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
     mapM_ (addClass sc) props
     mapM_ (applyAfterCreated widget') props
     childState <- create child
-    Gtk.containerAdd widget' (shadowStateWidget (shadowStateTop childState))
+    Gtk.containerAdd widget' (stateTreeWidget (stateTreeNode childState))
     w <- Gtk.toWidget widget'
-    return (ShadowBin (ShadowStateTop w sc) childState)
+    return (StateTreeBin (StateTreeNode w sc) childState)
 
-  patch (ShadowBin top child) (Bin _ oldAttributes oldChild) (Bin ctor newAttributes newChild) =
+  patch (StateTreeBin top child) (Bin _ oldAttributes oldChild) (Bin ctor newAttributes newChild) =
     Modify $ do
 
-      binWidget <- Gtk.unsafeCastTo ctor (shadowStateWidget top)
+      binWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
       Gtk.set binWidget (concatMap extractAttrSetOps newAttributes)
-      let sc = shadowStateStyleContext top
+      let sc = stateTreeStyleContext top
       mapM_ (removeClass sc) oldAttributes
       mapM_ (addClass sc) newAttributes
 
       childWidget <- getChild binWidget
 
       case patch child oldChild newChild of
-        Modify modify -> ShadowBin top <$> modify
+        Modify modify -> StateTreeBin top <$> modify
         Replace createNew -> do
           Gtk.containerRemove binWidget childWidget
           childState <- createNew
-          Gtk.containerAdd binWidget (shadowStateWidget (shadowStateTop childState))
-          return (ShadowBin top childState)
-        Keep -> return (ShadowBin top child)
+          Gtk.containerAdd binWidget (stateTreeWidget (stateTreeNode childState))
+          return (StateTreeBin top childState)
+        Keep -> return (StateTreeBin top child)
   patch _ _ new = Replace (create new)
 
 --

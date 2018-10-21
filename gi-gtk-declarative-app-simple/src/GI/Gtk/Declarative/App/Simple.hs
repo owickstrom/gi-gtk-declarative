@@ -21,6 +21,7 @@ import qualified GI.GLib.Constants             as GLib
 import qualified GI.Gtk                        as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.EventSource
+import           GI.Gtk.Declarative.State
 import           Pipes
 import           Pipes.Concurrent
 
@@ -56,11 +57,12 @@ runInWindow :: Typeable event => Gtk.Window -> App state event -> IO ()
 runInWindow window App {..} = do
   let firstMarkup = view initialState
   nextEvent                  <- newEmptyMVar
-  (firstState, subscription) <- runUI $ do
-    firstState <- create firstMarkup
-    widget'    <- Gtk.toWidget (shadowStateTopWidget firstState)
-    Gtk.containerAdd window widget'
-    Gtk.widgetShowAll window
+  (firstState, subscription) <- do
+    firstState <- runUI (create firstMarkup)
+    widget'    <- Gtk.toWidget (stateTreeNodeWidget firstState)
+    runUI_ $ do
+      Gtk.containerAdd window widget'
+      Gtk.widgetShowAll window
     sub <- subscribe firstMarkup widget' (publishEvent nextEvent)
     return (firstState, sub)
   void . forkIO $ runEffect
@@ -74,10 +76,10 @@ runInWindow window App {..} = do
         let newMarkup = view newModel
 
         (newState, sub) <-
-          runUI (patchContainer window oldState oldMarkup newMarkup nextEvent)
+          patchContainer window oldState oldMarkup newMarkup nextEvent
             >>= \case
                   (newState, Just newSubscription) -> do
-                    cancel oldSubscription
+                    runUI_ (cancel oldSubscription)
                     pure (newState, newSubscription)
                   (newState, Nothing) ->
                     pure (newState, oldSubscription)
@@ -121,23 +123,22 @@ run title size app = do
 patchContainer
   :: Typeable event
   => Gtk.Window
-  -> ShadowState
+  -> StateTree
   -> Widget event
   -> Widget event
   -> MVar event
-  -> IO (ShadowState, Maybe Subscription)
+  -> IO (StateTree, Maybe Subscription)
 patchContainer w state o1 o2 nextEvent = case patch state o1 o2 of
   Modify ma -> do
-    newState <- ma
-    -- Gtk.widgetShowAll w
-    sub <- subscribe o2 (shadowStateTopWidget newState) (publishEvent nextEvent)
+    newState <- runUI ma
+    sub <- subscribe o2 (stateTreeNodeWidget newState) (publishEvent nextEvent)
     return (newState, Just sub)
-  Replace createNew -> do
+  Replace createNew -> runUI $ do
     Gtk.containerForall w (Gtk.containerRemove w)
     newState <- createNew
-    Gtk.containerAdd w (shadowStateTopWidget newState)
+    Gtk.containerAdd w (stateTreeNodeWidget newState)
     Gtk.widgetShowAll w
-    sub <- subscribe o2 (shadowStateTopWidget newState) (publishEvent nextEvent)
+    sub <- subscribe o2 (stateTreeNodeWidget newState) (publishEvent nextEvent)
     return (newState, Just sub)
   Keep -> return (state, Nothing)
 
@@ -159,9 +160,13 @@ publishInputEvents :: MVar event -> Consumer event IO ()
 publishInputEvents nextEvent = forever (await >>= liftIO . (putMVar nextEvent))
 
 runUI :: IO a -> IO a
-runUI f = do
+runUI ma = do
   r <- newEmptyMVar
-  void . Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT $ do
-    f >>= putMVar r
-    return False
+  runUI_ (ma >>= putMVar r)
   takeMVar r
+
+runUI_ :: IO () -> IO ()
+runUI_ ma =
+  void . Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT $ do
+    ma
+    return False

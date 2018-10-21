@@ -1,14 +1,11 @@
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors -fno-warn-orphans #-}
 {-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedLabels       #-}
-{-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeFamilies           #-}
@@ -32,6 +29,7 @@ import           GI.Gtk.Declarative.Container.Patch
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
+import           GI.Gtk.Declarative.State
 
 data MenuItem event where
   MenuItem
@@ -67,15 +65,15 @@ subMenu ::
   -> MarkupOf MenuItem event ()
 subMenu label = single . SubMenu label . container Gtk.Menu []
 
-newSubMenuItem :: Text -> IO ShadowState -> IO ShadowState
+newSubMenuItem :: Text -> IO StateTree -> IO StateTree
 newSubMenuItem label createSubMenu = do
   menuItem' <- Gtk.menuItemNewWithLabel label
   sc <- Gtk.widgetGetStyleContext menuItem'
   subMenuState <- createSubMenu
-  subMenuWidget <- Gtk.unsafeCastTo Gtk.Menu (shadowStateTopWidget subMenuState)
+  subMenuWidget <- Gtk.unsafeCastTo Gtk.Menu (stateTreeNodeWidget subMenuState)
   Gtk.menuItemSetSubmenu menuItem' (Just subMenuWidget)
   w <- Gtk.toWidget menuItem'
-  return (ShadowBin (ShadowStateTop w sc) subMenuState)
+  return (StateTreeBin (StateTreeNode w sc) subMenuState)
 
 instance Patchable MenuItem where
   create =
@@ -87,12 +85,12 @@ instance Patchable MenuItem where
     case eqT @i1 @i2 of
       Just Refl -> patch state c1 c2
       Nothing   -> Replace (create c2)
-  patch (ShadowBin top childState) (SubMenu l1 c1) (SubMenu l2 c2)
+  patch (StateTreeBin top childState) (SubMenu l1 c1) (SubMenu l2 c2)
     -- TODO: case for l1 /= l2
     | l1 == l2 =
       case patch childState c1 c2 of
         Modify modify ->
-          Modify (ShadowBin top <$> modify)
+          Modify (StateTreeBin top <$> modify)
         Replace newSubMenu ->
           Replace (newSubMenuItem l2 newSubMenu)
         Keep -> Keep
