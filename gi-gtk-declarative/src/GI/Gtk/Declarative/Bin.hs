@@ -81,13 +81,16 @@ bin ctor attrs = fromWidget . Bin ctor attrs
 --
 
 instance (BinChild parent child, Patchable child) => Patchable (Bin parent child) where
-  create (Bin ctor props child) = do
-    let attrOps = concatMap extractAttrConstructOps props
-    widget' <- Gtk.new ctor attrOps
+  create (Bin ctor attrs child) = do
+    let collected = collectAttributes attrs
+    widget' <- Gtk.new ctor (constructProperties collected)
 
     sc <- Gtk.widgetGetStyleContext widget'
-    mapM_ (addClass sc) props
-    mapM_ (applyAfterCreated widget') props
+    updateClasses sc mempty (collectedClasses collected)
+
+    -- TODO:
+    -- mapM_ (applyAfterCreated widget') props
+
     childState <- create child
     Gtk.containerAdd widget' (stateTreeWidget (stateTreeNode childState))
     w <- Gtk.toWidget widget'
@@ -97,10 +100,10 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
     Modify $ do
 
       binWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
-      Gtk.set binWidget (concatMap extractAttrSetOps newAttributes)
-      let sc = stateTreeStyleContext top
-      mapM_ (removeClass sc) oldAttributes
-      mapM_ (addClass sc) newAttributes
+      let oldCollected = collectAttributes oldAttributes
+          newCollected = collectAttributes newAttributes
+      updateProperties binWidget (collectedProperties oldCollected) (collectedProperties newCollected)
+      updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
 
       case patch oldChildState oldChild newChild of
         Modify modify -> StateTreeBin top <$> modify

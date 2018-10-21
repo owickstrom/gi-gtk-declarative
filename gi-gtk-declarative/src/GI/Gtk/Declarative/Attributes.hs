@@ -17,6 +17,7 @@ module GI.Gtk.Declarative.Attributes
   ( Attribute(..)
   , classes
   , afterCreated
+  , ClassSet
   -- * Event Handling
   , on
   , onM
@@ -27,8 +28,10 @@ where
 
 import qualified Data.GI.Base.Attributes                            as GI
 import qualified Data.GI.Base.Signals                               as GI
+import           Data.HashSet (HashSet)
 import qualified Data.HashSet                                       as HashSet
 import qualified Data.Text                                          as T
+import           Data.Text    (Text)
 import           Data.Typeable
 import           GHC.TypeLits                                       (KnownSymbol,
                                                                      Symbol)
@@ -36,7 +39,6 @@ import qualified GI.Gtk                                             as Gtk
 
 import           GI.Gtk.Declarative.Attributes.Internal.EventHandler
 import           GI.Gtk.Declarative.Attributes.Internal.Conversions
-import           GI.Gtk.Declarative.CSS
 
 -- * Attributes
 
@@ -89,6 +91,9 @@ data Attribute widget event where
   AfterCreated
     :: (widget -> IO ())
     -> Attribute widget event
+
+-- | A set of CSS classes.
+type ClassSet = HashSet Text
 
 -- | Attributes have a 'Functor' instance that maps events in all
 -- event handler.

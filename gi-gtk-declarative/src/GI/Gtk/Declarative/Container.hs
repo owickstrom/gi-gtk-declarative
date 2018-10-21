@@ -82,26 +82,27 @@ toChildren = Children . runMarkup
 
 instance (Patchable child, IsContainer container child) =>
          Patchable (Container container (Children child)) where
-  create (Container ctor props children) = do
-    let attrOps = concatMap extractAttrConstructOps props
-    widget' <- Gtk.new ctor attrOps
+  create (Container ctor attrs children) = do
+    let collected = collectAttributes attrs
+    widget' <- Gtk.new ctor (constructProperties collected)
     sc <- Gtk.widgetGetStyleContext widget'
-    mapM_ (addClass sc) props
+    updateClasses sc mempty (collectedClasses collected)
+    -- TODO:
+    -- mapM_ (applyAfterCreated widget') props
     childStates <-
       forM (unChildren children) $ \child -> do
         childState <- create child
         appendChild widget' child (stateTreeNodeWidget childState)
         return childState
-    mapM_ (applyAfterCreated widget') props
     w <- Gtk.toWidget widget'
     return (StateTreeContainer (StateTreeNode w sc) childStates)
   patch (StateTreeContainer top childStates) (Container _ oldAttributes oldChildren) (Container ctor newAttributes newChildren) =
     Modify $ do
       containerWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
-      Gtk.set containerWidget (concatMap extractAttrSetOps newAttributes)
-      let sc = stateTreeStyleContext top
-      mapM_ (removeClass sc) oldAttributes
-      mapM_ (addClass sc) newAttributes
+      let oldCollected = collectAttributes oldAttributes
+          newCollected = collectAttributes newAttributes
+      updateProperties containerWidget (collectedProperties oldCollected) (collectedProperties newCollected)
+      updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
       patchInContainer
         (StateTreeContainer top childStates)
         containerWidget

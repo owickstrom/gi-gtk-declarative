@@ -31,7 +31,6 @@ library
                       , GI.Gtk.Declarative.Container.Box
                       , GI.Gtk.Declarative.Container.MenuItem
                       , GI.Gtk.Declarative.Container.Patch
-                      , GI.Gtk.Declarative.CSS
                       , GI.Gtk.Declarative.EventSource
                       , GI.Gtk.Declarative.Markup
                       , GI.Gtk.Declarative.Patch

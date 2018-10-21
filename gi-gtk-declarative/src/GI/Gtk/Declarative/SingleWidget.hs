@@ -40,13 +40,14 @@ instance Functor (SingleWidget widget) where
 
 instance Patchable (SingleWidget widget) where
   create = \case
-    (SingleWidget ctor props) -> do
-        let attrOps = concatMap extractAttrConstructOps props
-        widget' <- Gtk.new ctor attrOps
+    (SingleWidget ctor attrs) -> do
+        let collected = collectAttributes attrs
+        widget' <- Gtk.new ctor (constructProperties collected)
 
         sc <- Gtk.widgetGetStyleContext widget'
-        mapM_ (addClass sc) props
-        mapM_ (applyAfterCreated widget') props
+        updateClasses sc mempty (collectedClasses collected)
+        -- TODO:
+        -- mapM_ (applyAfterCreated widget') props
 
         Gtk.widgetShow widget'
         w <- Gtk.toWidget widget'
@@ -57,10 +58,10 @@ instance Patchable (SingleWidget widget) where
     case (stateTree, eqT @w1 @w2) of
       (StateTreeWidget top, Just Refl) -> Modify $ do
         w <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
-        Gtk.set w (concatMap extractAttrSetOps newAttributes)
-        let sc = stateTreeStyleContext top
-        mapM_ (removeClass sc) oldAttributes
-        mapM_ (addClass sc) newAttributes
+        let oldCollected = collectAttributes oldAttributes
+            newCollected = collectAttributes newAttributes
+        updateProperties w (collectedProperties oldCollected) (collectedProperties newCollected)
+        updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
         return (StateTreeWidget top)
       (_, _) -> Replace (create (SingleWidget ctor newAttributes))
 
