@@ -17,14 +17,13 @@ import           GI.Gtk                         ( Box(..)
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
-
 data Event = AddLeft | AddRight | Closed
 
 data State = State { lefts :: [Int], rights :: [Int], next :: Int }
 
 addBoxesView :: State -> AppView Event
 addBoxesView State {..} =
-  bin Window [#title := "AddBoxes", on #deleteEvent (const (True, Closed))]
+  bin Window [#title := "AddBoxes", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
     $ bin
         ScrolledWindow
         [ #hscrollbarPolicy := PolicyTypeAutomatic
@@ -36,7 +35,7 @@ addBoxesView State {..} =
         renderLane AddRight rights
  where
   renderLane :: Event -> [Int] -> MarkupOf BoxChild Event ()
-  renderLane onClick children = boxChild True True 10 $ do
+  renderLane onClick children = boxChild True True 10 $
     container Box [] $ do
       boxChild False False 10 $ do
         widget Button [#label := "Add", on #clicked onClick]

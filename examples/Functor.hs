@@ -28,7 +28,7 @@ data Event = Incr | Decr | Closed
 
 incrDecrView :: State -> AppView Event
 incrDecrView State {..} =
-  bin Window [#title := "Functor", on #deleteEvent (const (True, Closed))]
+  bin Window [#title := "Functor", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
     $ container Box [#orientation := OrientationVertical]
     $ do
         boxChild True True 0 $ widget Label [#label := Text.pack (show count)]

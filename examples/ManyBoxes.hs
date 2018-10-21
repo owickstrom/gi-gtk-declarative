@@ -23,7 +23,7 @@ data Event
 
 view' :: State -> AppView Event
 view' ns =
-  bin Window [#title := "Many Boxes", on #deleteEvent (const (True, Closed))]
+  bin Window [#title := "Many Boxes", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
     $ bin ScrolledWindow []
     $ container Box []
     $ forM_ ns

@@ -21,7 +21,7 @@ data Event = Open | Save | Help | Closed
 
 view' :: State -> AppView Event
 view' (Message msg) =
-  bin Window [#title := "MenuBar", on #deleteEvent (const (True, Closed))]
+  bin Window [#title := "MenuBar", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
     $ container Box [#orientation := OrientationVertical]
     $ do
         boxChild False False 0 $ container MenuBar [] $ do

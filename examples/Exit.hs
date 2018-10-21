@@ -21,7 +21,7 @@ data Event = ExitApplication | CountDownExit
 
 view' :: State -> AppView Event
 view' s =
-  bin Window [#title := "Exit", on #deleteEvent (const (True, ExitApplication))]
+  bin Window [#title := "Exit", on #deleteEvent (const (True, ExitApplication)), #widthRequest := 400, #heightRequest := 300]
     $ case s of
         Running ->
           widget Button [#label := "Exit", on #clicked ExitApplication]

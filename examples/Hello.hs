@@ -21,7 +21,7 @@ data Event = Greet Text | Closed
 
 view' :: State -> AppView Event
 view' s =
-  bin Window [#title := "Hello", on #deleteEvent (const (True, Closed))]
+  bin Window [#title := "Hello", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
     $ case s of
         Initial      -> widget Label [#label := "Nothing here yet."]
         Greeting who -> widget Label [#label := who]

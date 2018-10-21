@@ -24,7 +24,7 @@ view' :: State -> AppView Event
 view' s =
   bin
       Window
-      [#title := "File Chooser Button", on #deleteEvent (const (True, Closed))]
+      [#title := "File Chooser Button", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
     $ case s of
         Done path ->
           widget Label [#label := (Text.pack path <> " was selected.")]
