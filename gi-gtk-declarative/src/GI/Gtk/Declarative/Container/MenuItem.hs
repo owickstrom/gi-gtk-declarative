@@ -101,6 +101,8 @@ instance EventSource MenuItem where
   subscribe (MenuItem item) state cb = subscribe item state cb
   subscribe (SubMenu _ children) (StateTreeBin _ childState) cb =
     subscribe children childState cb
+  subscribe SubMenu{} _ _ =
+    error "Warning: Cannot subscribe to SubMenu events with a non-bin state tree."
 
 instance IsContainer Gtk.MenuShell MenuItem where
   appendChild shell _ widget' =

@@ -11,8 +11,6 @@ module GI.Gtk.Declarative.EventSource
   )
 where
 
-import qualified GI.Gtk               as Gtk
-
 import GI.Gtk.Declarative.State
 
 -- | Cancel a 'Subscription', meaning that the callback will not be invoked on

@@ -18,10 +18,8 @@ module GI.Gtk.Declarative.Bin
   )
 where
 
-import           Control.Monad                          ((>=>))
 import           Data.Maybe
 import           Data.Typeable
-import qualified GI.GObject                             as GI
 import qualified GI.Gtk                                 as Gtk
 
 import           GI.Gtk.Declarative.Attributes
@@ -125,6 +123,8 @@ instance (BinChild parent child, EventSource child) =>
     handlers' <-
       mconcat . catMaybes <$> mapM (addSignalHandler cb binWidget) props
     (<> handlers') <$> subscribe child childState cb
+  subscribe _ _ _ =
+    error "Cannot subscribe to Bin events with a non-bin state tree."
 
 --
 -- FromWidget

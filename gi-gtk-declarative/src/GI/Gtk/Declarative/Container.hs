@@ -118,11 +118,12 @@ instance (Typeable child, EventSource child) =>
   subscribe (Container ctor props children) (StateTreeContainer top childStates) cb = do
     parentWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
     handlers' <- mconcat . catMaybes <$> mapM (addSignalHandler cb parentWidget) props
-    childWidgets <- Gtk.containerGetChildren parentWidget
     subs <-
       flip foldMap (zip (unChildren children) childStates) $ \(c, childState) ->
         subscribe c childState cb
     return (handlers' <> subs)
+  subscribe _ _ _ =
+    error "Warning: Cannot subscribe to Container events with a non-container state tree."
 
 --
 -- FromWidget
