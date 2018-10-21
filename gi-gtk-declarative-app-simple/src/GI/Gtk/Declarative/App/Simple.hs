@@ -1,20 +1,17 @@
-{-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -- | A simple application architecture style inspired by PureScript's Pux
 -- framework.
 module GI.Gtk.Declarative.App.Simple
   ( App(..)
+  , AppView
   , Transition(..)
-  , runInWindow
   , run
   )
 where
 
 import           Control.Concurrent
 import           Control.Monad
-import           Data.Int
-import           Data.Text                      ( Text )
 import           Data.Typeable
 import qualified GI.Gdk                        as Gdk
 import qualified GI.GLib.Constants             as GLib
@@ -32,14 +29,16 @@ data App state event =
     -- ^ The update function of an application reduces the current state and
     -- a new event to a 'Transition', which decides if and how to transition
     -- to the next state.
-    , view   :: state -> Widget event
-    -- ^ The view renders a state value as a 'Widget', parameterized by the
+    , view   :: state -> AppView event
+    -- ^ The view renders a state value as a window, parameterized by the
     -- 'App's event type.
     , inputs :: [Producer event IO ()]
     -- ^ Inputs are pipes 'Producer's that feed events into the application.
     , initialState :: state
     -- ^ The initial state value of the state reduction loop.
     }
+
+type AppView event = Bin Gtk.Window Widget event
 
 -- | The result of applying the 'update' function, deciding if and how to
 -- transition to the next state.
@@ -50,19 +49,16 @@ data Transition state event =
   -- | Exit the application.
   | Exit
 
--- | Run an 'App' in a 'Gtk.Window' that has already been set up. This IO action
--- will loop, so run it in a separate thread using 'forkIO' if you're calling
--- it before the GTK main loop.
-runInWindow :: Typeable event => Gtk.Window -> App state event -> IO ()
-runInWindow window App {..} = do
+-- | Run an 'App'. This IO action will loop, so run it in a separate thread
+-- using 'forkIO' if you're calling it before the GTK main loop.
+runLoop :: Typeable event => App state event -> IO ()
+runLoop App {..} = do
   let firstMarkup = view initialState
   nextEvent                  <- newEmptyMVar
   (firstState, subscription) <- do
     firstState <- runUI (create firstMarkup)
-    widget'    <- Gtk.toWidget (stateTreeNodeWidget firstState)
-    runUI_ $ do
-      Gtk.containerAdd window widget'
-      Gtk.widgetShowAll window
+    let widget' = stateTreeNodeWidget firstState
+    runUI (Gtk.widgetShowAll widget')
     sub <- subscribe firstMarkup widget' (publishEvent nextEvent)
     return (firstState, sub)
   void . forkIO $ runEffect
@@ -76,13 +72,20 @@ runInWindow window App {..} = do
         let newMarkup = view newModel
 
         (newState, sub) <-
-          patchContainer window oldState oldMarkup newMarkup nextEvent
-            >>= \case
-                  (newState, Just newSubscription) -> do
-                    runUI_ (cancel oldSubscription)
-                    pure (newState, newSubscription)
-                  (newState, Nothing) ->
-                    pure (newState, oldSubscription)
+          case patch oldState oldMarkup newMarkup of
+            Modify ma -> do
+              runUI (cancel oldSubscription)
+              newState <- runUI ma
+              sub <- subscribe newMarkup (stateTreeNodeWidget newState) (publishEvent nextEvent)
+              return (newState, sub)
+            Replace createNew -> runUI $ do
+              Gtk.widgetDestroy (stateTreeNodeWidget oldState)
+              runUI (cancel oldSubscription)
+              newState <- createNew
+              Gtk.widgetShowAll (stateTreeNodeWidget newState)
+              sub <- subscribe newMarkup (stateTreeNodeWidget newState) (publishEvent nextEvent)
+              return (newState, sub)
+            Keep -> return (oldState, oldSubscription)
 
         -- Make sure the MVar is empty.
         void (tryTakeMVar nextEvent)
@@ -100,47 +103,15 @@ runInWindow window App {..} = do
 -- 'runInWindow' instead.
 run
   :: Typeable event
-  => Text                 -- ^ Window title
-  -> Maybe (Int32, Int32) -- ^ Optional window size
-  -> App state event      -- ^ Application to run
+  => App state event      -- ^ Application to run
   -> IO ()
-run title size app = do
+run app = do
   void $ Gtk.init Nothing
-  window <- Gtk.windowNew Gtk.WindowTypeToplevel
-  void (Gtk.onWidgetDestroy window Gtk.mainQuit)
-  Gtk.windowSetTitle window title
-  case size of
-    Just (width, height) -> Gtk.windowResize window width height
-    Nothing              -> return ()
-  void
-    . forkIO
-    $ do
-        runInWindow window app
-        -- In case the run loop exits, quit the main GTK loop.
-        Gtk.mainQuit
+  void . forkIO $ do
+    runLoop app
+    -- In case the run loop exits, quit the main GTK loop.
+    Gtk.mainQuit
   Gtk.main
-
-patchContainer
-  :: Typeable event
-  => Gtk.Window
-  -> StateTree
-  -> Widget event
-  -> Widget event
-  -> MVar event
-  -> IO (StateTree, Maybe Subscription)
-patchContainer w state o1 o2 nextEvent = case patch state o1 o2 of
-  Modify ma -> do
-    newState <- runUI ma
-    sub <- subscribe o2 (stateTreeNodeWidget newState) (publishEvent nextEvent)
-    return (newState, Just sub)
-  Replace createNew -> runUI $ do
-    Gtk.containerForall w (Gtk.containerRemove w)
-    newState <- createNew
-    Gtk.containerAdd w (stateTreeNodeWidget newState)
-    Gtk.widgetShowAll w
-    sub <- subscribe o2 (stateTreeNodeWidget newState) (publishEvent nextEvent)
-    return (newState, Just sub)
-  Keep -> return (state, Nothing)
 
 publishEvent :: MVar event -> event -> IO ()
 publishEvent mvar = void . tryPutMVar mvar

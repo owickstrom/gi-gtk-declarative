@@ -4,11 +4,14 @@
 
 module Exit where
 
-import           Control.Concurrent            (threadDelay)
-import           Data.Functor                  (($>))
+import           Control.Concurrent             ( threadDelay )
+import           Data.Functor                   ( ($>) )
 import qualified Data.Text                     as Text
 
-import           GI.Gtk                        (Button (..), Label (..))
+import           GI.Gtk                         ( Button(..)
+                                                , Label(..)
+                                                , Window(..)
+                                                )
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -16,27 +19,34 @@ data State = Running | ExitingIn Int
 
 data Event = ExitApplication | CountDownExit
 
-view' :: State -> Widget Event
-view' Running =
-  widget Button [#label := "Exit", on #clicked ExitApplication]
-view' (ExitingIn sec) =
-  widget Label [#label := ("Exiting in " <> Text.pack (show sec) <> " seconds.")]
+view' :: State -> AppView Event
+view' s =
+  bin Window [#title := "Exit", on #deleteEvent (const (True, ExitApplication))]
+    $ case s of
+        Running ->
+          widget Button [#label := "Exit", on #clicked ExitApplication]
+        ExitingIn sec -> widget
+          Label
+          [#label := ("Exiting in " <> Text.pack (show sec) <> " seconds.")]
 
 countDown :: IO (Maybe Event)
 countDown = threadDelay oneSec $> Just CountDownExit
-  where
-    oneSec :: Int
-    oneSec = 1000000
+ where
+  oneSec :: Int
+  oneSec = 1000000
 
 update' :: State -> Event -> Transition State Event
-update' Running ExitApplication = Transition (ExitingIn 3) countDown
-update' Running _               = Transition Running (pure Nothing)
-update' (ExitingIn 1) _         = Exit
-update' (ExitingIn sec) _       = Transition (ExitingIn (pred sec)) countDown
+update' Running       ExitApplication = Transition (ExitingIn 3) countDown
+update' Running       _               = Transition Running (pure Nothing)
+update' (ExitingIn 1) CountDownExit   = Exit
+update' (ExitingIn sec) CountDownExit =
+  Transition (ExitingIn (pred sec)) countDown
+update' s@ExitingIn{} ExitApplication   = Transition s (pure Nothing)
 
 main :: IO ()
-main =
-  run
-    "Hello"
-    (Just (640, 480))
-    App {view = view', update = update', inputs = [], initialState = Running}
+main = run App
+  { view         = view'
+  , update       = update'
+  , inputs       = []
+  , initialState = Running
+  }

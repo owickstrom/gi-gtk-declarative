@@ -8,8 +8,8 @@ data StateTree
   | StateTreeContainer StateTreeNode [StateTree]
 
 data StateTreeNode = StateTreeNode
-  { stateTreeWidget :: Gtk.Widget
-  , stateTreeStyleContext :: Gtk.StyleContext
+  { stateTreeWidget :: !Gtk.Widget
+  , stateTreeStyleContext :: !Gtk.StyleContext
   }
 
 stateTreeNode :: StateTree -> StateTreeNode

@@ -4,43 +4,49 @@
 
 module Functor where
 
-import           Data.Functor                  (($>))
-import           Data.Text                     (Text)
+import           Data.Functor                   ( ($>) )
+import           Data.Text                      ( Text )
 import qualified Data.Text                     as Text
 
-import           GI.Gtk                        (Box (..), Button (..),
-                                                Label (..), Orientation (..))
+import           GI.Gtk                         ( Box(..)
+                                                , Button(..)
+                                                , Label(..)
+                                                , Orientation(..)
+                                                , Window(..)
+                                                )
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
 data ButtonEvent = ButtonClicked
 
 clickyButton :: Text -> Widget ButtonEvent
-clickyButton label =
-  widget Button [ #label := label, on #clicked ButtonClicked ]
+clickyButton label = widget Button [#label := label, on #clicked ButtonClicked]
 
 data State = State { count :: Integer }
 
-data Event = Incr | Decr
+data Event = Incr | Decr | Closed
 
-incrDecrView :: State -> Widget Event
+incrDecrView :: State -> AppView Event
 incrDecrView State {..} =
-  container Box [ #orientation := OrientationVertical ] $ do
-    boxChild True True 0 $
-      widget Label [ #label := Text.pack (show count) ]
-    boxChild False False 0 $
-      container Box [ #orientation := OrientationHorizontal ] $ do
-        boxChild True True 0 $ clickyButton "-1" $> Decr
-        boxChild True True 0 $ clickyButton "+1" $> Incr
+  bin Window [#title := "Functor", on #deleteEvent (const (True, Closed))]
+    $ container Box [#orientation := OrientationVertical]
+    $ do
+        boxChild True True 0 $ widget Label [#label := Text.pack (show count)]
+        boxChild False False 0
+          $ container Box [#orientation := OrientationHorizontal]
+          $ do
+              boxChild True True 0 $ clickyButton "-1" $> Decr
+              boxChild True True 0 $ clickyButton "+1" $> Incr
 
 update' :: State -> Event -> Transition State Event
-update' State{..} Incr = Transition (State (count + 1)) (return Nothing)
-update' State{..} Decr = Transition (State (count - 1)) (return Nothing)
+update' State {..} Incr   = Transition (State (count + 1)) (return Nothing)
+update' State {..} Decr   = Transition (State (count - 1)) (return Nothing)
+update' _          Closed = Exit
 
 main :: IO ()
-main =
-  run
-    "Hello"
-    (Just (640, 480))
-    App
-    {view = incrDecrView, update = update', inputs = [], initialState = State 0}
+main = run App
+  { view         = incrDecrView
+  , update       = update'
+  , inputs       = []
+  , initialState = State 0
+  }

@@ -20,7 +20,6 @@ executable example
                       , ListBox
                       , ManyBoxes
                       , MenuBar
-                      , Window
   build-depends:        base >=4.10 && <4.12
                       , gi-gobject
                       , gi-glib

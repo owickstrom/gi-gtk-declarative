@@ -10,7 +10,6 @@ import qualified FileChooserButton
 import qualified Functor
 import qualified Hello
 import qualified ListBox
-import qualified Window
 import qualified ManyBoxes
 import qualified MenuBar
 
@@ -22,7 +21,6 @@ main =
                  , ("ListBox", ListBox.main)
                  , ("Functor", Functor.main)
                  , ("Exit", Exit.main)
-                 , ("Window", Window.main)
                  , ("ManyBoxes", ManyBoxes.main)
                  , ("MenuBar", MenuBar.main)
                  ]
