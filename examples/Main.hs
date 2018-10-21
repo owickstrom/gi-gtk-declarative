@@ -29,4 +29,5 @@ main =
       case lookup example examples of
         Just main' -> main'
         Nothing -> hPutStrLn stderr ("No example available with name: " <> example)
-    _ -> hPutStrLn stderr "Usage: gi-gtk-declarative-example NAME"
+    _ -> hPutStrLn stderr ("Usage: gi-gtk-declarative-example NAME\n\nWhere NAME is any of:\n" <> unlines (map (("  " <>) . fst) examples))
+      

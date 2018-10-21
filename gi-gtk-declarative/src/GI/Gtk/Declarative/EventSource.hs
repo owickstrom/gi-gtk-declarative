@@ -13,6 +13,8 @@ where
 
 import qualified GI.Gtk               as Gtk
 
+import GI.Gtk.Declarative.State
+
 -- | Cancel a 'Subscription', meaning that the callback will not be invoked on
 -- any subsequent signal emissions.
 cancel :: Subscription -> IO ()
@@ -23,7 +25,7 @@ cancel = sequence_ . cancellations
 class EventSource widget where
   subscribe
     :: widget event     -- ^ Declarative widget with event handlers.
-    -> Gtk.Widget       -- ^ Actual 'Gtk.Widget' that has been created or patched.
+    -> StateTree        -- ^ State of rendered widget tree.
     -> (event -> IO ()) -- ^ Event callback, invoked on each emitted event until
                         -- the 'Subscription' is cancelled, or widget is otherwise
                         -- destroyed.

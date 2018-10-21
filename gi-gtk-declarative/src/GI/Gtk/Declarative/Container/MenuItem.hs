@@ -98,11 +98,9 @@ instance Patchable MenuItem where
   patch _ _ b2 = Replace (create b2)
 
 instance EventSource MenuItem where
-  subscribe (MenuItem item) widget' cb = subscribe item widget' cb
-  subscribe (SubMenu _ children) widget' cb = do
-    subMenuItem <- Gtk.unsafeCastTo Gtk.MenuItem widget'
-    Just subMenu' <- Gtk.menuItemGetSubmenu subMenuItem
-    subscribe children subMenu' cb
+  subscribe (MenuItem item) state cb = subscribe item state cb
+  subscribe (SubMenu _ children) (StateTreeBin _ childState) cb =
+    subscribe children childState cb
 
 instance IsContainer Gtk.MenuShell MenuItem where
   appendChild shell _ widget' =

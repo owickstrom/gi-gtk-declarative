@@ -115,13 +115,13 @@ instance (Patchable child, IsContainer container child) =>
 
 instance (Typeable child, EventSource child) =>
          EventSource (Container widget (Children child)) where
-  subscribe (Container ctor props children) widget' cb = do
-    parentWidget <- Gtk.unsafeCastTo ctor widget'
+  subscribe (Container ctor props children) (StateTreeContainer top childStates) cb = do
+    parentWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
     handlers' <- mconcat . catMaybes <$> mapM (addSignalHandler cb parentWidget) props
     childWidgets <- Gtk.containerGetChildren parentWidget
     subs <-
-      flip foldMap (zip (unChildren children) childWidgets) $ \(c, w) ->
-        subscribe c w cb
+      flip foldMap (zip (unChildren children) childStates) $ \(c, childState) ->
+        subscribe c childState cb
     return (handlers' <> subs)
 
 --

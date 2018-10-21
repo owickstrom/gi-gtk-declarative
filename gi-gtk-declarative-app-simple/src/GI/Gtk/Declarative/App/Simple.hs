@@ -59,44 +59,45 @@ runLoop App {..} = do
     firstState <- runUI (create firstMarkup)
     let widget' = stateTreeNodeWidget firstState
     runUI (Gtk.widgetShowAll widget')
-    sub <- subscribe firstMarkup widget' (publishEvent nextEvent)
+    sub <- subscribe firstMarkup firstState (publishEvent nextEvent)
     return (firstState, sub)
   void . forkIO $ runEffect
     (mergeProducers inputs >-> publishInputEvents nextEvent)
   loop firstState firstMarkup nextEvent subscription initialState
- where
-  loop oldState oldMarkup nextEvent oldSubscription oldModel = do
-    event <- takeMVar nextEvent
-    case update oldModel event of
-      Transition newModel action -> do
-        let newMarkup = view newModel
 
-        (newState, sub) <-
-          case patch oldState oldMarkup newMarkup of
-            Modify ma -> do
-              runUI (cancel oldSubscription)
-              newState <- runUI ma
-              sub <- subscribe newMarkup (stateTreeNodeWidget newState) (publishEvent nextEvent)
-              return (newState, sub)
-            Replace createNew -> runUI $ do
-              Gtk.widgetDestroy (stateTreeNodeWidget oldState)
-              runUI (cancel oldSubscription)
-              newState <- createNew
-              Gtk.widgetShowAll (stateTreeNodeWidget newState)
-              sub <- subscribe newMarkup (stateTreeNodeWidget newState) (publishEvent nextEvent)
-              return (newState, sub)
-            Keep -> return (oldState, oldSubscription)
+  where
+    loop oldState oldMarkup nextEvent oldSubscription oldModel = do
+      event <- takeMVar nextEvent
+      case update oldModel event of
+        Transition newModel action -> do
+          let newMarkup = view newModel
 
-        -- Make sure the MVar is empty.
-        void (tryTakeMVar nextEvent)
+          (newState, sub) <-
+            case patch oldState oldMarkup newMarkup of
+              Modify ma -> do
+                cancel oldSubscription
+                newState <- runUI ma
+                sub <- subscribe newMarkup newState (publishEvent nextEvent)
+                return (newState, sub)
+              Replace createNew -> runUI $ do
+                Gtk.widgetDestroy (stateTreeNodeWidget oldState)
+                cancel oldSubscription
+                newState <- createNew
+                Gtk.widgetShowAll (stateTreeNodeWidget newState)
+                sub <- subscribe newMarkup newState (publishEvent nextEvent)
+                return (newState, sub)
+              Keep -> return (oldState, oldSubscription)
 
-        -- If the action returned by the update function produced an event, then
-        -- we write that as the nextEvent to use directly.
-        void . forkIO $ action >>= maybe (return ()) (putMVar nextEvent)
+          -- Make sure the MVar is empty.
+          void (tryTakeMVar nextEvent)
 
-        -- Finally, we loop.
-        loop newState newMarkup nextEvent sub newModel
-      Exit -> return ()
+          -- If the action returned by the update function produced an event, then
+          -- we write that as the nextEvent to use directly.
+          void . forkIO $ action >>= maybe (return ()) (putMVar nextEvent)
+
+          -- Finally, we loop.
+          loop newState newMarkup nextEvent sub newModel
+        Exit -> return ()
 
 -- | Initialize GTK, set up a new window, and run the application in it. This
 -- is a convenience function. If you need more flexibility, you should use

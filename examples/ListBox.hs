@@ -14,12 +14,9 @@ import           GI.Gtk                         ( Label(..)
                                                 , ListBox(..)
                                                 , Window(..)
                                                 , ListBoxRow(..)
-                                                , Box(..)
                                                 )
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
-
-import Debug.Trace
 
 data State = State { greetings :: [Text] }
 
@@ -29,11 +26,9 @@ view' :: State -> AppView Event
 view' State {..} =
   bin Window [#title := "ListBox", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
     $ container ListBox []
-    -- $ container Box []
     $ forM_ greetings
     $ \name ->
         bin ListBoxRow [#activatable := False, #selectable := False]
-        -- boxChild False False 2
           $ widget Label [#label := name]
 
 update' :: State -> Event -> Transition State Event
@@ -46,7 +41,7 @@ main = run App
   { view         = view'
   , update       = update'
   , inputs       = [greetings]
-  , initialState = State ["Nothing yet."]
+  , initialState = State []
   }
  where
   greetings =

@@ -33,25 +33,13 @@ import           GI.Gtk.Declarative.State
 
 
 -- | Supported 'Gtk.Bin's.
-class BinChild bin (child :: * -> *) | bin -> child where
-  getChild :: bin -> IO Gtk.Widget
+class BinChild bin (child :: * -> *) | bin -> child
 
 instance BinChild Gtk.ScrolledWindow Widget where
-  getChild scrolledWindow = do
-    viewPort <- getBinChild Gtk.Viewport scrolledWindow
-    getBinChild Gtk.Widget viewPort
-
 instance BinChild Gtk.ListBoxRow Widget where
-  getChild = getBinChild Gtk.Widget
-
 instance BinChild Gtk.Window Widget where
-  getChild = getBinChild Gtk.Widget
-
 instance BinChild Gtk.Dialog Widget where
-  getChild = getBinChild Gtk.Widget
-
 instance BinChild Gtk.MenuItem Widget where
-  getChild = getBinChild Gtk.Widget
 
 -- | Declarative version of a /bin/ widget, i.e. a widget with exactly one
 -- child.
@@ -83,7 +71,6 @@ bin ::
      , Gtk.IsBin widget
      , Gtk.IsWidget widget
      , FromWidget (Bin widget child) event target
-     , BinChild widget child
      )
   => (Gtk.ManagedPtr widget -> widget) -- ^ A bin widget constructor from the underlying gi-gtk library.
   -> [Attribute widget event]          -- ^ List of 'Attribute's.
@@ -108,7 +95,7 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
     w <- Gtk.toWidget widget'
     return (StateTreeBin (StateTreeNode w sc) childState)
 
-  patch (StateTreeBin top child) (Bin _ oldAttributes oldChild) (Bin ctor newAttributes newChild) =
+  patch (StateTreeBin top oldChildState) (Bin _ oldAttributes oldChild) (Bin ctor newAttributes newChild) =
     Modify $ do
 
       binWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
@@ -117,16 +104,14 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
       mapM_ (removeClass sc) oldAttributes
       mapM_ (addClass sc) newAttributes
 
-      childWidget <- getChild binWidget
-
-      case patch child oldChild newChild of
+      case patch oldChildState oldChild newChild of
         Modify modify -> StateTreeBin top <$> modify
         Replace createNew -> do
-          Gtk.containerRemove binWidget childWidget
-          childState <- createNew
-          Gtk.containerAdd binWidget (stateTreeWidget (stateTreeNode childState))
-          return (StateTreeBin top childState)
-        Keep -> return (StateTreeBin top child)
+          Gtk.containerRemove binWidget (stateTreeNodeWidget oldChildState)
+          newChildState <- createNew
+          Gtk.containerAdd binWidget (stateTreeNodeWidget newChildState)
+          return (StateTreeBin top newChildState)
+        Keep -> return (StateTreeBin top oldChildState)
   patch _ _ new = Replace (create new)
 
 --
@@ -135,12 +120,11 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
 
 instance (BinChild parent child, EventSource child) =>
          EventSource (Bin parent child) where
-  subscribe (Bin ctor props child) widget' cb = do
-    binWidget <- Gtk.unsafeCastTo ctor widget'
+  subscribe (Bin ctor props child) (StateTreeBin top childState) cb = do
+    binWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
     handlers' <-
       mconcat . catMaybes <$> mapM (addSignalHandler cb binWidget) props
-    childWidget <- getChild binWidget
-    (<> handlers') <$> subscribe child childWidget cb
+    (<> handlers') <$> subscribe child childState cb
 
 --
 -- FromWidget
@@ -170,14 +154,3 @@ instance ( BinChild widget child
 
 instance FromWidget (Bin widget child) event (Bin widget child event) where
   fromWidget = id
-
--- | Get a "Gtk.Bin" child, or fail, and cast it to the given widget type.
-getBinChild
-  :: (Gtk.IsBin bin, GI.GObject child)
-  => (Gtk.ManagedPtr child -> child)
-  -> bin
-  -> IO child
-getBinChild ctor =
-  Gtk.binGetChild
-    >=> maybe (fail "expected Bin to have a child") return
-    >=> Gtk.unsafeCastTo ctor

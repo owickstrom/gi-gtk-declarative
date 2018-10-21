@@ -74,7 +74,7 @@ patchInContainer (StateTreeContainer top children) container os' ns' = do
           -- In case we have a corresponding old and new declarative widget, we patch
           -- the GTK widget.
           (i, Just child, Just old, Just new) -> case patch child old new of
-            Modify  modify       -> modify >> return [child]
+            Modify  modify       -> pure <$> modify
             Replace createWidget -> do
               newChild <- createWidget
               replaceChild container
@@ -102,12 +102,13 @@ patchInContainer (StateTreeContainer top children) container os' ns' = do
           (_i, Nothing, _, Just n) -> do
             newChild <- create n
             appendChild container n (stateTreeNodeWidget newChild)
+            Gtk.widgetShow (stateTreeNodeWidget newChild)
             return [newChild]
 
           -- When a declarative widget has been removed, remove the GTK widget from
           -- the container.
           (_i, Just child, Just _, Nothing) -> do
-            Gtk.containerRemove container (stateTreeNodeWidget child)
+            Gtk.widgetDestroy (stateTreeNodeWidget child)
             return []
 
           -- When there are more old declarative widgets than GTK widgets, we can
@@ -118,8 +119,7 @@ patchInContainer (StateTreeContainer top children) container os' ns' = do
           -- declarative widgets, something has gone wrong, and we clean that up by
           -- removing the GTK widgets.
           (_i, Just child, Nothing, Nothing) -> do
-            Gtk.containerRemove container (stateTreeNodeWidget child)
-            -- TODO: destroy 'child' somehow?
+            Gtk.widgetDestroy (stateTreeNodeWidget child)
             return []
 
           -- No more GTK widgets or declarative widgets, we are done.
@@ -134,15 +134,16 @@ padMaybes :: [a] -> [Maybe a]
 padMaybes xs = map Just xs ++ repeat Nothing
 
 instance IsContainer Gtk.ListBox (Bin Gtk.ListBoxRow Widget) where
-  appendChild box _ widget' = Gtk.listBoxInsert box widget' (-1)
+  appendChild box _ widget' =
+    Gtk.listBoxInsert box widget' (-1)
   replaceChild box _ i old new = do
-    Gtk.containerRemove box old
+    Gtk.widgetDestroy old
     Gtk.listBoxInsert box new i
 
 instance IsContainer Gtk.Box BoxChild where
   appendChild box BoxChild {..} widget' =
     Gtk.boxPackStart box widget' expand fill padding
   replaceChild box boxChild' i old new = do
-    Gtk.containerRemove box old
+    Gtk.widgetDestroy old
     appendChild box boxChild' new
     Gtk.boxReorderChild box new i

@@ -65,8 +65,8 @@ instance Patchable (SingleWidget widget) where
       (_, _) -> Replace (create (SingleWidget ctor newAttributes))
 
 instance EventSource (SingleWidget widget) where
-  subscribe (SingleWidget ctor props) widget' cb = do
-    w <- Gtk.unsafeCastTo ctor widget'
+  subscribe (SingleWidget ctor props) s cb = do
+    w <- Gtk.unsafeCastTo ctor (stateTreeNodeWidget s)
     mconcat . catMaybes <$> mapM (addSignalHandler cb w) props
 
 instance (Typeable widget, Functor (SingleWidget widget))
