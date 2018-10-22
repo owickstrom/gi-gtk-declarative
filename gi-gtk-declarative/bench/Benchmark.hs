@@ -26,8 +26,7 @@ testPatch state oldView newView = case patch state oldView newView of
   Modify ma -> do
     ret <- newEmptyMVar
     void . Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT $ do
-      void ma
-      putMVar ret ()
+      ma >>= putMVar ret
       return False
     takeMVar ret
   _ -> return ()
@@ -44,7 +43,9 @@ main = do
           "patch"
           [ bench "Modify (equal)" . whnfIO . replicateM_ 10 $
             void $ testPatch initialState initialView initialView
+            void $ testPatch initialState initialView initialView
           , bench "Modify (diff)" . whnfIO . replicateM_ 10 $
+            void $ testPatch initialState initialView initialView
             void $ testPatch initialState initialView (testView [2 .. 101])
           ]
       ]

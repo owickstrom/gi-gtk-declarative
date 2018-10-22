@@ -71,6 +71,8 @@ data CollectedProperty widget where
       , GI.AttrSetTypeConstraint info setValue
       , KnownSymbol attr
       , Typeable attr
+      , Eq setValue
+      , Typeable setValue
       )
    => GI.AttrLabelProxy attr -> setValue -> CollectedProperty widget
 
@@ -118,12 +120,22 @@ updateProperties
   -> CollectedProperties widget
   -> IO ()
 updateProperties (widget' :: widget) oldProps newProps = do
-  let toAdd = HashMap.difference newProps oldProps
-      toSet = HashMap.intersection newProps oldProps 
-  GI.set widget' (map (toSetOp (Proxy @widget)) (HashMap.elems (toAdd <> toSet)))
+  let toAdd = HashMap.elems (HashMap.difference newProps oldProps)
+      setOps = mconcat (HashMap.elems (HashMap.intersectionWith toMaybeSetOp newProps oldProps))
+  GI.set widget' ((map (toSetOp (Proxy @widget)) toAdd) <> setOps)
   where
     toSetOp :: Proxy widget -> CollectedProperty widget -> Gtk.AttrOp widget 'GI.AttrSet
     toSetOp _ (CollectedProperty attr value) = attr Gtk.:= value
+
+    toMaybeSetOp
+      :: CollectedProperty widget
+      -> CollectedProperty widget
+      -> [Gtk.AttrOp widget 'GI.AttrSet]
+    toMaybeSetOp (CollectedProperty attr (v1 :: t1)) (CollectedProperty _ (v2 :: t2)) =
+      case eqT @t1 @t2 of
+        Just Refl 
+          | v1 /= v2 -> pure (attr Gtk.:= v2)
+        _ -> mempty
 
 updateClasses
   :: Gtk.StyleContext

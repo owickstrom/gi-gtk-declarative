@@ -57,6 +57,8 @@ data Attribute widget event where
       , GI.AttrSetTypeConstraint info setValue
       , KnownSymbol attr
       , Typeable attr
+      , Eq setValue
+      , Typeable setValue
       )
    => GI.AttrLabelProxy (attr :: Symbol) -> setValue -> Attribute widget event
   -- | Defines a set of CSS classes for the underlying widget's style context.
