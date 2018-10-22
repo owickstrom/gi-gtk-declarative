@@ -1,4 +1,3 @@
-{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 
@@ -23,7 +22,7 @@ cancel = sequence_ . cancellations
 class EventSource widget where
   subscribe
     :: widget event     -- ^ Declarative widget with event handlers.
-    -> StateTree        -- ^ State of rendered widget tree.
+    -> SomeState        -- ^ State of rendered widget tree.
     -> (event -> IO ()) -- ^ Event callback, invoked on each emitted event until
                         -- the 'Subscription' is cancelled, or widget is otherwise
                         -- destroyed.

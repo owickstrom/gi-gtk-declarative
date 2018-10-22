@@ -21,6 +21,7 @@ import           Data.Typeable
 import qualified GI.Gtk                         as Gtk
 
 import           GI.Gtk.Declarative.Attributes
+import           GI.Gtk.Declarative.Attributes.Collected
 import           GI.Gtk.Declarative.Attributes.Internal
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Markup
@@ -43,32 +44,32 @@ instance Patchable (SingleWidget widget) where
     (SingleWidget ctor attrs) -> do
         let collected = collectAttributes attrs
         widget' <- Gtk.new ctor (constructProperties collected)
-
         sc <- Gtk.widgetGetStyleContext widget'
         updateClasses sc mempty (collectedClasses collected)
         -- TODO:
         -- mapM_ (applyAfterCreated widget') props
 
         Gtk.widgetShow widget'
-        w <- Gtk.toWidget widget'
-        return (StateTreeWidget (StateTreeNode w sc))
-  patch stateTree
-        (SingleWidget (_    :: Gtk.ManagedPtr w1 -> w1) oldAttributes)
+        return (SomeState (StateTreeWidget (StateTreeNode widget' sc collected)))
+  patch (SomeState (st :: StateTree stateType w child event))
+        (SingleWidget (_    :: Gtk.ManagedPtr w1 -> w1) _)
         (SingleWidget (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes) =
-    case (stateTree, eqT @w1 @w2) of
-      (StateTreeWidget top, Just Refl) -> Modify $ do
-        w <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
-        let oldCollected = collectAttributes oldAttributes
+    case (st, eqT @w @w1, eqT @w1 @w2) of
+      (StateTreeWidget top, Just Refl, Just Refl) -> Modify $ do
+        let w = stateTreeWidget top
+        let oldCollected = stateTreeCollectedAttributes top
             newCollected = collectAttributes newAttributes
         updateProperties w (collectedProperties oldCollected) (collectedProperties newCollected)
         updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
-        return (StateTreeWidget top)
-      (_, _) -> Replace (create (SingleWidget ctor newAttributes))
+        return (SomeState (StateTreeWidget top { stateTreeCollectedAttributes = newCollected }))
+      (_, _, _) -> Replace (create (SingleWidget ctor newAttributes))
 
 instance EventSource (SingleWidget widget) where
-  subscribe (SingleWidget ctor props) s cb = do
-    w <- Gtk.unsafeCastTo ctor (stateTreeNodeWidget s)
-    mconcat . catMaybes <$> mapM (addSignalHandler cb w) props
+  subscribe (SingleWidget (_ :: Gtk.ManagedPtr w1 -> w1) props) (SomeState (st :: StateTree stateType w2 child event)) cb = do
+    case (st, eqT @w1 @w2) of
+      (StateTreeWidget top, Just Refl) ->
+        mconcat . catMaybes <$> mapM (addSignalHandler cb (stateTreeWidget top)) props
+      _ -> fail ""
 
 instance (Typeable widget, Functor (SingleWidget widget))
   => FromWidget (SingleWidget widget) event (Widget event) where

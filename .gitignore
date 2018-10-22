@@ -11,5 +11,7 @@
 /cabal.project.local
 
 # Profiling and flamegraphs
-/*.prof
-/*.svg
+/gi-gtk-*.prof
+/gi-gtk-*.svg
+/example.prof
+/example.svg

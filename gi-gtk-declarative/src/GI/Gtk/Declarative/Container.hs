@@ -1,14 +1,15 @@
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE DeriveFunctor          #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedLabels       #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedLabels      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 -- | Implementations for common "Gtk.Container".
 
@@ -19,12 +20,13 @@ module GI.Gtk.Declarative.Container
   )
 where
 
-import           Control.Monad                      (forM)
+import           Control.Monad                          (forM)
 import           Data.Maybe
 import           Data.Typeable
-import qualified GI.Gtk                             as Gtk
+import qualified GI.Gtk                                 as Gtk
 
 import           GI.Gtk.Declarative.Attributes
+import           GI.Gtk.Declarative.Attributes.Collected
 import           GI.Gtk.Declarative.Attributes.Internal
 import           GI.Gtk.Declarative.Container.Patch
 import           GI.Gtk.Declarative.EventSource
@@ -80,7 +82,7 @@ toChildren = Children . runMarkup
 -- Patchable
 --
 
-instance (Patchable child, IsContainer container child) =>
+instance (Patchable child, Typeable child, IsContainer container child) =>
          Patchable (Container container (Children child)) where
   create (Container ctor attrs children) = do
     let collected = collectAttributes attrs
@@ -92,23 +94,26 @@ instance (Patchable child, IsContainer container child) =>
     childStates <-
       forM (unChildren children) $ \child -> do
         childState <- create child
-        appendChild widget' child (stateTreeNodeWidget childState)
+        appendChild widget' child =<< someStateWidget childState
         return childState
-    w <- Gtk.toWidget widget'
-    return (StateTreeContainer (StateTreeNode w sc) childStates)
-  patch (StateTreeContainer top childStates) (Container _ oldAttributes oldChildren) (Container ctor newAttributes newChildren) =
-    Modify $ do
-      containerWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
-      let oldCollected = collectAttributes oldAttributes
-          newCollected = collectAttributes newAttributes
-      updateProperties containerWidget (collectedProperties oldCollected) (collectedProperties newCollected)
-      updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
-      patchInContainer
-        (StateTreeContainer top childStates)
-        containerWidget
-        (unChildren oldChildren)
-        (unChildren newChildren)
-  patch _ _ new = Replace (create new)
+    return (SomeState (StateTreeContainer (StateTreeNode widget' sc collected) childStates))
+  patch (SomeState (st :: StateTree stateType w1 c1 e1)) (Container _ oldAttributes (oldChildren)) new@(Container (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes (newChildren :: Children c2 e2)) =
+    case (st, eqT @w1 @w2) of
+      (StateTreeContainer top childStates, Just Refl) ->
+        Modify $ do
+          containerWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
+          let oldCollected = collectAttributes oldAttributes
+              newCollected = collectAttributes newAttributes
+          updateProperties containerWidget (collectedProperties oldCollected) (collectedProperties newCollected)
+          updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
+
+          SomeState <$>
+            patchInContainer
+              (StateTreeContainer top childStates)
+              containerWidget
+              (unChildren oldChildren)
+              (unChildren newChildren)
+      _ -> Replace (create new)
 
 --
 -- EventSource
@@ -116,15 +121,16 @@ instance (Patchable child, IsContainer container child) =>
 
 instance (Typeable child, EventSource child) =>
          EventSource (Container widget (Children child)) where
-  subscribe (Container ctor props children) (StateTreeContainer top childStates) cb = do
-    parentWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
-    handlers' <- mconcat . catMaybes <$> mapM (addSignalHandler cb parentWidget) props
-    subs <-
-      flip foldMap (zip (unChildren children) childStates) $ \(c, childState) ->
-        subscribe c childState cb
-    return (handlers' <> subs)
-  subscribe _ _ _ =
-    error "Warning: Cannot subscribe to Container events with a non-container state tree."
+  subscribe (Container ctor props children) (SomeState st) cb =
+    case st of
+      StateTreeContainer top childStates -> do
+        parentWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
+        handlers' <- mconcat . catMaybes <$> mapM (addSignalHandler cb parentWidget) props
+        subs <-
+          flip foldMap (zip (unChildren children) childStates) $ \(c, childState) ->
+            subscribe c childState cb
+        return (handlers' <> subs)
+      _ -> error "Warning: Cannot subscribe to Container events with a non-container state tree."
 
 --
 -- FromWidget

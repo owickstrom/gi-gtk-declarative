@@ -29,24 +29,24 @@ testPatch state oldView newView = case patch state oldView newView of
       ma >>= putMVar ret
       return False
     takeMVar ret
-  _ -> return ()
+  _ -> error "Expected a modification."
 
 main :: IO ()
 main = do
   _      <- Gtk.init Nothing
   let initialView = testView [1 .. 100]
   initialState <- create initialView
-  #showAll (stateTreeNodeWidget initialState)
+  #showAll =<< someStateWidget initialState
   _ <- forkOS $ do
     defaultMain
       [ bgroup
           "patch"
-          [ bench "Modify (equal)" . whnfIO . replicateM_ 10 $
-            void $ testPatch initialState initialView initialView
-            void $ testPatch initialState initialView initialView
-          , bench "Modify (diff)" . whnfIO . replicateM_ 10 $
-            void $ testPatch initialState initialView initialView
-            void $ testPatch initialState initialView (testView [2 .. 101])
+          [ bench "Modify (equal)" . whnfIO . replicateM_ 10 $ do
+            s1 <- testPatch initialState initialView initialView
+            void $ testPatch s1 initialView initialView
+          , bench "Modify (diff)" . whnfIO . replicateM_ 10 $ do
+            s1 <- testPatch initialState initialView initialView
+            void $ testPatch s1 initialView (testView [2 .. 101])
           ]
       ]
     Gtk.mainQuit

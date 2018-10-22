@@ -57,8 +57,7 @@ runLoop App {..} = do
   nextEvent                  <- newEmptyMVar
   (firstState, subscription) <- do
     firstState <- runUI (create firstMarkup)
-    let widget' = stateTreeNodeWidget firstState
-    runUI (Gtk.widgetShowAll widget')
+    runUI (Gtk.widgetShowAll =<< someStateWidget firstState)
     sub <- subscribe firstMarkup firstState (publishEvent nextEvent)
     return (firstState, sub)
   void . forkIO $ runEffect
@@ -80,10 +79,10 @@ runLoop App {..} = do
                 sub <- subscribe newMarkup newState (publishEvent nextEvent)
                 return (newState, sub)
               Replace createNew -> runUI $ do
-                Gtk.widgetDestroy (stateTreeNodeWidget oldState)
+                Gtk.widgetDestroy =<< someStateWidget oldState
                 cancel oldSubscription
                 newState <- createNew
-                Gtk.widgetShowAll (stateTreeNodeWidget newState)
+                Gtk.widgetShowAll =<< someStateWidget newState
                 sub <- subscribe newMarkup newState (publishEvent nextEvent)
                 return (newState, sub)
               Keep -> return (oldState, oldSubscription)

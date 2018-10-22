@@ -24,6 +24,7 @@ import qualified GI.Gtk                                 as Gtk
 
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Attributes.Internal
+import           GI.Gtk.Declarative.Attributes.Collected
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
@@ -92,28 +93,28 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
     -- mapM_ (applyAfterCreated widget') props
 
     childState <- create child
-    Gtk.containerAdd widget' (stateTreeWidget (stateTreeNode childState))
-    w <- Gtk.toWidget widget'
-    return (StateTreeBin (StateTreeNode w sc) childState)
+    Gtk.containerAdd widget' =<< someStateWidget childState
+    return (SomeState (StateTreeBin (StateTreeNode widget' sc collected) childState))
 
-  patch (StateTreeBin top oldChildState) (Bin _ oldAttributes oldChild) (Bin ctor newAttributes newChild) =
-    Modify $ do
+  patch (SomeState st) (Bin _ oldAttributes oldChild) (Bin ctor newAttributes newChild) =
+    case st of
+      StateTreeBin top oldChildState ->
+        Modify $ do
+          binWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
+          let oldCollected = collectAttributes oldAttributes
+              newCollected = collectAttributes newAttributes
+          updateProperties binWidget (collectedProperties oldCollected) (collectedProperties newCollected)
+          updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
 
-      binWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
-      let oldCollected = collectAttributes oldAttributes
-          newCollected = collectAttributes newAttributes
-      updateProperties binWidget (collectedProperties oldCollected) (collectedProperties newCollected)
-      updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
-
-      case patch oldChildState oldChild newChild of
-        Modify modify -> StateTreeBin top <$> modify
-        Replace createNew -> do
-          Gtk.containerRemove binWidget (stateTreeNodeWidget oldChildState)
-          newChildState <- createNew
-          Gtk.containerAdd binWidget (stateTreeNodeWidget newChildState)
-          return (StateTreeBin top newChildState)
-        Keep -> return (StateTreeBin top oldChildState)
-  patch _ _ new = Replace (create new)
+          case patch oldChildState oldChild newChild of
+            Modify modify -> SomeState . StateTreeBin top <$> modify
+            Replace createNew -> do
+              Gtk.widgetDestroy =<< someStateWidget oldChildState
+              newChildState <- createNew
+              Gtk.containerAdd binWidget  =<< someStateWidget newChildState
+              return (SomeState (StateTreeBin top newChildState))
+            Keep -> return (SomeState st)
+      _ -> Replace (create (Bin ctor newAttributes newChild))
 
 --
 -- EventSource
@@ -121,13 +122,14 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
 
 instance (BinChild parent child, EventSource child) =>
          EventSource (Bin parent child) where
-  subscribe (Bin ctor props child) (StateTreeBin top childState) cb = do
-    binWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
-    handlers' <-
-      mconcat . catMaybes <$> mapM (addSignalHandler cb binWidget) props
-    (<> handlers') <$> subscribe child childState cb
-  subscribe _ _ _ =
-    error "Cannot subscribe to Bin events with a non-bin state tree."
+  subscribe (Bin ctor props child) (SomeState st) cb = 
+    case st of
+      StateTreeBin top childState -> do
+        binWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
+        handlers' <-
+          mconcat . catMaybes <$> mapM (addSignalHandler cb binWidget) props
+        (<> handlers') <$> subscribe child childState cb
+      _ -> error "Cannot subscribe to Bin events with a non-bin state tree."
 
 --
 -- FromWidget
