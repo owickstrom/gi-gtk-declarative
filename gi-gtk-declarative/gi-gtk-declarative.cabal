@@ -63,4 +63,4 @@ benchmark gi-gtk-declarative-benchmark
                  , gi-gtk-declarative
                  , random
                  , text
-  ghc-options:     -Wall -O2 -rtsopts -with-rtsopts=-N -threaded -prof
+  ghc-options:     -Wall -O2 -rtsopts -with-rtsopts=-N -threaded
