@@ -20,10 +20,11 @@ module GI.Gtk.Declarative.Container
   )
 where
 
-import           Control.Monad                          (forM)
-import           Data.Maybe
+import           Control.Monad                           (forM)
 import           Data.Typeable
-import qualified GI.Gtk                                 as Gtk
+import           Data.Vector                             (Vector)
+import qualified Data.Vector                             as Vector
+import qualified GI.Gtk                                  as Gtk
 
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Attributes.Collected
@@ -47,7 +48,7 @@ data Container widget children event where
        , Functor children
        )
     => (Gtk.ManagedPtr widget -> widget)
-    -> [Attribute widget event]
+    -> Vector (Attribute widget event)
     -> children event
     -> Container widget children event
 
@@ -67,12 +68,12 @@ container
      , FromWidget (Container widget (Children child)) event target
      )
   => (Gtk.ManagedPtr widget -> widget) -- ^ A container widget constructor from the underlying gi-gtk library.
-  -> [Attribute widget event]          -- ^ List of 'Attribute's.
+  -> Vector (Attribute widget event)          -- ^ List of 'Attribute's.
   -> MarkupOf child event ()           -- ^ The container's 'child' widgets, in a 'MarkupOf' builder.
   -> target                            -- ^ The target, whose type is decided by 'FromWidget'.
 container ctor attrs = fromWidget . Container ctor attrs . toChildren
 
-newtype Children child event = Children { unChildren :: [child event] }
+newtype Children child event = Children { unChildren :: Vector (child event) }
   deriving (Functor)
 
 toChildren :: MarkupOf child event () -> Children child event
@@ -97,12 +98,12 @@ instance (Patchable child, Typeable child, IsContainer container child) =>
         appendChild widget' child =<< someStateWidget childState
         return childState
     return (SomeState (StateTreeContainer (StateTreeNode widget' sc collected) childStates))
-  patch (SomeState (st :: StateTree stateType w1 c1 e1)) (Container _ oldAttributes (oldChildren)) new@(Container (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes (newChildren :: Children c2 e2)) =
+  patch (SomeState (st :: StateTree stateType w1 c1 e1)) (Container _ _ oldChildren) new@(Container (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes (newChildren :: Children c2 e2)) =
     case (st, eqT @w1 @w2) of
       (StateTreeContainer top childStates, Just Refl) ->
         Modify $ do
           containerWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
-          let oldCollected = collectAttributes oldAttributes
+          let oldCollected = stateTreeCollectedAttributes top
               newCollected = collectAttributes newAttributes
           updateProperties containerWidget (collectedProperties oldCollected) (collectedProperties newCollected)
           updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
@@ -125,9 +126,9 @@ instance (Typeable child, EventSource child) =>
     case st of
       StateTreeContainer top childStates -> do
         parentWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
-        handlers' <- mconcat . catMaybes <$> mapM (addSignalHandler cb parentWidget) props
+        handlers' <- foldMap (addSignalHandler cb parentWidget) props
         subs <-
-          flip foldMap (zip (unChildren children) childStates) $ \(c, childState) ->
+          flip foldMap (Vector.zip (unChildren children) childStates) $ \(c, childState) ->
             subscribe c childState cb
         return (handlers' <> subs)
       _ -> error "Warning: Cannot subscribe to Container events with a non-container state tree."
@@ -158,6 +159,5 @@ instance ( a ~ ()
          ) =>
          FromWidget (Container widget children) event (Markup event a) where
   fromWidget = single . Widget
-
 instance FromWidget (Container widget children) event (Container widget children event) where
   fromWidget = id

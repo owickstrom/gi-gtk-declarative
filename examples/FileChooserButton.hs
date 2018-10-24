@@ -1,18 +1,16 @@
 {-# LANGUAGE OverloadedLabels  #-}
+{-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module FileChooserButton where
 
 import qualified Data.Text                     as Text
 
-import           GI.Gtk                         ( Box(..)
-                                                , Button(..)
-                                                , FileChooserButton(..)
-                                                , Window(..)
-                                                , Label(..)
-                                                , Orientation(..)
-                                                , fileChooserGetFilename
-                                                )
+import           GI.Gtk                        (Box (..), Button (..),
+                                                FileChooserButton (..),
+                                                Label (..), Orientation (..),
+                                                Window (..),
+                                                fileChooserGetFilename)
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -24,7 +22,11 @@ view' :: State -> AppView Event
 view' s =
   bin
       Window
-      [#title := "File Chooser Button", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
+      [ #title := "File Chooser Button"
+      , on #deleteEvent (const (True, Closed))
+      , #widthRequest := 400
+      , #heightRequest := 300
+      ]
     $ case s of
         Done path ->
           widget Label [#label := (Text.pack path <> " was selected.")]

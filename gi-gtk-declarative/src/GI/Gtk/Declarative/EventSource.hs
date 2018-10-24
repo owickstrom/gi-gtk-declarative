@@ -3,14 +3,16 @@
 
 -- | Event handling for declarative widgets.
 module GI.Gtk.Declarative.EventSource
-  ( EventSource (..)
+  ( EventSource(..)
   , Subscription
   , fromCancellation
   , cancel
   )
 where
 
-import GI.Gtk.Declarative.State
+import           Data.Vector              (Vector)
+
+import           GI.Gtk.Declarative.State
 
 -- | Cancel a 'Subscription', meaning that the callback will not be invoked on
 -- any subsequent signal emissions.
@@ -32,7 +34,7 @@ class EventSource widget where
 -- handlers (to a tree of widgets.) When subscribing to a container widget, all
 -- child widgets are also subscribed to, and the 'Subscription's are combined
 -- using the 'Semigroup' instance.
-newtype Subscription = Subscription { cancellations :: [IO ()] }
+newtype Subscription = Subscription { cancellations :: Vector (IO ()) }
   deriving (Semigroup, Monoid)
 
 -- | Create a subscription from a cancellation IO action.

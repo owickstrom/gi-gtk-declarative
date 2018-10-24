@@ -29,6 +29,7 @@ where
 
 import           Control.Monad.Writer
 import           Data.Typeable
+import           Data.Vector                    (Vector)
 
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Patch
@@ -74,11 +75,11 @@ instance EventSource Widget where
 -- technical necessity to have the 'Monad' instance. You can still use it if
 -- you need to return a value from a markup function, though.
 newtype MarkupOf widget event a =
-  MarkupOf (Writer [widget event] a)
+  MarkupOf (Writer (Vector (widget event)) a)
   deriving (Functor, Applicative, Monad)
 
 -- | Run a 'MarkupOf' builder and get its widgets.
-runMarkup :: MarkupOf widget event () -> [widget event]
+runMarkup :: MarkupOf widget event () -> Vector (widget event)
 runMarkup (MarkupOf w) = execWriter w
 
 -- | Handy type alias for the common case of markup containing 'Widget's.
@@ -86,10 +87,10 @@ type Markup event a = MarkupOf Widget event a
 
 -- | Construct markup from a single widget.
 single :: widget event -> MarkupOf widget event ()
-single w = MarkupOf (tell [w])
+single = MarkupOf . tell . pure
 
 -- | Construct markup from multiple widgets.
-multiple :: [widget event] -> MarkupOf widget event ()
+multiple :: Vector (widget event) -> MarkupOf widget event ()
 multiple = MarkupOf . tell
 
 -- | Convert a widget to a target type. This is deliberately unconstrained in

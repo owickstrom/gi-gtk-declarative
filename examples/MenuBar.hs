@@ -1,17 +1,14 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedLabels  #-}
+{-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module MenuBar where
 
-import           Data.Text                      ( Text )
-import           GI.Gtk                         ( Box(..)
-                                                , Label(..)
-                                                , MenuBar(..)
-                                                , MenuItem(..)
-                                                , Orientation(..)
-                                                , Window(..)
-                                                )
+import           Data.Text                     (Text)
+import           GI.Gtk                        (Box (..), Label (..),
+                                                MenuBar (..), MenuItem (..),
+                                                Orientation (..), Window (..))
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -21,7 +18,13 @@ data Event = Open | Save | Help | Closed
 
 view' :: State -> AppView Event
 view' (Message msg) =
-  bin Window [#title := "MenuBar", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
+  bin
+      Window
+      [ #title := "MenuBar"
+      , on #deleteEvent (const (True, Closed))
+      , #widthRequest := 400
+      , #heightRequest := 300
+      ]
     $ container Box [#orientation := OrientationVertical]
     $ do
         boxChild False False 0 $ container MenuBar [] $ do

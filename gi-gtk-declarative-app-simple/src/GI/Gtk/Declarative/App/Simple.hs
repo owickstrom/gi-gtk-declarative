@@ -54,48 +54,48 @@ data Transition state event =
 runLoop :: Typeable event => App state event -> IO ()
 runLoop App {..} = do
   let firstMarkup = view initialState
-  nextEvent                  <- newEmptyMVar
+  events                  <- newChan
   (firstState, subscription) <- do
     firstState <- runUI (create firstMarkup)
     runUI (Gtk.widgetShowAll =<< someStateWidget firstState)
-    sub <- subscribe firstMarkup firstState (publishEvent nextEvent)
+    sub <- subscribe firstMarkup firstState (publishEvent events)
     return (firstState, sub)
   void . forkIO $ runEffect
-    (mergeProducers inputs >-> publishInputEvents nextEvent)
-  loop firstState firstMarkup nextEvent subscription initialState
+    (mergeProducers inputs >-> publishInputEvents events)
+  loop firstState firstMarkup events subscription initialState
 
   where
-    loop oldState oldMarkup nextEvent oldSubscription oldModel = do
-      event <- takeMVar nextEvent
+    loop oldState oldMarkup events oldSubscription oldModel = do
+      event <- readChan events
       case update oldModel event of
         Transition newModel action -> do
           let newMarkup = view newModel
 
           (newState, sub) <-
             case patch oldState oldMarkup newMarkup of
-              Modify ma -> do
+              Modify ma -> runUI $ do
                 cancel oldSubscription
-                newState <- runUI ma
-                sub <- subscribe newMarkup newState (publishEvent nextEvent)
+                newState <- ma
+                sub <- subscribe newMarkup newState (publishEvent events)
                 return (newState, sub)
               Replace createNew -> runUI $ do
                 Gtk.widgetDestroy =<< someStateWidget oldState
                 cancel oldSubscription
                 newState <- createNew
                 Gtk.widgetShowAll =<< someStateWidget newState
-                sub <- subscribe newMarkup newState (publishEvent nextEvent)
+                sub <- subscribe newMarkup newState (publishEvent events)
                 return (newState, sub)
               Keep -> return (oldState, oldSubscription)
 
-          -- Make sure the MVar is empty.
-          void (tryTakeMVar nextEvent)
-
           -- If the action returned by the update function produced an event, then
-          -- we write that as the nextEvent to use directly.
-          void . forkIO $ action >>= maybe (return ()) (putMVar nextEvent)
+          -- we write that to the channel.
+          --
+          -- TODO: Use prioritized queue for events returned by 'update', to take
+          -- precendence over those from 'inputs'.
+          void . forkIO $ action >>= maybe (return ()) (writeChan events)
 
           -- Finally, we loop.
-          loop newState newMarkup nextEvent sub newModel
+          loop newState newMarkup events sub newModel
         Exit -> return ()
 
 -- | Initialize GTK, set up a new window, and run the application in it. This
@@ -103,6 +103,7 @@ runLoop App {..} = do
 -- 'runInWindow' instead.
 run
   :: Typeable event
+  => Show state
   => App state event      -- ^ Application to run
   -> IO ()
 run app = do
@@ -113,8 +114,8 @@ run app = do
     Gtk.mainQuit
   Gtk.main
 
-publishEvent :: MVar event -> event -> IO ()
-publishEvent mvar = void . tryPutMVar mvar
+publishEvent :: Chan event -> event -> IO ()
+publishEvent mvar = void . writeChan mvar
 
 mergeProducers :: [Producer a IO ()] -> Producer a IO ()
 mergeProducers producers = do
@@ -127,8 +128,8 @@ mergeProducers producers = do
     runEffect $ producer >-> toOutput output
     performGC
 
-publishInputEvents :: MVar event -> Consumer event IO ()
-publishInputEvents nextEvent = forever (await >>= liftIO . (putMVar nextEvent))
+publishInputEvents :: Chan event -> Consumer event IO ()
+publishInputEvents events = forever (await >>= liftIO . writeChan events)
 
 runUI :: IO a -> IO a
 runUI ma = do

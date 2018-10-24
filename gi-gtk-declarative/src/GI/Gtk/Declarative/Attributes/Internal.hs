@@ -32,10 +32,10 @@ addSignalHandler
   => (event -> IO ())
   -> widget
   -> Attribute widget event
-  -> m (Maybe Subscription)
+  -> m Subscription
 addSignalHandler onEvent widget' = listenToSignal >=> \case
   Just eh -> setupCancellation eh
-  Nothing -> pure Nothing
+  Nothing -> pure mempty
  where
   listenToSignal = \case
     OnSignalPure signal handler ->
@@ -45,4 +45,4 @@ addSignalHandler onEvent widget' = listenToSignal >=> \case
     _ -> pure Nothing
   setupCancellation handlerId = do
     w <- Gtk.toWidget widget'
-    pure (Just (fromCancellation (GI.signalHandlerDisconnect w handlerId)))
+    pure (fromCancellation (GI.signalHandlerDisconnect w handlerId))

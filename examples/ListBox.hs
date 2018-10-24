@@ -1,20 +1,18 @@
 {-# LANGUAGE OverloadedLabels  #-}
+{-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
 module ListBox where
 
-import           Control.Monad                  ( forM_ )
-import           Data.Function                  ( (&) )
-import           Data.Text                      ( Text )
+import           Control.Monad                 (forM_)
+import           Data.Function                 ((&))
+import           Data.Text                     (Text)
 import           Pipes
 import qualified Pipes.Extras                  as Pipes
 
-import           GI.Gtk                         ( Label(..)
-                                                , ListBox(..)
-                                                , Window(..)
-                                                , ListBoxRow(..)
-                                                )
+import           GI.Gtk                        (Label (..), ListBox (..),
+                                                ListBoxRow (..), Window (..))
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -24,7 +22,13 @@ data Event = Greet Text | Closed
 
 view' :: State -> AppView Event
 view' State {..} =
-  bin Window [#title := "ListBox", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
+  bin
+      Window
+      [ #title := "ListBox"
+      , on #deleteEvent (const (True, Closed))
+      , #widthRequest := 400
+      , #heightRequest := 300
+      ]
     $ container ListBox []
     $ forM_ greetings
     $ \name ->
@@ -33,7 +37,7 @@ view' State {..} =
 
 update' :: State -> Event -> Transition State Event
 update' State {..} (Greet who) =
-  Transition State { greetings = greetings <> [who] } (pure Nothing)
+  Transition State {greetings = greetings <> [who]} (pure Nothing)
 update' _ Closed = Exit
 
 main :: IO ()

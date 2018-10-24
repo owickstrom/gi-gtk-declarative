@@ -1,19 +1,17 @@
 {-# LANGUAGE OverloadedLabels  #-}
+{-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
 module Functor where
 
-import           Data.Functor                   ( ($>) )
-import           Data.Text                      ( Text )
+import           Data.Functor                  (($>))
+import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
 
-import           GI.Gtk                         ( Box(..)
-                                                , Button(..)
-                                                , Label(..)
-                                                , Orientation(..)
-                                                , Window(..)
-                                                )
+import           GI.Gtk                        (Box (..), Button (..),
+                                                Label (..), Orientation (..),
+                                                Window (..))
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -28,7 +26,13 @@ data Event = Incr | Decr | Closed
 
 incrDecrView :: State -> AppView Event
 incrDecrView State {..} =
-  bin Window [#title := "Functor", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
+  bin
+      Window
+      [ #title := "Functor"
+      , on #deleteEvent (const (True, Closed))
+      , #widthRequest := 400
+      , #heightRequest := 300
+      ]
     $ container Box [#orientation := OrientationVertical]
     $ do
         boxChild True True 0 $ widget Label [#label := Text.pack (show count)]

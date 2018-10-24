@@ -18,9 +18,10 @@ module GI.Gtk.Declarative.Container.MenuItem
   )
 where
 
-import           Data.Text                          (Text)
+import           Data.Text                                ( Text )
 import           Data.Typeable
-import qualified GI.Gtk                             as Gtk
+import           Data.Vector                              ( Vector )
+import qualified GI.Gtk                        as Gtk
 
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Bin
@@ -43,8 +44,8 @@ instance Functor MenuItem where
   fmap f (MenuItem item) = MenuItem (fmap f item)
   fmap f (SubMenu label subMenu')= SubMenu label (fmap f subMenu')
 
-menuItem ::
-     ( Gtk.IsMenuItem item
+menuItem
+  :: ( Gtk.IsMenuItem item
      , Typeable event
      , BinChild item Widget
      , Typeable item
@@ -53,30 +54,32 @@ menuItem ::
      , Gtk.IsWidget item
      )
   => (Gtk.ManagedPtr item -> item)
-  -> [Attribute item event]
+  -> Vector (Attribute item event)
   -> Widget event
   -> MarkupOf MenuItem event ()
 menuItem item attrs = single . MenuItem . Bin item attrs
 
-subMenu ::
-     (Typeable event)
+subMenu
+  :: (Typeable event)
   => Text
   -> MarkupOf MenuItem event ()
   -> MarkupOf MenuItem event ()
-subMenu label = single . SubMenu label . container Gtk.Menu []
+subMenu label = single . SubMenu label . container Gtk.Menu mempty
 
-newSubMenuItem 
-  :: Text
-  -> IO SomeState
-  -> IO SomeState
+newSubMenuItem :: Text -> IO SomeState -> IO SomeState
 newSubMenuItem label createSubMenu = do
   menuItem' <- Gtk.menuItemNewWithLabel label
-  sc <- Gtk.widgetGetStyleContext menuItem'
+  sc        <- Gtk.widgetGetStyleContext menuItem'
   SomeState (subMenuState :: StateTree st subMenu children e1) <- createSubMenu
   case eqT @subMenu @Gtk.Menu of
     Just Refl -> do
       Gtk.menuItemSetSubmenu menuItem' (Just (stateTreeNodeWidget subMenuState))
-      return (SomeState (StateTreeBin (StateTreeNode menuItem' sc mempty) (SomeState subMenuState)))
+      return
+        (SomeState
+          (StateTreeBin (StateTreeNode menuItem' sc mempty)
+                        (SomeState subMenuState)
+          )
+        )
     Nothing -> fail "Failed to create new sub menu item."
 
 instance Patchable MenuItem where

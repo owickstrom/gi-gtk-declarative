@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedLabels  #-}
+{-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
@@ -6,14 +7,11 @@ import           Control.Concurrent
 import           Control.Monad
 import           Criterion.Main
 import           Data.Text
-import qualified GI.Gdk                        as Gdk
-import qualified GI.GLib.Constants             as GLib
+import qualified GI.Gdk                   as Gdk
+import qualified GI.GLib.Constants        as GLib
 
-import           GI.Gtk                         ( Box(..)
-                                                , Window(..)
-                                                , Label(..)
-                                                )
-import qualified GI.Gtk                        as Gtk
+import           GI.Gtk                   (Box (..), Label (..), Window (..))
+import qualified GI.Gtk                   as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.State
 
@@ -33,7 +31,7 @@ testPatch state oldView newView = case patch state oldView newView of
 
 main :: IO ()
 main = do
-  _      <- Gtk.init Nothing
+  _ <- Gtk.init Nothing
   let initialView = testView [1 .. 100]
   initialState <- create initialView
   #showAll =<< someStateWidget initialState
