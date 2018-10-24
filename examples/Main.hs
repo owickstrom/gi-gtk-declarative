@@ -4,6 +4,8 @@ module Main where
 import           System.Environment
 import           System.IO
 
+import           Data.List (intercalate)
+
 import qualified AddBoxes
 import qualified Exit
 import qualified FileChooserButton
@@ -24,9 +26,10 @@ main =
                  , ("Window", Window.main)
                  , ("MenuBar", MenuBar.main)
                  ]
+      exampleNames = intercalate ", " $ fst <$> examples
   in getArgs >>= \case
     [example] ->
       case lookup example examples of
         Just main' -> main'
         Nothing -> hPutStrLn stderr ("No example available with name: " <> example)
-    _ -> hPutStrLn stderr "Usage: gi-gtk-declarative-example NAME"
+    _ -> hPutStrLn stderr $ "Usage: gi-gtk-declarative-example EXAMPLE\nExamples: " <> exampleNames
