@@ -86,6 +86,7 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
   create (Bin ctor attrs child) = do
     let collected = collectAttributes attrs
     widget' <- Gtk.new ctor (constructProperties collected)
+    Gtk.widgetShow widget'
 
     sc <- Gtk.widgetGetStyleContext widget'
     updateClasses sc mempty (collectedClasses collected)
@@ -95,11 +96,10 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
 
     childState <- create child
     childWidget <- someStateWidget childState
-    Gtk.widgetShow childWidget
     Gtk.containerAdd widget' childWidget
-    return (SomeState (StateTreeBin (StateTreeNode widget' sc collected) childState))
+    return (SomeState (StateTreeBin (StateTreeNode widget' sc collected ()) childState))
 
-  patch (SomeState (st :: StateTree stateType w1 c1 e1))
+  patch (SomeState (st :: StateTree stateType w1 c1 e1 cs))
         (Bin _ _ oldChild)
         (Bin (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes newChild) =
     case (st, eqT @w1 @w2) of

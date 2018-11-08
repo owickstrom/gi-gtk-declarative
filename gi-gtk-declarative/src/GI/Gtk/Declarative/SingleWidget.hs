@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -44,13 +45,14 @@ instance Patchable (SingleWidget widget) where
     SingleWidget ctor attrs -> do
         let collected = collectAttributes attrs
         widget' <- Gtk.new ctor (constructProperties collected)
+        Gtk.widgetShow widget'
         sc <- Gtk.widgetGetStyleContext widget'
         updateClasses sc mempty (collectedClasses collected)
         -- TODO:
         -- mapM_ (applyAfterCreated widget') props
 
-        return (SomeState (StateTreeWidget (StateTreeNode widget' sc collected)))
-  patch (SomeState (st :: StateTree stateType w child event))
+        return (SomeState (StateTreeWidget (StateTreeNode widget' sc collected ())))
+  patch (SomeState (st :: StateTree stateType w child event cs))
         (SingleWidget (_    :: Gtk.ManagedPtr w1 -> w1) _)
         (SingleWidget (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes) =
     case (st, eqT @w @w1, eqT @w1 @w2) of
@@ -62,10 +64,10 @@ instance Patchable (SingleWidget widget) where
         updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
         let top' = top { stateTreeCollectedAttributes = newCollected }
         return (SomeState (StateTreeWidget top' { stateTreeCollectedAttributes = newCollected }))
-      (_, _, _) -> Replace (create (SingleWidget ctor newAttributes))
+      _ -> Replace (create (SingleWidget ctor newAttributes))
 
 instance EventSource (SingleWidget widget) where
-  subscribe (SingleWidget (_ :: Gtk.ManagedPtr w1 -> w1) props) (SomeState (st :: StateTree stateType w2 child event)) cb = do
+  subscribe (SingleWidget (_ :: Gtk.ManagedPtr w1 -> w1) props) (SomeState (st :: StateTree stateType w2 child event cs)) cb = do
     case (st, eqT @w1 @w2) of
       (StateTreeWidget top, Just Refl) ->
         foldMap (addSignalHandler cb (stateTreeWidget top)) props

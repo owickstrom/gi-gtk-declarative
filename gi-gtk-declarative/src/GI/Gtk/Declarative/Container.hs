@@ -88,6 +88,7 @@ instance (Patchable child, Typeable child, IsContainer container child) =>
   create (Container ctor attrs children) = do
     let collected = collectAttributes attrs
     widget' <- Gtk.new ctor (constructProperties collected)
+    Gtk.widgetShow widget'
     sc <- Gtk.widgetGetStyleContext widget'
     updateClasses sc mempty (collectedClasses collected)
     -- TODO:
@@ -97,8 +98,8 @@ instance (Patchable child, Typeable child, IsContainer container child) =>
         childState <- create child
         appendChild widget' child =<< someStateWidget childState
         return childState
-    return (SomeState (StateTreeContainer (StateTreeNode widget' sc collected) childStates))
-  patch (SomeState (st :: StateTree stateType w1 c1 e1)) (Container _ _ oldChildren) new@(Container (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes (newChildren :: Children c2 e2)) =
+    return (SomeState (StateTreeContainer (StateTreeNode widget' sc collected ()) childStates))
+  patch (SomeState (st :: StateTree stateType w1 c1 e1 cs)) (Container _ _ oldChildren) new@(Container (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes (newChildren :: Children c2 e2)) =
     case (st, eqT @w1 @w2) of
       (StateTreeContainer top childStates, Just Refl) ->
         Modify $ do

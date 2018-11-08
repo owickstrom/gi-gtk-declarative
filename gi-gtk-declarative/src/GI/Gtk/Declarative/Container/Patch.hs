@@ -41,11 +41,11 @@ patchInContainer
      , Patchable child
      , IsContainer container child
      )
-  => StateTree 'ContainerState container child event
+  => StateTree 'ContainerState container child event cs
   -> container
   -> Vector (child e1)
   -> Vector (child e2)
-  -> IO (StateTree 'ContainerState container child event)
+  -> IO (StateTree 'ContainerState container child event cs)
 patchInContainer (StateTreeContainer top children) container os' ns' = do
   let maxLength = maximum ([length children, length os', length ns'] :: [Int])
       indices   = Vector.enumFromN 0 (fromIntegral maxLength)
@@ -70,7 +70,6 @@ patchInContainer (StateTreeContainer top children) container os' ns' = do
             newChildState  <- createWidget
             oldChildWidget <- someStateWidget oldChildState
             newChildWidget <- someStateWidget newChildState
-            Gtk.widgetShow newChildWidget
             replaceChild container new i oldChildWidget newChildWidget
             return (pure newChildState)
           Keep -> return (pure oldChildState)
@@ -82,7 +81,6 @@ patchInContainer (StateTreeContainer top children) container os' ns' = do
         newChildState  <- create new
         oldChildWidget <- someStateWidget oldChildState
         newChildWidget <- someStateWidget newChildState
-        Gtk.widgetShow newChildWidget
         replaceChild container new i oldChildWidget newChildWidget
         return (Vector.singleton newChildState)
 
@@ -91,7 +89,6 @@ patchInContainer (StateTreeContainer top children) container os' ns' = do
       (_i, Nothing, _, Just n) -> do
         newChildState <- create n
         w             <- someStateWidget newChildState
-        Gtk.widgetShow w
         appendChild container n w
         return (Vector.singleton newChildState)
 

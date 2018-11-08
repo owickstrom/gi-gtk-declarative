@@ -70,13 +70,13 @@ newSubMenuItem :: Text -> IO SomeState -> IO SomeState
 newSubMenuItem label createSubMenu = do
   menuItem' <- Gtk.menuItemNewWithLabel label
   sc        <- Gtk.widgetGetStyleContext menuItem'
-  SomeState (subMenuState :: StateTree st subMenu children e1) <- createSubMenu
+  SomeState (subMenuState :: StateTree st subMenu children e1 cs) <- createSubMenu
   case eqT @subMenu @Gtk.Menu of
     Just Refl -> do
       Gtk.menuItemSetSubmenu menuItem' (Just (stateTreeNodeWidget subMenuState))
       return
         (SomeState
-          (StateTreeBin (StateTreeNode menuItem' sc mempty)
+          (StateTreeBin (StateTreeNode menuItem' sc mempty ())
                         (SomeState subMenuState)
           )
         )

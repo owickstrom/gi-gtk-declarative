@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds      #-}
 {-# LANGUAGE GADTs          #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE RankNTypes     #-}
 module GI.Gtk.Declarative.State where
 
 import           Data.Typeable
@@ -15,41 +16,44 @@ data SomeState where
   SomeState
     :: ( Gtk.IsWidget widget
        , Typeable widget
+       , Typeable customState
        )
-    => StateTree stateType widget child event
+    => StateTree stateType widget child event customState
     -> SomeState
 
 data StateType = WidgetState | BinState | ContainerState
 
-data StateTree (stateType :: StateType) widget child event where
+data StateTree (stateType :: StateType) widget child event customState where
   StateTreeWidget
-    :: !(StateTreeNode widget event)
-    -> StateTree 'WidgetState widget child event
+    :: !(StateTreeNode widget event customState)
+    -> StateTree 'WidgetState widget child event customState
   StateTreeBin
-    :: !(StateTreeNode widget event)
+    :: !(StateTreeNode widget event customState)
     -> SomeState
-    -> StateTree 'BinState widget child event
+    -> StateTree 'BinState widget child event customState
   StateTreeContainer
     :: ( Gtk.IsContainer widget
        , IsContainer widget child
        )
-    => !(StateTreeNode widget event)
+    => !(StateTreeNode widget event customState)
     -> Vector SomeState
-    -> StateTree 'ContainerState widget child event
+    -> StateTree 'ContainerState widget child event customState
 
-data StateTreeNode widget event = StateTreeNode
+data StateTreeNode widget event customState = StateTreeNode
   { stateTreeWidget              :: !widget
   , stateTreeStyleContext        :: !Gtk.StyleContext
   , stateTreeCollectedAttributes :: !(Collected widget event)
+  , stateTreeCustomState         :: customState
   }
 
 stateTreeNode
-  :: StateTree stateType widget child event -> StateTreeNode widget event
+  :: StateTree stateType widget child event customState
+  -> StateTreeNode widget event customState
 stateTreeNode (StateTreeWidget s     ) = s
 stateTreeNode (StateTreeBin       s _) = s
 stateTreeNode (StateTreeContainer s _) = s
 
-stateTreeNodeWidget :: StateTree stateType widget child event -> widget
+stateTreeNodeWidget :: StateTree stateType widget child event customState -> widget
 stateTreeNodeWidget = stateTreeWidget . stateTreeNode
 
 someStateWidget :: SomeState -> IO Gtk.Widget
