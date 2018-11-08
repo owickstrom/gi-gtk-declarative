@@ -13,6 +13,7 @@ cabal-version:        >=1.10
 executable example
   main-is:              Main.hs
   other-modules:        AddBoxes
+                      , CSS
                       , Exit
                       , FileChooserButton
                       , Functor
@@ -21,6 +22,8 @@ executable example
                       , ManyBoxes
                       , MenuBar
   build-depends:        base >=4.10 && <4.12
+                      , async
+                      , bytestring
                       , gi-gobject
                       , gi-glib
                       , gi-gtk

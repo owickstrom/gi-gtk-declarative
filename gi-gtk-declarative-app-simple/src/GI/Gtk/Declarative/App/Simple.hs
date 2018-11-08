@@ -7,10 +7,12 @@ module GI.Gtk.Declarative.App.Simple
   , AppView
   , Transition(..)
   , run
+  , runLoop
   )
 where
 
 import           Control.Concurrent
+import           Control.Concurrent.Async (async)
 import           Control.Monad
 import           Data.Typeable
 import qualified GI.Gdk                        as Gdk
@@ -49,8 +51,32 @@ data Transition state event =
   -- | Exit the application.
   | Exit
 
+-- | Initialize GTK and run the application in it. This is a
+-- convenience function that is highly recommended. If you need more
+-- flexibility, e.g. to set up GTK+ yourself, use 'runLoop' instead.
+run
+  :: Typeable event
+  => App state event      -- ^ Application to run
+  -> IO ()
+run app = do
+  void $ Gtk.init Nothing
+  void . async $ do
+    runLoop app
+    -- In case the run loop exits, quit the main GTK loop.
+    Gtk.mainQuit
+  Gtk.main
+
 -- | Run an 'App'. This IO action will loop, so run it in a separate thread
--- using 'forkIO' if you're calling it before the GTK main loop.
+-- using 'async' if you're calling it before the GTK main loop.
+--
+-- @
+--     void $ Gtk.init Nothing
+--     void . async $ do
+--       runLoop app
+--       -- In case the run loop exits, quit the main GTK loop.
+--       Gtk.mainQuit
+--     Gtk.main
+-- @
 runLoop :: Typeable event => App state event -> IO ()
 runLoop App {..} = do
   let firstMarkup = view initialState
@@ -97,22 +123,6 @@ runLoop App {..} = do
           -- Finally, we loop.
           loop newState newMarkup events sub newModel
         Exit -> return ()
-
--- | Initialize GTK, set up a new window, and run the application in it. This
--- is a convenience function. If you need more flexibility, you should use
--- 'runInWindow' instead.
-run
-  :: Typeable event
-  => Show state
-  => App state event      -- ^ Application to run
-  -> IO ()
-run app = do
-  void $ Gtk.init Nothing
-  void . forkIO $ do
-    runLoop app
-    -- In case the run loop exits, quit the main GTK loop.
-    Gtk.mainQuit
-  Gtk.main
 
 publishEvent :: Chan event -> event -> IO ()
 publishEvent mvar = void . writeChan mvar

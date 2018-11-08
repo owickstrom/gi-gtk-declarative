@@ -17,7 +17,7 @@ import           GI.Gtk.Declarative.App.Simple
 
 type State = [Int]
 
-data Event 
+data Event
   = IncrAll
   | Closed
 
