@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedLabels  #-}
+{-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
@@ -11,38 +12,45 @@ import           Pipes
 import qualified Pipes.Extras                  as Pipes
 
 import           GI.Gtk                        (Label (..), ListBox (..),
-                                                ListBoxRow (..))
+                                                ListBoxRow (..), Window (..))
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
 data State = State { greetings :: [Text] }
 
-data Event = Greet Text
+data Event = Greet Text | Closed
 
-view' :: State -> Widget Event
-view' State {..} = container ListBox [] $
-  forM_ greetings $ \name ->
-    bin ListBoxRow [ #activatable := False, #selectable := False ] $
-      widget Label [ #label := name ]
+view' :: State -> AppView Event
+view' State {..} =
+  bin
+      Window
+      [ #title := "ListBox"
+      , on #deleteEvent (const (True, Closed))
+      , #widthRequest := 400
+      , #heightRequest := 300
+      ]
+    $ container ListBox []
+    $ forM_ greetings
+    $ \name ->
+        bin ListBoxRow [#activatable := False, #selectable := False]
+          $ widget Label [#label := name]
 
 update' :: State -> Event -> Transition State Event
-update' State{..} (Greet who) =
+update' State {..} (Greet who) =
   Transition State {greetings = greetings <> [who]} (pure Nothing)
+update' _ Closed = Exit
 
 main :: IO ()
-main =
-  run
-    "Hello"
-    (Just (640, 480))
-    App
-    { view = view'
-    , update = update'
-    , inputs = [greetings]
-    , initialState = State []
-    }
-  where
-    greetings =
-      cycle ["Joe", "Mike"]
+main = run App
+  { view         = view'
+  , update       = update'
+  , inputs       = [greetings]
+  , initialState = State []
+  }
+ where
+  greetings =
+    cycle ["Joe", "Mike"]
       & map (\n -> (Greet ("Hello, " <> n)))
       & Pipes.each
+      & (>-> Pipes.delay 1.0)
       & (>-> Pipes.delay 1.0)

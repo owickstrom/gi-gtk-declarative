@@ -1,0 +1,5 @@
+# To be run in a Nix shell, or otherwise customized (remove this line!)
+--command="ghci -igi-gtk-declarative/src -igi-gtk-declarative-app-simple/src -iexamples -fobject-code examples/Main.hs"
+--reload=gi-gtk-declarative
+--reload=gi-gtk-declarative-app-simple
+--reload=examples

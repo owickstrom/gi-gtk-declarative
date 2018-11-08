@@ -46,7 +46,7 @@ boxChild expand fill padding child = single BoxChild {..}
 
 instance Patchable BoxChild where
   create = create . child
-  patch b1 b2 = patch (child b1) (child b2)
+  patch s b1 b2 = patch s (child b1) (child b2)
 
 instance EventSource BoxChild where
   subscribe BoxChild{..} = subscribe child

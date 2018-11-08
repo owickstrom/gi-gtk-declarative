@@ -8,9 +8,10 @@ import qualified AddBoxes
 import qualified Exit
 import qualified FileChooserButton
 import qualified Functor
+import qualified CSS
 import qualified Hello
 import qualified ListBox
-import qualified Window
+import qualified ManyBoxes
 import qualified MenuBar
 
 main :: IO ()
@@ -21,12 +22,13 @@ main =
                  , ("ListBox", ListBox.main)
                  , ("Functor", Functor.main)
                  , ("Exit", Exit.main)
-                 , ("Window", Window.main)
+                 , ("ManyBoxes", ManyBoxes.main)
                  , ("MenuBar", MenuBar.main)
+                 , ("CSS", CSS.main)
                  ]
   in getArgs >>= \case
     [example] ->
       case lookup example examples of
         Just main' -> main'
         Nothing -> hPutStrLn stderr ("No example available with name: " <> example)
-    _ -> hPutStrLn stderr "Usage: gi-gtk-declarative-example NAME"
+    _ -> hPutStrLn stderr ("Usage: gi-gtk-declarative-example NAME\n\nWhere NAME is any of:\n" <> unlines (map (("  " <>) . fst) examples))

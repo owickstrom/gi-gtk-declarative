@@ -9,3 +9,9 @@
 /TAGS
 .ghc.environment*
 /cabal.project.local
+
+# Profiling and flamegraphs
+/gi-gtk-*.prof
+/gi-gtk-*.svg
+/example.prof
+/example.svg

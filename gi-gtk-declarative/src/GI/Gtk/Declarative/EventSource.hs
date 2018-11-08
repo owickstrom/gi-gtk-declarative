@@ -1,17 +1,18 @@
-{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 
 -- | Event handling for declarative widgets.
 module GI.Gtk.Declarative.EventSource
-  ( EventSource (..)
+  ( EventSource(..)
   , Subscription
   , fromCancellation
   , cancel
   )
 where
 
-import qualified GI.Gtk               as Gtk
+import           Data.Vector              (Vector)
+
+import           GI.Gtk.Declarative.State
 
 -- | Cancel a 'Subscription', meaning that the callback will not be invoked on
 -- any subsequent signal emissions.
@@ -23,7 +24,7 @@ cancel = sequence_ . cancellations
 class EventSource widget where
   subscribe
     :: widget event     -- ^ Declarative widget with event handlers.
-    -> Gtk.Widget       -- ^ Actual 'Gtk.Widget' that has been created or patched.
+    -> SomeState        -- ^ State of rendered widget tree.
     -> (event -> IO ()) -- ^ Event callback, invoked on each emitted event until
                         -- the 'Subscription' is cancelled, or widget is otherwise
                         -- destroyed.
@@ -33,7 +34,7 @@ class EventSource widget where
 -- handlers (to a tree of widgets.) When subscribing to a container widget, all
 -- child widgets are also subscribed to, and the 'Subscription's are combined
 -- using the 'Semigroup' instance.
-newtype Subscription = Subscription { cancellations :: [IO ()] }
+newtype Subscription = Subscription { cancellations :: Vector (IO ()) }
   deriving (Semigroup, Monoid)
 
 -- | Create a subscription from a cancellation IO action.

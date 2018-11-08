@@ -1,14 +1,11 @@
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors -fno-warn-orphans #-}
 {-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedLabels       #-}
-{-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeFamilies           #-}
@@ -21,9 +18,10 @@ module GI.Gtk.Declarative.Container.MenuItem
   )
 where
 
-import           Data.Text                          (Text)
+import           Data.Text                                ( Text )
 import           Data.Typeable
-import qualified GI.Gtk                             as Gtk
+import           Data.Vector                              ( Vector )
+import qualified GI.Gtk                        as Gtk
 
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Bin
@@ -32,6 +30,7 @@ import           GI.Gtk.Declarative.Container.Patch
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
+import           GI.Gtk.Declarative.State
 
 data MenuItem event where
   MenuItem
@@ -45,8 +44,8 @@ instance Functor MenuItem where
   fmap f (MenuItem item) = MenuItem (fmap f item)
   fmap f (SubMenu label subMenu')= SubMenu label (fmap f subMenu')
 
-menuItem ::
-     ( Gtk.IsMenuItem item
+menuItem
+  :: ( Gtk.IsMenuItem item
      , Typeable event
      , BinChild item Widget
      , Typeable item
@@ -55,57 +54,62 @@ menuItem ::
      , Gtk.IsWidget item
      )
   => (Gtk.ManagedPtr item -> item)
-  -> [Attribute item event]
+  -> Vector (Attribute item event)
   -> Widget event
   -> MarkupOf MenuItem event ()
 menuItem item attrs = single . MenuItem . Bin item attrs
 
-subMenu ::
-     (Typeable event)
+subMenu
+  :: (Typeable event)
   => Text
   -> MarkupOf MenuItem event ()
   -> MarkupOf MenuItem event ()
-subMenu label = single . SubMenu label . container Gtk.Menu []
+subMenu label = single . SubMenu label . container Gtk.Menu mempty
 
-newSubMenuItem ::
-     Gtk.IsWidget w => Text -> IO w -> IO Gtk.Widget
+newSubMenuItem :: Text -> IO SomeState -> IO SomeState
 newSubMenuItem label createSubMenu = do
   menuItem' <- Gtk.menuItemNewWithLabel label
-  subMenuWidget <- Gtk.unsafeCastTo Gtk.Menu =<< createSubMenu
-  Gtk.menuItemSetSubmenu menuItem' (Just subMenuWidget)
-  Gtk.toWidget menuItem'
+  sc        <- Gtk.widgetGetStyleContext menuItem'
+  SomeState (subMenuState :: StateTree st subMenu children e1 cs) <- createSubMenu
+  case eqT @subMenu @Gtk.Menu of
+    Just Refl -> do
+      Gtk.menuItemSetSubmenu menuItem' (Just (stateTreeNodeWidget subMenuState))
+      return
+        (SomeState
+          (StateTreeBin (StateTreeNode menuItem' sc mempty ())
+                        (SomeState subMenuState)
+          )
+        )
+    Nothing -> fail "Failed to create new sub menu item."
 
 instance Patchable MenuItem where
   create =
     \case
       MenuItem item -> create item
-      SubMenu label subMenu' ->
-        newSubMenuItem label (create subMenu')
-  patch (MenuItem (c1 :: Bin i1 Widget e1)) (MenuItem (c2 :: Bin i2 Widget e2)) =
+      SubMenu label subMenu' -> newSubMenuItem label (create subMenu')
+  patch state (MenuItem (c1 :: Bin i1 Widget e1)) (MenuItem (c2 :: Bin i2 Widget e2)) =
     case eqT @i1 @i2 of
-      Just Refl -> patch c1 c2
+      Just Refl -> patch state c1 c2
       Nothing   -> Replace (create c2)
-  patch (SubMenu l1 c1) (SubMenu l2 c2)
-    -- TODO: case for l1 /= l2
-    | l1 == l2 =
-      case patch c1 c2 of
-        Modify modify ->
-          Modify $ \w -> do
-            subMenuItem <- Gtk.unsafeCastTo Gtk.MenuItem w
-            Just subMenu' <- Gtk.menuItemGetSubmenu subMenuItem
-            modify subMenu'
-        Replace newSubMenu ->
-          Replace (newSubMenuItem l2 newSubMenu)
-        Keep -> Keep
-
-  patch _ b2 = Replace (create b2)
+  patch (SomeState st) (SubMenu l1 c1) (SubMenu l2 c2) =
+    case st of
+      StateTreeBin top childState | l1 == l2 ->
+        case patch childState c1 c2 of
+          Modify modify ->
+            Modify (SomeState . StateTreeBin top <$> modify)
+          Replace newSubMenu ->
+            Replace (newSubMenuItem l2 newSubMenu)
+          Keep -> Keep
+      -- TODO: case for l1 /= l2
+      _ -> Replace (create (SubMenu l2 c2))
+  patch _ _ b2 = Replace (create b2)
 
 instance EventSource MenuItem where
-  subscribe (MenuItem item) widget' cb = subscribe item widget' cb
-  subscribe (SubMenu _ children) widget' cb = do
-    subMenuItem <- Gtk.unsafeCastTo Gtk.MenuItem widget'
-    Just subMenu' <- Gtk.menuItemGetSubmenu subMenuItem
-    subscribe children subMenu' cb
+  subscribe (MenuItem item) state cb = subscribe item state cb
+  subscribe (SubMenu _ children) (SomeState st) cb =
+    case st of
+      StateTreeBin _ childState -> subscribe children childState cb
+      _ -> error "Warning: Cannot subscribe to SubMenu events with a non-bin state tree."
 
 instance IsContainer Gtk.MenuShell MenuItem where
   appendChild shell _ widget' =
