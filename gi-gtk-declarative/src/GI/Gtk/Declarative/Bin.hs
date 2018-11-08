@@ -111,15 +111,16 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
           updateProperties binWidget (collectedProperties oldCollected) (collectedProperties newCollected)
           updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
 
+          let top' = top { stateTreeCollectedAttributes = newCollected }
           case patch oldChildState oldChild newChild of
-            Modify modify -> SomeState . StateTreeBin top <$> modify
+            Modify modify -> SomeState . StateTreeBin top' <$> modify
             Replace createNew -> do
               Gtk.widgetDestroy =<< someStateWidget oldChildState
               newChildState <- createNew
               childWidget <- someStateWidget newChildState
               Gtk.widgetShow childWidget
               Gtk.containerAdd binWidget childWidget
-              return (SomeState (StateTreeBin top newChildState))
+              return (SomeState (StateTreeBin top' newChildState))
             Keep -> return (SomeState st)
       _ -> Replace (create (Bin ctor newAttributes newChild))
 

@@ -60,7 +60,8 @@ instance Patchable (SingleWidget widget) where
             newCollected = collectAttributes newAttributes
         updateProperties w (collectedProperties oldCollected) (collectedProperties newCollected)
         updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
-        return (SomeState (StateTreeWidget top { stateTreeCollectedAttributes = newCollected }))
+        let top' = top { stateTreeCollectedAttributes = newCollected }
+        return (SomeState (StateTreeWidget top' { stateTreeCollectedAttributes = newCollected }))
       (_, _, _) -> Replace (create (SingleWidget ctor newAttributes))
 
 instance EventSource (SingleWidget widget) where

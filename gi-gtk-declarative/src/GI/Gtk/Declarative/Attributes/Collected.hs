@@ -109,8 +109,8 @@ updateProperties (widget' :: widget) oldProps newProps = do
       _                    -> mempty
 
 updateClasses :: Gtk.StyleContext -> ClassSet -> ClassSet -> IO ()
-updateClasses sc oldProps newProps = do
-  let toAdd    = HashSet.difference newProps oldProps
-      toRemove = HashSet.difference oldProps newProps
+updateClasses sc old new = do
+  let toAdd    = HashSet.difference new old
+      toRemove = HashSet.difference old new
   mapM_ (Gtk.styleContextAddClass sc)    toAdd
   mapM_ (Gtk.styleContextRemoveClass sc) toRemove

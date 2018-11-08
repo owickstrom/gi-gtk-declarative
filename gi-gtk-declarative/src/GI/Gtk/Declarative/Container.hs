@@ -108,9 +108,10 @@ instance (Patchable child, Typeable child, IsContainer container child) =>
           updateProperties containerWidget (collectedProperties oldCollected) (collectedProperties newCollected)
           updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
 
+          let top' = top { stateTreeCollectedAttributes = newCollected }
           SomeState <$>
             patchInContainer
-              (StateTreeContainer top childStates)
+              (StateTreeContainer top' childStates)
               containerWidget
               (unChildren oldChildren)
               (unChildren newChildren)
