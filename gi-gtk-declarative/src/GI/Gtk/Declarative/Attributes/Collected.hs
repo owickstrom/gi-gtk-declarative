@@ -31,6 +31,8 @@ import           Data.Vector                              ( Vector )
 
 import           GI.Gtk.Declarative.Attributes
 
+-- | A collected property key/value pair, to be used when
+-- settings properties when patching widgets.
 data CollectedProperty widget where
   CollectedProperty
     :: (GI.AttrOpAllowed 'GI.AttrConstruct info widget
@@ -44,8 +46,14 @@ data CollectedProperty widget where
       )
    => GI.AttrLabelProxy attr -> setValue -> CollectedProperty widget
 
+-- | A collected map of key/value pairs, where the type-level property
+-- names are represented as 'Text' values. This is used to calculate
+-- differences in old and new property sets when patching.
 type CollectedProperties widget = HashMap Text (CollectedProperty widget)
 
+-- | All the collected properties and classes for a widget. These are based
+-- on the 'Attribute' list in the declarative markup, but collected separately
+-- into more efficient data structures, optimized for patching.
 data Collected widget event = Collected
   { collectedClasses :: ClassSet
   , collectedProperties :: CollectedProperties widget
@@ -60,6 +68,8 @@ instance Semigroup (Collected widget event) where
 instance Monoid (Collected widget event) where
   mempty = Collected mempty mempty
 
+-- | Collect declarative markup attributes to the patching-optimized
+-- 'Collected' data structure.
 collectAttributes :: Vector (Attribute widget event) -> Collected widget event
 collectAttributes = foldl' go mempty
  where
@@ -78,12 +88,16 @@ collectAttributes = foldl' go mempty
       Collected {collectedClasses = collectedClasses <> classSet, ..}
     _ -> Collected {..}
 
+-- | Create a list of GTK construct operations based on collected
+-- properties, used when creating new widgets.
 constructProperties
   :: Collected widget event -> [GI.AttrOp widget 'GI.AttrConstruct]
 constructProperties c = map
   (\(CollectedProperty attr value) -> attr Gtk.:= value)
   (HashMap.elems (collectedProperties c))
 
+-- | Update the changed properties of a widget, based on the old and new
+-- collected properties.
 updateProperties
   :: widget -> CollectedProperties widget -> CollectedProperties widget -> IO ()
 updateProperties (widget' :: widget) oldProps newProps = do
@@ -108,6 +122,8 @@ updateProperties (widget' :: widget) oldProps newProps = do
       Just Refl | v1 /= v2 -> pure (attr Gtk.:= v2)
       _                    -> mempty
 
+-- | Update the style context's classes to only include the new set of
+-- classes (last argument).
 updateClasses :: Gtk.StyleContext -> ClassSet -> ClassSet -> IO ()
 updateClasses sc old new = do
   let toAdd    = HashSet.difference new old

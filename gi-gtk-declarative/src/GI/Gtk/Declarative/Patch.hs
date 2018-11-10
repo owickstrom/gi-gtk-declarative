@@ -1,12 +1,13 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
 
+-- | The central patching type class of this library.
 module GI.Gtk.Declarative.Patch
   ( Patch(..)
   , Patchable(..)
   ) where
 
-import GI.Gtk.Declarative.State
+import           GI.Gtk.Declarative.State
 
 -- | A possible action to take on an existing 'Gtk.Widget', decided by the
 -- 'patch' method when comparing declarative widgets.

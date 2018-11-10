@@ -1,5 +1,5 @@
 name:                 examples
-version:              0.1.0
+version:              0.2.0
 synopsis:             Examples of using gi-gtk-declarative and gi-gtk-declarative-app-simple.
 license:              MPL-2.0
 license-file:         LICENSE

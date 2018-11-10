@@ -12,12 +12,12 @@ module GI.Gtk.Declarative.App.Simple
 where
 
 import           Control.Concurrent
-import           Control.Concurrent.Async (async)
+import           Control.Concurrent.Async       (async)
 import           Control.Monad
 import           Data.Typeable
-import qualified GI.Gdk                        as Gdk
-import qualified GI.GLib.Constants             as GLib
-import qualified GI.Gtk                        as Gtk
+import qualified GI.Gdk                         as Gdk
+import qualified GI.GLib.Constants              as GLib
+import qualified GI.Gtk                         as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.State
@@ -27,19 +27,21 @@ import           Pipes.Concurrent
 -- | Describes an state reducer application.
 data App state event =
   App
-    { update :: state -> event -> Transition state event
+    { update       :: state -> event -> Transition state event
     -- ^ The update function of an application reduces the current state and
     -- a new event to a 'Transition', which decides if and how to transition
     -- to the next state.
-    , view   :: state -> AppView event
+    , view         :: state -> AppView event
     -- ^ The view renders a state value as a window, parameterized by the
     -- 'App's event type.
-    , inputs :: [Producer event IO ()]
+    , inputs       :: [Producer event IO ()]
     -- ^ Inputs are pipes 'Producer's that feed events into the application.
     , initialState :: state
     -- ^ The initial state value of the state reduction loop.
     }
 
+-- | The top-level widget for the 'view' function of an 'App',
+-- requiring a GTK+ 'Window'.
 type AppView event = Bin Gtk.Window Widget event
 
 -- | The result of applying the 'update' function, deciding if and how to
