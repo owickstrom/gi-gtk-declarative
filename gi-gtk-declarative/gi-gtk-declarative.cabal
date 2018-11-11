@@ -15,10 +15,17 @@ license-file:         LICENSE
 author:               Oskar Wickström
 maintainer:           oskar.wickstrom@gmail.com
 copyright:            Oskar Wickström
+homepage:             https://github.com/owickstrom/gi-gtk-declarative
+bug-reports:          https://github.com/owickstrom/gi-gtk-declarative/issues
 category:             Graphics
 build-type:           Simple
 cabal-version:        >=1.10
 extra-source-files:   CHANGELOG.md
+
+source-repository head
+  type:     git
+  location: https://github.com/owickstrom/gi-gtk-declarative
+
 
 library
   exposed-modules:      GI.Gtk.Declarative
