@@ -16,7 +16,7 @@ extra-source-files:   CHANGELOG.md
 
 library
   exposed-modules:      GI.Gtk.Declarative.App.Simple
-  build-depends:        base                    >=4.10    && <4.12
+  build-depends:        base                    >=4.10    && <4.13
                       , async
                       , gi-gobject              >= 2      && <3
                       , gi-glib
