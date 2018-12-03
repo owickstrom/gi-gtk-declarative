@@ -12,7 +12,7 @@ module GI.Gtk.Declarative.App.Simple
 where
 
 import           Control.Concurrent
-import           Control.Concurrent.Async       (async)
+import           Control.Concurrent.Async       (async, wait)
 import           Control.Monad
 import           Data.Typeable
 import qualified GI.Gdk                         as Gdk
@@ -59,14 +59,16 @@ data Transition state event =
 run
   :: Typeable event
   => App state event      -- ^ Application to run
-  -> IO ()
+  -> IO state
 run app = do
   void $ Gtk.init Nothing
-  void . async $ do
-    runLoop app
+  lastState <- async $ do
+    r <- runLoop app
     -- In case the run loop exits, quit the main GTK loop.
     Gtk.mainQuit
+    return r
   Gtk.main
+  wait lastState
 
 -- | Run an 'App'. This IO action will loop, so run it in a separate thread
 -- using 'async' if you're calling it before the GTK main loop.
@@ -79,7 +81,7 @@ run app = do
 --       Gtk.mainQuit
 --     Gtk.main
 -- @
-runLoop :: Typeable event => App state event -> IO ()
+runLoop :: Typeable event => App state event -> IO state
 runLoop App {..} = do
   let firstMarkup = view initialState
   events                  <- newChan
@@ -124,7 +126,7 @@ runLoop App {..} = do
 
           -- Finally, we loop.
           loop newState newMarkup events sub newModel
-        Exit -> return ()
+        Exit -> return oldModel
 
 publishEvent :: Chan event -> event -> IO ()
 publishEvent mvar = void . writeChan mvar
