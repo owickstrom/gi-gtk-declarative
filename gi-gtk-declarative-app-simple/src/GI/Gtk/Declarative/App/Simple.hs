@@ -1,4 +1,5 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RecordWildCards  #-}
 
 -- | A simple application architecture style inspired by PureScript's Pux
 -- framework.
@@ -19,19 +20,20 @@ import qualified GI.Gdk                         as Gdk
 import qualified GI.GLib.Constants              as GLib
 import qualified GI.Gtk                         as Gtk
 import           GI.Gtk.Declarative
+import           GI.Gtk.Declarative.Bin
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.State
 import           Pipes
 import           Pipes.Concurrent
 
 -- | Describes an state reducer application.
-data App state event =
+data App window state event =
   App
     { update       :: state -> event -> Transition state event
     -- ^ The update function of an application reduces the current state and
     -- a new event to a 'Transition', which decides if and how to transition
     -- to the next state.
-    , view         :: state -> AppView event
+    , view         :: state -> AppView window event
     -- ^ The view renders a state value as a window, parameterized by the
     -- 'App's event type.
     , inputs       :: [Producer event IO ()]
@@ -42,7 +44,7 @@ data App state event =
 
 -- | The top-level widget for the 'view' function of an 'App',
 -- requiring a GTK+ 'Window'.
-type AppView event = Bin Gtk.Window Widget event
+type AppView window event =  Bin window Widget event
 
 -- | The result of applying the 'update' function, deciding if and how to
 -- transition to the next state.
@@ -57,8 +59,8 @@ data Transition state event =
 -- convenience function that is highly recommended. If you need more
 -- flexibility, e.g. to set up GTK+ yourself, use 'runLoop' instead.
 run
-  :: Typeable event
-  => App state event      -- ^ Application to run
+  :: (Typeable event, BinChild window Widget)
+  => App window state event      -- ^ Application to run
   -> IO ()
 run app = do
   void $ Gtk.init Nothing
@@ -79,7 +81,7 @@ run app = do
 --       Gtk.mainQuit
 --     Gtk.main
 -- @
-runLoop :: Typeable event => App state event -> IO ()
+runLoop :: (Typeable event, BinChild window Widget) => App window state event -> IO ()
 runLoop App {..} = do
   let firstMarkup = view initialState
   events                  <- newChan

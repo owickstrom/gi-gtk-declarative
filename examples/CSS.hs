@@ -4,19 +4,14 @@
 
 module CSS where
 
-import           Data.ByteString                ( ByteString )
-import           Data.Text                      ( Text )
+import           Data.ByteString               (ByteString)
+import           Data.Text                     (Text)
 
-import           Control.Concurrent.Async       ( async )
-import           Control.Monad                  ( forM_
-                                                , void
-                                                )
+import           Control.Concurrent.Async      (async)
+import           Control.Monad                 (forM_, void)
 import qualified GI.Gdk                        as Gdk
-import           GI.Gtk                         ( Box(..)
-                                                , Button(..)
-                                                , Orientation(..)
-                                                , Window(..)
-                                                )
+import           GI.Gtk                        (Box (..), Button (..),
+                                                Orientation (..), Window (..))
 import qualified GI.Gtk                        as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
@@ -30,7 +25,7 @@ data Event
 colors :: [Text]
 colors = ["red", "green", "blue", "yellow"]
 
-view' :: State -> AppView Event
+view' :: State -> AppView Window Event
 view' si =
   bin Window [#title := "CSS Example", on #deleteEvent (const (True, Closed))]
     $ container Box [#orientation := OrientationVertical]

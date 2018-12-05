@@ -7,14 +7,11 @@ module AddBoxes where
 
 import qualified Data.Text                     as Text
 
-import           GI.Gtk                         ( Box(..)
-                                                , Button(..)
-                                                , Label(..)
-                                                , Orientation(..)
-                                                , PolicyType(..)
-                                                , Window(..)
-                                                , ScrolledWindow(..)
-                                                )
+import           GI.Gtk                        (Box (..), Button (..),
+                                                Label (..), Orientation (..),
+                                                PolicyType (..),
+                                                ScrolledWindow (..),
+                                                Window (..))
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -22,7 +19,7 @@ data Event = AddLeft | AddRight | Closed
 
 data State = State { lefts :: [Int], rights :: [Int], next :: Int }
 
-addBoxesView :: State -> AppView Event
+addBoxesView :: State -> AppView Window Event
 addBoxesView State {..} =
   bin Window [#title := "AddBoxes", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
     $ bin

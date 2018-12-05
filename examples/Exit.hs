@@ -4,14 +4,12 @@
 
 module Exit where
 
-import           Control.Concurrent             ( threadDelay )
-import           Data.Functor                   ( ($>) )
+import           Control.Concurrent            (threadDelay)
+import           Data.Functor                  (($>))
 import qualified Data.Text                     as Text
 
-import           GI.Gtk                         ( Button(..)
-                                                , Label(..)
-                                                , Window(..)
-                                                )
+import           GI.Gtk                        (Button (..), Label (..),
+                                                Window (..))
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -19,7 +17,7 @@ data State = Running | ExitingIn Int
 
 data Event = ExitApplication | CountDownExit
 
-view' :: State -> AppView Event
+view' :: State -> AppView Window Event
 view' s =
   bin Window [#title := "Exit", on #deleteEvent (const (True, ExitApplication)), #widthRequest := 400, #heightRequest := 300]
     $ case s of
