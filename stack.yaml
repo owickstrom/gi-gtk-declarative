@@ -1,6 +1,9 @@
-resolver: lts-12.4
+resolver: lts-12.21
 
 packages:
 - gi-gtk-declarative
 - gi-gtk-declarative-app-simple
 - examples
+
+nix:
+  packages: [pkgconfig, gnome3.gobjectIntrospection, gnome3.gtk]
