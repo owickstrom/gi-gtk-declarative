@@ -91,8 +91,7 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
     sc <- Gtk.widgetGetStyleContext widget'
     updateClasses sc mempty (collectedClasses collected)
 
-    -- TODO:
-    -- mapM_ (applyAfterCreated widget') props
+    mapM_ (applyAfterCreated widget') attrs
 
     childState <- create child
     childWidget <- someStateWidget childState
