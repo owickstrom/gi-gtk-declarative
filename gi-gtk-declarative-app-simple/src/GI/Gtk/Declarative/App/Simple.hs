@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE LambdaCase #-}
 
 -- | A simple application architecture style inspired by PureScript's Pux
 -- framework.
@@ -12,7 +13,8 @@ module GI.Gtk.Declarative.App.Simple
 where
 
 import           Control.Concurrent
-import           Control.Concurrent.Async       (async, wait)
+import qualified Control.Concurrent.Async as Async
+import           Control.Exception (throw, Exception)
 import           Control.Monad
 import           Data.Typeable
 import qualified GI.Gdk                         as Gdk
@@ -53,6 +55,14 @@ data Transition state event =
   -- | Exit the application.
   | Exit
 
+-- | An exception thrown by the 'run' function when gtk's main loop exits
+-- before event/state handling which should never happen but can be caused
+-- by user code calling 'Gtk.mainQuit'
+data GtkMainExitedException =
+  GtkMainExitedException String deriving (Typeable, Show)
+
+instance Exception GtkMainExitedException
+
 -- | Initialize GTK and run the application in it. This is a
 -- convenience function that is highly recommended. If you need more
 -- flexibility, e.g. to set up GTK+ yourself, use 'runLoop' instead.
@@ -62,13 +72,13 @@ run
   -> IO state
 run app = do
   void $ Gtk.init Nothing
-  lastState <- async $ do
-    r <- runLoop app
-    -- In case the run loop exits, quit the main GTK loop.
-    Gtk.mainQuit
-    return r
-  Gtk.main
-  wait lastState
+  Async.withAsync (runLoop app <* Gtk.mainQuit) $ \lastState -> do
+    Gtk.main
+    Async.poll lastState >>= \case
+      Nothing -> throw $
+        GtkMainExitedException "gtk's main loop exited unexpectedly"
+      Just (Right state) -> return state
+      Just (Left exception) -> throw exception
 
 -- | Run an 'App'. This IO action will loop, so run it in a separate thread
 -- using 'async' if you're calling it before the GTK main loop.
