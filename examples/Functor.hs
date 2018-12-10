@@ -8,6 +8,7 @@ module Functor where
 import           Data.Functor                  (($>))
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
+import           Control.Monad                 (void)
 
 import           GI.Gtk                        (Box (..), Button (..),
                                                 Label (..), Orientation (..),
@@ -48,7 +49,7 @@ update' State {..} Decr   = Transition (State (count - 1)) (return Nothing)
 update' _          Closed = Exit
 
 main :: IO ()
-main = run App
+main = void $ run App
   { view         = incrDecrView
   , update       = update'
   , inputs       = []

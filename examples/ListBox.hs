@@ -5,7 +5,7 @@
 
 module ListBox where
 
-import           Control.Monad                 (forM_)
+import           Control.Monad                 (forM_, void)
 import           Data.Function                 ((&))
 import           Data.Text                     (Text)
 import           Pipes
@@ -41,7 +41,7 @@ update' State {..} (Greet who) =
 update' _ Closed = Exit
 
 main :: IO ()
-main = run App
+main = void $ run App
   { view         = view'
   , update       = update'
   , inputs       = [greetings]

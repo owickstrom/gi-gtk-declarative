@@ -5,6 +5,7 @@
 module Exit where
 
 import           Control.Concurrent             ( threadDelay )
+import           Control.Monad                  ( void )
 import           Data.Functor                   ( ($>) )
 import qualified Data.Text                     as Text
 
@@ -44,7 +45,7 @@ update' (ExitingIn sec) CountDownExit =
 update' s@ExitingIn{} ExitApplication   = Transition s (pure Nothing)
 
 main :: IO ()
-main = run App
+main = void $ run App
   { view         = view'
   , update       = update'
   , inputs       = []

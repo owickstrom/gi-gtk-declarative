@@ -6,6 +6,7 @@
 module AddBoxes where
 
 import qualified Data.Text                     as Text
+import           Control.Monad                  ( void )
 
 import           GI.Gtk                         ( Box(..)
                                                 , Button(..)
@@ -54,7 +55,7 @@ update' state@State {..} AddRight = Transition
 update' _ Closed = Exit
 
 main :: IO ()
-main = run App
+main = void $ run App
   { view         = addBoxesView
   , update       = update'
   , inputs       = []
