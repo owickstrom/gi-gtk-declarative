@@ -6,6 +6,8 @@
 module MenuBar where
 
 import           Data.Text                     (Text)
+import           Control.Monad                 (void)
+
 import           GI.Gtk                        (Box (..), Label (..),
                                                 MenuBar (..), MenuItem (..),
                                                 Orientation (..), Window (..))
@@ -45,7 +47,7 @@ update' _ = \case
   Closed -> Exit
 
 main :: IO ()
-main = run App
+main = void $ run App
   { view         = view'
   , update       = update'
   , inputs       = []

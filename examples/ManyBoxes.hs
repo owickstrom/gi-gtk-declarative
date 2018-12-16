@@ -5,6 +5,7 @@
 module ManyBoxes where
 
 import           Data.Text                      ( pack )
+import           Control.Monad                  ( void )
 
 import           GI.Gtk                         ( Box(..)
                                                 , Button(..)
@@ -35,7 +36,7 @@ update' ns IncrAll = Transition (map succ ns) (return Nothing)
 update' _ Closed = Exit
 
 main :: IO ()
-main = run App
+main = void $ run App
   { view         = view'
   , update       = update'
   , inputs       = []
