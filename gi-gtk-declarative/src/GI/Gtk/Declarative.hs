@@ -16,6 +16,10 @@ import           GI.Gtk.Declarative.Container          as Export (Container,
 import           GI.Gtk.Declarative.Container.Box      as Export
 import           GI.Gtk.Declarative.Container.MenuItem as Export
 import           GI.Gtk.Declarative.CustomWidget       as Export
+import           GI.Gtk.Declarative.Container.Paned    as Export (Pane,
+                                                                  Resize (..),
+                                                                  Shrink (..),
+                                                                  pane)
 import           GI.Gtk.Declarative.Markup             as Export
 import           GI.Gtk.Declarative.Patch              as Export
 import           GI.Gtk.Declarative.SingleWidget       as Export
