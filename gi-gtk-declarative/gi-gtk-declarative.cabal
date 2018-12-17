@@ -39,6 +39,7 @@ library
                       , GI.Gtk.Declarative.Container.Box
                       , GI.Gtk.Declarative.Container.Class
                       , GI.Gtk.Declarative.Container.MenuItem
+                      , GI.Gtk.Declarative.Container.Paned
                       , GI.Gtk.Declarative.Container.Patch
                       , GI.Gtk.Declarative.EventSource
                       , GI.Gtk.Declarative.Markup
@@ -47,6 +48,7 @@ library
                       , GI.Gtk.Declarative.State
   build-depends:        base >=4.10 && <4.13
                       , gi-gobject             >= 2    && <3
+                      , gi-glib                >= 2    && <3
                       , gi-gtk                 >= 3    && <4
                       , haskell-gi             >= 0.21 && <0.22
                       , haskell-gi-base        >= 0.21 && <0.22

@@ -6,9 +6,10 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE OverloadedLabels      #-}
 {-# LANGUAGE OverloadedLists       #-}
-{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -20,14 +21,18 @@ module GI.Gtk.Declarative.Container.Patch
   )
 where
 
+import           Data.Coerce                        (coerce)
 import           Data.Foldable                      (foldMap)
 import           Data.Vector                        (Vector, (!?))
 import qualified Data.Vector                        as Vector
+import           GHC.Ptr                            (nullPtr)
+import qualified GI.GLib                            as GLib
 import qualified GI.Gtk                             as Gtk
 
 import           GI.Gtk.Declarative.Bin
 import           GI.Gtk.Declarative.Container.Box
 import           GI.Gtk.Declarative.Container.Class
+import           GI.Gtk.Declarative.Container.Paned
 import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.State
@@ -123,9 +128,34 @@ instance IsContainer Gtk.ListBox (Bin Gtk.ListBoxRow Widget) where
     Gtk.listBoxInsert box new i
 
 instance IsContainer Gtk.Box BoxChild where
-  appendChild box BoxChild {..} widget' =
+  appendChild box BoxChild {expand, fill, padding} widget' =
     Gtk.boxPackStart box widget' expand fill padding
   replaceChild box boxChild' i old new = do
     Gtk.widgetDestroy old
     appendChild box boxChild' new
     Gtk.boxReorderChild box new i
+
+-- TODO: Rewrite this as a custom widget, with a type only permitting
+-- 2 child widgets. Warning and ignoring widgets is not great.
+instance IsContainer Gtk.Paned Pane where
+  appendChild paned Pane{resize, shrink} widget' = do
+    c1 <- Gtk.panedGetChild1 paned
+    c2 <- Gtk.panedGetChild2 paned
+    case (c1, c2) of
+      (Nothing, Nothing) -> Gtk.panedPack1 paned widget' (coerce resize) (coerce shrink)
+      (Just _, Nothing) -> Gtk.panedPack2 paned widget' (coerce resize) (coerce shrink)
+      _ -> GLib.logDefaultHandler
+           (Just "gi-gtk-declarative")
+           [GLib.LogLevelFlagsLevelWarning]
+           (Just "appendChild: The `GI.Gtk.Paned` widget can only fit 2 panes. Additional children will be ignored.")
+           nullPtr
+  replaceChild paned Pane{resize, shrink} i old new = do
+    Gtk.widgetDestroy old
+    case i of
+      0 -> Gtk.panedPack1 paned new (coerce resize) (coerce shrink)
+      1 -> Gtk.panedPack2 paned new (coerce resize) (coerce shrink)
+      _ -> GLib.logDefaultHandler
+           (Just "gi-gtk-declarative")
+           [GLib.LogLevelFlagsLevelWarning]
+           (Just "replaceChild: The `GI.Gtk.Paned` widget can only fit 2 panes. Additional children will be ignored.")
+           nullPtr

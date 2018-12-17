@@ -5,14 +5,15 @@ import           System.Environment
 import           System.IO
 
 import qualified AddBoxes
+import qualified CSS
 import qualified Exit
 import qualified FileChooserButton
 import qualified Functor
-import qualified CSS
 import qualified Hello
 import qualified ListBox
 import qualified ManyBoxes
 import qualified MenuBar
+import qualified Paned
 
 main :: IO ()
 main =
@@ -25,6 +26,7 @@ main =
                  , ("ManyBoxes", ManyBoxes.main)
                  , ("MenuBar", MenuBar.main)
                  , ("CSS", CSS.main)
+                 , ("Paned", Paned.main)
                  ]
   in getArgs >>= \case
     [example] ->
