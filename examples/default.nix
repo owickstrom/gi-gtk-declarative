@@ -1,10 +1,11 @@
-{ pkgs ? import <nixpkgs> {}, compiler ? "ghc844", doBenchmark ? false }:
+{ pkgs ? import <nixpkgs> {}, compiler ? "ghc844", doBenchmark ? false
+, gi-gtk-declarative, gi-gtk-declarative-app-simple
+}:
 
 let
   haskellPackages = pkgs.haskell.packages.${compiler}.override {
     overrides = self: super: {
-      gi-gtk-declarative = (import ../gi-gtk-declarative { inherit compiler; }).gi-gtk-declarative;
-      gi-gtk-declarative-app-simple = (import ../gi-gtk-declarative-app-simple { inherit compiler; }).gi-gtk-declarative-app-simple;
+      inherit gi-gtk-declarative gi-gtk-declarative-app-simple;
     };
   };
   variant = if doBenchmark then pkgs.haskell.lib.doBenchmark else pkgs.lib.id;
