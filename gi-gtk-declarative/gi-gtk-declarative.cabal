@@ -35,6 +35,7 @@ library
                       , GI.Gtk.Declarative.Attributes.Internal.EventHandler
                       , GI.Gtk.Declarative.Attributes.Internal.Conversions
                       , GI.Gtk.Declarative.Bin
+                      , GI.Gtk.Declarative.CustomWidget
                       , GI.Gtk.Declarative.Container
                       , GI.Gtk.Declarative.Container.Box
                       , GI.Gtk.Declarative.Container.Class

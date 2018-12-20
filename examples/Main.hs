@@ -5,10 +5,11 @@ import           System.Environment
 import           System.IO
 
 import qualified AddBoxes
+import qualified CSS
+import qualified CustomWidget
 import qualified Exit
 import qualified FileChooserButton
 import qualified Functor
-import qualified CSS
 import qualified Hello
 import qualified ListBox
 import qualified ManyBoxes
@@ -17,6 +18,7 @@ import qualified MenuBar
 main :: IO ()
 main =
   let examples = [ ("AddBoxes", AddBoxes.main)
+                 , ("CustomWidget", CustomWidget.main)
                  , ("FileChooserButton", FileChooserButton.main)
                  , ("Hello", Hello.main)
                  , ("ListBox", ListBox.main)
