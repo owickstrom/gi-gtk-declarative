@@ -25,7 +25,7 @@ data State = State { count :: Integer }
 
 data Event = Incr | Decr | Closed
 
-incrDecrView :: State -> AppView Event
+incrDecrView :: State -> AppView Window Event
 incrDecrView State {..} =
   bin
       Window

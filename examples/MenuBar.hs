@@ -5,12 +5,12 @@
 
 module MenuBar where
 
-import           Data.Text                     (Text)
 import           Control.Monad                 (void)
-
-import           GI.Gtk                        (Box (..), Label (..),
+import           Data.Text                     (Text)
+import           GI.Gtk                        (ApplicationWindow (..),
+                                                Box (..), Label (..),
                                                 MenuBar (..), MenuItem (..),
-                                                Orientation (..), Window (..))
+                                                Orientation (..))
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -18,10 +18,10 @@ data State = Message Text
 
 data Event = Open | Save | Help | Closed
 
-view' :: State -> AppView Event
+view' :: State -> AppView ApplicationWindow Event
 view' (Message msg) =
   bin
-      Window
+      ApplicationWindow
       [ #title := "MenuBar"
       , on #deleteEvent (const (True, Closed))
       , #widthRequest := 400

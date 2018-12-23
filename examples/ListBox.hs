@@ -20,7 +20,7 @@ data State = State { greetings :: [Text] }
 
 data Event = Greet Text | Closed
 
-view' :: State -> AppView Event
+view' :: State -> AppView Window Event
 view' State {..} =
   bin
       Window

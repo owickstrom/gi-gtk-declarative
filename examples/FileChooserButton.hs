@@ -19,7 +19,7 @@ data State = Started (Maybe FilePath) | Done FilePath
 
 data Event = FileSelectionChanged (Maybe FilePath) | ButtonClicked | Closed
 
-view' :: State -> AppView Event
+view' :: State -> AppView Window Event
 view' s =
   bin
       Window

@@ -38,6 +38,7 @@ class BinChild bin (child :: * -> *) | bin -> child
 instance BinChild Gtk.ScrolledWindow Widget where
 instance BinChild Gtk.ListBoxRow Widget where
 instance BinChild Gtk.Window Widget where
+instance BinChild Gtk.ApplicationWindow Widget where
 instance BinChild Gtk.Dialog Widget where
 instance BinChild Gtk.MenuItem Widget where
 

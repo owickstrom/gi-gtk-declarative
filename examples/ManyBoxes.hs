@@ -4,16 +4,14 @@
 
 module ManyBoxes where
 
-import           Data.Text                      ( pack )
-import           Control.Monad                  ( void )
+import           Control.Monad                 (void)
+import           Data.Text                     (pack)
 
-import           GI.Gtk                         ( Box(..)
-                                                , Button(..)
-                                                , ScrolledWindow(..)
-                                                , Window(..)
-                                                )
+import           Control.Monad                 (forM_)
+import           GI.Gtk                        (Box (..), Button (..),
+                                                ScrolledWindow (..),
+                                                Window (..))
 import           GI.Gtk.Declarative
-import           Control.Monad                  ( forM_ )
 import           GI.Gtk.Declarative.App.Simple
 
 type State = [Int]
@@ -22,7 +20,7 @@ data Event
   = IncrAll
   | Closed
 
-view' :: State -> AppView Event
+view' :: State -> AppView Window Event
 view' ns =
   bin Window [#title := "Many Boxes", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
     $ bin ScrolledWindow []
@@ -33,7 +31,7 @@ view' ns =
 
 update' :: State -> Event -> Transition State Event
 update' ns IncrAll = Transition (map succ ns) (return Nothing)
-update' _ Closed = Exit
+update' _ Closed   = Exit
 
 main :: IO ()
 main = void $ run App
