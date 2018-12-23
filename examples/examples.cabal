@@ -14,6 +14,7 @@ executable example
   main-is:              Main.hs
   other-modules:        AddBoxes
                       , CSS
+                      , CustomWidget
                       , Exit
                       , FileChooserButton
                       , Functor
