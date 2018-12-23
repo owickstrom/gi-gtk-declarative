@@ -70,7 +70,7 @@ main = do
 
   -- Start main loop
   void . async $ do
-    runLoop app
+    void $ runLoop app
     Gtk.mainQuit
   Gtk.main
  where

@@ -102,7 +102,7 @@ data State = State Double
 
 data Event = NumberSet Double | Closed
 
-view' :: State -> AppView Event
+view' :: State -> AppView Gtk.Window Event
 view' (State currentValue) =
   bin
       Gtk.Window

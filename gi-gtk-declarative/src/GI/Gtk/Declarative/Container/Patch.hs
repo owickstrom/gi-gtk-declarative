@@ -135,8 +135,6 @@ instance IsContainer Gtk.Box BoxChild where
     appendChild box boxChild' new
     Gtk.boxReorderChild box new i
 
--- TODO: Rewrite this as a custom widget, with a type only permitting
--- 2 child widgets. Warning and ignoring widgets is not great.
 instance IsContainer Gtk.Paned Pane where
   appendChild paned Pane{resize, shrink} widget' = do
     c1 <- Gtk.panedGetChild1 paned

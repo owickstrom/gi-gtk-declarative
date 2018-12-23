@@ -15,7 +15,7 @@ data State = Initial
 
 data Event = Closed
 
-view' :: State -> AppView Event
+view' :: State -> AppView Window Event
 view' s =
   bin Window [#title := "Hello", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300] $
     case s of
