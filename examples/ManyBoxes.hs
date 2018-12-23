@@ -4,6 +4,7 @@
 
 module ManyBoxes where
 
+import           Control.Monad                 (void)
 import           Data.Text                     (pack)
 
 import           Control.Monad                 (forM_)
@@ -33,7 +34,7 @@ update' ns IncrAll = Transition (map succ ns) (return Nothing)
 update' _ Closed   = Exit
 
 main :: IO ()
-main = run App
+main = void $ run App
   { view         = view'
   , update       = update'
   , inputs       = []

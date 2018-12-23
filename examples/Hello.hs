@@ -8,6 +8,7 @@ import           Data.Function                 ((&))
 import           Data.Text                     (Text)
 import           Pipes
 import qualified Pipes.Extras                  as Pipes
+import           Control.Monad                 (void)
 
 import           GI.Gtk                        (Label (..), Window (..))
 import           GI.Gtk.Declarative
@@ -29,7 +30,7 @@ update' _ (Greet who) = Transition (Greeting who) (return Nothing)
 update' _ Closed      = Exit
 
 main :: IO ()
-main = run App
+main = void $ run App
   { view         = view'
   , update       = update'
   , inputs       = [greetings]

@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase       #-}
 {-# LANGUAGE RecordWildCards  #-}
 
 -- | A simple application architecture style inspired by PureScript's Pux
@@ -13,7 +14,8 @@ module GI.Gtk.Declarative.App.Simple
 where
 
 import           Control.Concurrent
-import           Control.Concurrent.Async       (async)
+import qualified Control.Concurrent.Async       as Async
+import           Control.Exception              (Exception, throw)
 import           Control.Monad
 import           Data.Typeable
 import qualified GI.Gdk                         as Gdk
@@ -55,20 +57,30 @@ data Transition state event =
   -- | Exit the application.
   | Exit
 
+-- | An exception thrown by the 'run' function when gtk's main loop exits
+-- before event/state handling which should never happen but can be caused
+-- by user code calling 'Gtk.mainQuit'
+data GtkMainExitedException =
+  GtkMainExitedException String deriving (Typeable, Show)
+
+instance Exception GtkMainExitedException
+
 -- | Initialize GTK and run the application in it. This is a
 -- convenience function that is highly recommended. If you need more
 -- flexibility, e.g. to set up GTK+ yourself, use 'runLoop' instead.
 run
   :: (Typeable event, BinChild window Widget)
   => App window state event      -- ^ Application to run
-  -> IO ()
+  -> IO state
 run app = do
   void $ Gtk.init Nothing
-  void . async $ do
-    runLoop app
-    -- In case the run loop exits, quit the main GTK loop.
-    Gtk.mainQuit
-  Gtk.main
+  Async.withAsync (runLoop app <* Gtk.mainQuit) $ \lastState -> do
+    Gtk.main
+    Async.poll lastState >>= \case
+      Nothing -> throw $
+        GtkMainExitedException "gtk's main loop exited unexpectedly"
+      Just (Right state) -> return state
+      Just (Left exception) -> throw exception
 
 -- | Run an 'App'. This IO action will loop, so run it in a separate thread
 -- using 'async' if you're calling it before the GTK main loop.
@@ -81,7 +93,7 @@ run app = do
 --       Gtk.mainQuit
 --     Gtk.main
 -- @
-runLoop :: (Typeable event, BinChild window Widget) => App window state event -> IO ()
+runLoop :: (Typeable event, BinChild window Widget) => App window state event -> IO state
 runLoop App {..} = do
   let firstMarkup = view initialState
   events                  <- newChan
@@ -126,7 +138,7 @@ runLoop App {..} = do
 
           -- Finally, we loop.
           loop newState newMarkup events sub newModel
-        Exit -> return ()
+        Exit -> return oldModel
 
 publishEvent :: Chan event -> event -> IO ()
 publishEvent mvar = void . writeChan mvar
