@@ -23,7 +23,7 @@ executable example
                       , ManyBoxes
                       , MenuBar
                       , Paned
-  build-depends:        base >=4.10 && <4.13
+  build-depends:        base >=4.10 && <5
                       , async
                       , bytestring
                       , gi-gobject

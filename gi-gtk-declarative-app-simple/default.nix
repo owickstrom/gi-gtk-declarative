@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {}, compiler ? "ghc844", doBenchmark ? false
+{ pkgs ? import <nixpkgs> {}, compiler ? "ghc862", doBenchmark ? false
 , gi-gtk-declarative
 }:
 
