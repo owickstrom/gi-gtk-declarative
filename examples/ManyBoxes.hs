@@ -5,9 +5,9 @@
 module ManyBoxes where
 
 import           Control.Monad                 (void)
+import           Data.Functor                  ((<&>))
 import           Data.Text                     (pack)
 
-import           Control.Monad                 (forM_)
 import           GI.Gtk                        (Box (..), Button (..),
                                                 ScrolledWindow (..),
                                                 Window (..))
@@ -25,8 +25,8 @@ view' ns =
   bin Window [#title := "Many Boxes", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
     $ bin ScrolledWindow []
     $ container Box []
-    $ forM_ ns
-    $ \n -> boxChild False False 10
+    $ ns <&> \n ->
+      boxChild False False 10
         $ widget Button [#label := pack (show n), on #clicked IncrAll]
 
 update' :: State -> Event -> Transition State Event

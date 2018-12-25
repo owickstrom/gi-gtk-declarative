@@ -1,15 +1,15 @@
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors -fno-warn-orphans #-}
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE LambdaCase             #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedLabels       #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeApplications       #-}
-{-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedLabels      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module GI.Gtk.Declarative.Container.MenuItem
   ( MenuItem
@@ -18,19 +18,19 @@ module GI.Gtk.Declarative.Container.MenuItem
   )
 where
 
-import           Data.Text                                ( Text )
+import           Data.Text                          (Text)
 import           Data.Typeable
-import           Data.Vector                              ( Vector )
-import qualified GI.Gtk                        as Gtk
+import           Data.Vector                        (Vector)
+import qualified GI.Gtk                             as Gtk
 
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Bin
 import           GI.Gtk.Declarative.Container
 import           GI.Gtk.Declarative.Container.Patch
 import           GI.Gtk.Declarative.EventSource
-import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.State
+import           GI.Gtk.Declarative.Widget
 
 data MenuItem event where
   MenuItem
@@ -38,11 +38,15 @@ data MenuItem event where
     => Bin item Widget event
     -> MenuItem event
   SubMenu
-    :: Text -> (Container Gtk.Menu (Children MenuItem) event) -> MenuItem event
+    :: Text -> Container Gtk.Menu (Children MenuItem) event -> MenuItem event
 
 instance Functor MenuItem where
-  fmap f (MenuItem item) = MenuItem (fmap f item)
-  fmap f (SubMenu label subMenu')= SubMenu label (fmap f subMenu')
+  fmap f (MenuItem item)          = MenuItem (fmap f item)
+  fmap f (SubMenu label subMenu')=SubMenu label (fmap f subMenu')
+
+instance ToChildren Gtk.Menu [] MenuItem
+
+instance ToChildren Gtk.MenuBar [] MenuItem
 
 menuItem
   :: ( Gtk.IsMenuItem item
@@ -56,15 +60,15 @@ menuItem
   => (Gtk.ManagedPtr item -> item)
   -> Vector (Attribute item event)
   -> Widget event
-  -> MarkupOf MenuItem event ()
-menuItem item attrs = single . MenuItem . Bin item attrs
+  -> MenuItem event
+menuItem item attrs = MenuItem . Bin item attrs
 
 subMenu
   :: (Typeable event)
   => Text
-  -> MarkupOf MenuItem event ()
-  -> MarkupOf MenuItem event ()
-subMenu label = single . SubMenu label . container Gtk.Menu mempty
+  -> [MenuItem event]
+  -> MenuItem event
+subMenu label = SubMenu label . container Gtk.Menu mempty
 
 newSubMenuItem :: Text -> IO SomeState -> IO SomeState
 newSubMenuItem label createSubMenu = do

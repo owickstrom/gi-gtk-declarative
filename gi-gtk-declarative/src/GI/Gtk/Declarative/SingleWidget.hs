@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -8,6 +7,7 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 
 -- | A declarative representation of 'Gtk.Widget' in GTK without children.
@@ -25,9 +25,9 @@ import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Attributes.Collected
 import           GI.Gtk.Declarative.Attributes.Internal
 import           GI.Gtk.Declarative.EventSource
-import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.State
+import           GI.Gtk.Declarative.Widget
 
 -- | Declarative version of a /leaf/ widget, i.e. a widget without any children.
 data SingleWidget widget event where
@@ -66,22 +66,15 @@ instance Patchable (SingleWidget widget) where
       _ -> Replace (create (SingleWidget ctor newAttributes))
 
 instance EventSource (SingleWidget widget) where
-  subscribe (SingleWidget (_ :: Gtk.ManagedPtr w1 -> w1) props) (SomeState (st :: StateTree stateType w2 child event cs)) cb = do
+  subscribe (SingleWidget (_ :: Gtk.ManagedPtr w1 -> w1) props) (SomeState (st :: StateTree stateType w2 child event cs)) cb =
     case (st, eqT @w1 @w2) of
       (StateTreeWidget top, Just Refl) ->
         foldMap (addSignalHandler cb (stateTreeWidget top)) props
       _ -> fail ""
 
-instance (Typeable widget, Functor (SingleWidget widget))
-  => FromWidget (SingleWidget widget) event (Widget event) where
-  fromWidget = Widget
-
-instance FromWidget (SingleWidget widget) event (MarkupOf (SingleWidget widget) event ()) where
-  fromWidget = single
-
-instance (Typeable widget, Functor (SingleWidget widget))
-  => FromWidget (SingleWidget widget) event (Markup event ()) where
-  fromWidget = single . Widget
+-- instance (Typeable widget, Functor (SingleWidget widget))
+--   => FromWidget (SingleWidget widget) Widget where
+--   fromWidget = Widget
 
 -- | Construct a /leaf/ widget, i.e. one without any children.
 widget
@@ -89,9 +82,9 @@ widget
      , Typeable event
      , Functor (Attribute widget)
      , Gtk.IsWidget widget
-     , FromWidget (SingleWidget widget) event target
+     , FromWidget (SingleWidget widget) target
      )
   => (Gtk.ManagedPtr widget -> widget) -- ^ A widget constructor from the underlying gi-gtk library.
   -> Vector (Attribute widget event)   -- ^ List of 'Attribute's.
-  -> target                            -- ^ The target, whose type is decided by 'FromWidget'.
+  -> target event                      -- ^ The target, whose type is decided by 'FromWidget'.
 widget ctor = fromWidget . SingleWidget ctor

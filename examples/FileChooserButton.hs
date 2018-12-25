@@ -4,8 +4,8 @@
 
 module FileChooserButton where
 
-import qualified Data.Text                     as Text
 import           Control.Monad                 (void)
+import qualified Data.Text                     as Text
 
 import           GI.Gtk                        (Box (..), Button (..),
                                                 FileChooserButton (..),
@@ -32,22 +32,23 @@ view' s =
         Done path ->
           widget Label [#label := (Text.pack path <> " was selected.")]
         Started currentFile ->
-          container Box [#orientation := OrientationVertical] $ do
-            boxChild True True 0
+          container Box [#orientation := OrientationVertical]
+          [boxChild True True 0
               $ widget
                   Label
                   [#label := maybe "No file yet." Text.pack currentFile]
-            boxChild False False 10 $ widget
+          , boxChild False False 10 $ widget
               FileChooserButton
               [ onM #selectionChanged
                     (fmap FileSelectionChanged . fileChooserGetFilename)
               ]
-            boxChild False False 10 $ widget
+          , boxChild False False 10 $ widget
               Button
               [ #label := "Select"
               , #tooltipText := "Select the chosen file"
               , on #clicked ButtonClicked
               ]
+          ]
 
 update' :: State -> Event -> Transition State Event
 update' (Started _) (FileSelectionChanged p) =

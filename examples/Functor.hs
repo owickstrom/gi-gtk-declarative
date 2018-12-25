@@ -5,10 +5,10 @@
 
 module Functor where
 
+import           Control.Monad                 (void)
 import           Data.Functor                  (($>))
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
-import           Control.Monad                 (void)
 
 import           GI.Gtk                        (Box (..), Button (..),
                                                 Label (..), Orientation (..),
@@ -34,14 +34,17 @@ incrDecrView State {..} =
       , #widthRequest := 400
       , #heightRequest := 300
       ]
-    $ container Box [#orientation := OrientationVertical]
-    $ do
-        boxChild True True 0 $ widget Label [#label := Text.pack (show count)]
-        boxChild False False 0
-          $ container Box [#orientation := OrientationHorizontal]
-          $ do
-              boxChild True True 0 $ clickyButton "-1" $> Decr
-              boxChild True True 0 $ clickyButton "+1" $> Incr
+    $ container
+        Box
+        [#orientation := OrientationVertical]
+        [ boxChild True True 0 $ widget Label [#label := Text.pack (show count)]
+        , boxChild False False 0 $ container
+          Box
+          [#orientation := OrientationHorizontal]
+          [ boxChild True True 0 $ clickyButton "-1" $> Decr
+          , boxChild True True 0 $ clickyButton "+1" $> Incr
+          ]
+        ]
 
 update' :: State -> Event -> Transition State Event
 update' State {..} Incr   = Transition (State (count + 1)) (return Nothing)

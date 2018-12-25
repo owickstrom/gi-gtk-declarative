@@ -5,8 +5,9 @@
 
 module ListBox where
 
-import           Control.Monad                 (forM_, void)
+import           Control.Monad                 (void)
 import           Data.Function                 ((&))
+import           Data.Functor                  ((<&>))
 import           Data.Text                     (Text)
 import           Pipes
 import qualified Pipes.Extras                  as Pipes
@@ -16,7 +17,7 @@ import           GI.Gtk                        (Label (..), ListBox (..),
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
-data State = State { greetings :: [Text] }
+newtype State = State { greetings :: [Text] }
 
 data Event = Greet Text | Closed
 
@@ -30,8 +31,7 @@ view' State {..} =
       , #heightRequest := 300
       ]
     $ container ListBox []
-    $ forM_ greetings
-    $ \name ->
+    $ greetings <&> \name ->
         bin ListBoxRow [#activatable := False, #selectable := False]
           $ widget Label [#label := name]
 
@@ -50,7 +50,7 @@ main = void $ run App
  where
   greetings =
     cycle ["Joe", "Mike"]
-      & map (\n -> (Greet ("Hello, " <> n)))
+      & map (\n -> Greet ("Hello, " <> n))
       & Pipes.each
       & (>-> Pipes.delay 1.0)
       & (>-> Pipes.delay 1.0)

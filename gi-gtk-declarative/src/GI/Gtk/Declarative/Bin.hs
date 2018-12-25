@@ -27,9 +27,9 @@ import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Attributes.Collected
 import           GI.Gtk.Declarative.Attributes.Internal
 import           GI.Gtk.Declarative.EventSource
-import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.State
+import           GI.Gtk.Declarative.Widget
 
 
 -- | Supported 'Gtk.Bin's.
@@ -71,12 +71,12 @@ bin
      , Gtk.IsContainer widget
      , Gtk.IsBin widget
      , Gtk.IsWidget widget
-     , FromWidget (Bin widget child) event target
+     , FromWidget (Bin widget child) target
      )
   => (Gtk.ManagedPtr widget -> widget) -- ^ A bin widget constructor from the underlying gi-gtk library.
   -> Vector (Attribute widget event)   -- ^ List of 'Attribute's.
   -> child event                       -- ^ The bin's child widget, whose type is decided by the 'BinChild' instance.
-  -> target                            -- ^ The target, whose type is decided by 'FromWidget'.
+  -> target event                      -- ^ The target, whose type is decided by 'FromWidget'.
 bin ctor attrs = fromWidget . Bin ctor attrs
 
 --
@@ -138,31 +138,9 @@ instance (BinChild parent child, EventSource child) =>
         (<> handlers') <$> subscribe child childState cb
       _ -> error "Cannot subscribe to Bin events with a non-bin state tree."
 
---
--- FromWidget
---
-
-instance ( BinChild widget child
-         , Typeable widget
-         , Patchable child
-         , EventSource child
-         , Functor (Bin widget child)
-         ) =>
-         FromWidget (Bin widget child) event (Widget event) where
-  fromWidget = Widget
-
-instance a ~ () => FromWidget (Bin widget child) event (MarkupOf (Bin widget child) event a) where
-  fromWidget = single
-
-instance ( BinChild widget child
-         , a ~ ()
-         , Typeable widget
-         , Patchable child
-         , EventSource child
-         , Functor (Bin widget child)
-         ) =>
-         FromWidget (Bin widget child) event (Markup event a) where
-  fromWidget = single . Widget
-
-instance FromWidget (Bin widget child) event (Bin widget child event) where
+instance (a ~ b, c ~ d) => FromWidget (Bin a c) (Bin b d) where
   fromWidget = id
+
+instance (BinChild widget child, Patchable child, EventSource child)
+         => FromWidget (Bin widget child) Widget where
+  fromWidget = Widget
