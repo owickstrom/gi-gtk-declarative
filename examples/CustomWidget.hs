@@ -6,6 +6,7 @@
 module CustomWidget where
 
 import           Control.Monad                           (void)
+import           Data.Typeable                           (Typeable)
 import           Data.Word
 
 import qualified GI.GObject                              as GI
@@ -102,7 +103,7 @@ data State = State Double
 
 data Event = NumberSet Double | Closed
 
-view' :: State -> AppView Event
+view' :: State -> AppView Gtk.Window Event
 view' (State currentValue) =
   bin
       Gtk.Window
@@ -124,12 +125,16 @@ view' (State currentValue) =
     }
   -- Map the custom widget's event to our app 'Event' type
   toNumberEvent (NumberInputChanged d) = NumberSet d
-  -- Helper that vertically and horizontally centers a widget
-  centered =
-    container Gtk.Box [#orientation := Gtk.OrientationVertical]
-      . boxChild True False 10
-      . container Gtk.Box [#orientation := Gtk.OrientationHorizontal]
-      . boxChild True False 10
+
+-- Helper that vertically and horizontally centers a widget
+centered :: Typeable e => Widget e -> Widget e
+centered w =
+  container Gtk.Box [#orientation := Gtk.OrientationVertical]
+  [
+    boxChild True False 10 $
+    container Gtk.Box [#orientation := Gtk.OrientationHorizontal]
+    [boxChild True False 10 w]
+  ]
 
 update' :: State -> Event -> Transition State Event
 update' _ (NumberSet d) = Transition (State d) (return Nothing)

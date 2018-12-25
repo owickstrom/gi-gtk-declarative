@@ -14,6 +14,7 @@ import qualified Hello
 import qualified ListBox
 import qualified ManyBoxes
 import qualified MenuBar
+import qualified Paned
 
 main :: IO ()
 main =
@@ -27,6 +28,7 @@ main =
                  , ("ManyBoxes", ManyBoxes.main)
                  , ("MenuBar", MenuBar.main)
                  , ("CSS", CSS.main)
+                 , ("Paned", Paned.main)
                  ]
   in getArgs >>= \case
     [example] ->

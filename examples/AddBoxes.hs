@@ -5,8 +5,8 @@
 
 module AddBoxes where
 
+import           Control.Monad                 (void)
 import qualified Data.Text                     as Text
-import           Control.Monad                  ( void )
 
 import           GI.Gtk                        (Box (..), Button (..),
                                                 Label (..), Orientation (..),
@@ -29,16 +29,18 @@ addBoxesView State {..} =
         , #vscrollbarPolicy := PolicyTypeNever
         ]
     $ container Box [#orientation := OrientationVertical]
-    $ do
-        renderLane AddLeft  lefts
-        renderLane AddRight rights
+    [ renderLane AddLeft  lefts
+    , renderLane AddRight rights
+    ]
  where
-  renderLane :: Event -> [Int] -> MarkupOf BoxChild Event ()
+  renderLane :: Event -> [Int] -> BoxChild Event
   renderLane onClick children = boxChild True True 10 $
-    container Box [] $ do
-      boxChild False False 10 $ do
-        widget Button [#label := "Add", on #clicked onClick]
-      (mapM_ (boxChild False False 5 . renderChild) children)
+    container Box []
+    ( boxChild False False 10 btn
+    : map (boxChild False False 5 . renderChild) children
+    )
+    where
+      btn = widget Button [#label := "Add", on #clicked onClick]
   renderChild :: Int -> Widget Event
   renderChild n = widget Label [#label := Text.pack (show n)]
 

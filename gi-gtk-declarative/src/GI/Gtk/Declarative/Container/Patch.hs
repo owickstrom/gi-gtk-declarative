@@ -6,9 +6,10 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE OverloadedLabels      #-}
 {-# LANGUAGE OverloadedLists       #-}
-{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -28,9 +29,9 @@ import qualified GI.Gtk                             as Gtk
 import           GI.Gtk.Declarative.Bin
 import           GI.Gtk.Declarative.Container.Box
 import           GI.Gtk.Declarative.Container.Class
-import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.State
+import           GI.Gtk.Declarative.Widget
 
 -- | Patch all children in a container. This does not feature any ID checking,
 -- as seen in React, so reordering children in a container can produce many
@@ -123,7 +124,7 @@ instance IsContainer Gtk.ListBox (Bin Gtk.ListBoxRow Widget) where
     Gtk.listBoxInsert box new i
 
 instance IsContainer Gtk.Box BoxChild where
-  appendChild box BoxChild {..} widget' =
+  appendChild box BoxChild {expand, fill, padding} widget' =
     Gtk.boxPackStart box widget' expand fill padding
   replaceChild box boxChild' i old new = do
     Gtk.widgetDestroy old

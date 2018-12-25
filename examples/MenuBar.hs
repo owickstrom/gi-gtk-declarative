@@ -14,7 +14,7 @@ import           GI.Gtk                        (ApplicationWindow (..),
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
-data State = Message Text
+newtype State = Message Text
 
 data Event = Open | Save | Help | Closed
 
@@ -27,17 +27,24 @@ view' (Message msg) =
       , #widthRequest := 400
       , #heightRequest := 300
       ]
-    $ container Box [#orientation := OrientationVertical]
-    $ do
-        boxChild False False 0 $ container MenuBar [] $ do
-          subMenu "File" $ do
-            menuItem MenuItem [on #activate Open]
+    $ container
+        Box
+        [#orientation := OrientationVertical]
+        [ boxChild False False 0 $ container
+          MenuBar
+          []
+          [ subMenu
+            "File"
+            [ menuItem MenuItem [on #activate Open]
               $ widget Label [#label := "Open"]
-            menuItem MenuItem [on #activate Save]
+            , menuItem MenuItem [on #activate Save]
               $ widget Label [#label := "Save"]
-          menuItem MenuItem [on #activate Help]
-            $ widget Label [#label := "Help"]
-        boxChild True False 0 $ widget Label [#label := msg]
+            ]
+          , menuItem MenuItem [on #activate Help] $
+            widget Label [#label := "Help"]
+          ]
+        , boxChild True False 0 $ widget Label [#label := msg]
+        ]
 
 update' :: State -> Event -> Transition State Event
 update' _ = \case

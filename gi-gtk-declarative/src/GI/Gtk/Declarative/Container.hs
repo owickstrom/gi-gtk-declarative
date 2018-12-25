@@ -1,15 +1,17 @@
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveFunctor         #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedLabels      #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE DefaultSignatures      #-}
+{-# LANGUAGE DeriveFunctor          #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedLabels       #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeApplications       #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeOperators          #-}
 
 -- | Implementations for common "Gtk.Container".
 
@@ -17,6 +19,7 @@ module GI.Gtk.Declarative.Container
   ( Container
   , container
   , Children
+  , ToChildren(..)
   )
 where
 
@@ -29,11 +32,12 @@ import qualified GI.Gtk                                  as Gtk
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Attributes.Collected
 import           GI.Gtk.Declarative.Attributes.Internal
+import           GI.Gtk.Declarative.Container.Class
 import           GI.Gtk.Declarative.Container.Patch
 import           GI.Gtk.Declarative.EventSource
-import           GI.Gtk.Declarative.Markup
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.State
+import           GI.Gtk.Declarative.Widget
 
 -- | Declarative version of a /container/ widget, i.e. a widget with zero
 -- or more child widgets. The type of 'children' is parameterized, and differs
@@ -65,19 +69,14 @@ container
      , Functor child
      , Gtk.IsWidget widget
      , Gtk.IsContainer widget
-     , FromWidget (Container widget (Children child)) event target
+     , FromWidget (Container widget (Children child)) target
+     , ToChildren widget parent child
      )
   => (Gtk.ManagedPtr widget -> widget) -- ^ A container widget constructor from the underlying gi-gtk library.
-  -> Vector (Attribute widget event)          -- ^ List of 'Attribute's.
-  -> MarkupOf child event ()           -- ^ The container's 'child' widgets, in a 'MarkupOf' builder.
-  -> target                            -- ^ The target, whose type is decided by 'FromWidget'.
-container ctor attrs = fromWidget . Container ctor attrs . toChildren
-
-newtype Children child event = Children { unChildren :: Vector (child event) }
-  deriving (Functor)
-
-toChildren :: MarkupOf child event () -> Children child event
-toChildren = Children . runMarkup
+  -> Vector (Attribute widget event)   -- ^ 'Attribute's.
+  -> parent (child event)              -- ^ The container's 'child' widgets, in a 'MarkupOf' builder.
+  -> target event                      -- ^ The target, whose type is decided by 'FromWidget'.
+container ctor attrs = fromWidget . Container ctor attrs . toChildren ctor
 
 --
 -- Patchable
@@ -144,21 +143,8 @@ instance ( Typeable widget
          , EventSource (Container widget children)
          , Functor (Container widget children)
          ) =>
-         FromWidget (Container widget children) event (Widget event) where
+         FromWidget (Container widget children) Widget where
   fromWidget = Widget
 
-instance a ~ () =>
-         FromWidget (Container widget children) event (MarkupOf (Container widget children) event a) where
-  fromWidget = single
-
-instance ( a ~ ()
-         , Typeable widget
-         , Typeable children
-         , Patchable (Container widget children)
-         , EventSource (Container widget children)
-         , Functor (Container widget children)
-         ) =>
-         FromWidget (Container widget children) event (Markup event a) where
-  fromWidget = single . Widget
-instance FromWidget (Container widget children) event (Container widget children event) where
+instance a ~ b => FromWidget (Container a children) (Container b children) where
   fromWidget = id

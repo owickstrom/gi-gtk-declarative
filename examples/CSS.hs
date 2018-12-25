@@ -8,7 +8,8 @@ import           Data.ByteString               (ByteString)
 import           Data.Text                     (Text)
 
 import           Control.Concurrent.Async      (async)
-import           Control.Monad                 (forM_, void)
+import           Control.Monad                 (void)
+import           Data.Functor                  ((<&>))
 import qualified GI.Gdk                        as Gdk
 import           GI.Gtk                        (Box (..), Button (..),
                                                 Orientation (..), Window (..))
@@ -29,10 +30,11 @@ view' :: State -> AppView Window Event
 view' si =
   bin Window [#title := "CSS Example", on #deleteEvent (const (True, Closed))]
     $ container Box [#orientation := OrientationVertical]
-    $ boxChild True False 10
-    $ container Box [#orientation := OrientationHorizontal]
-    $ forM_ (zip [0 ..] colors)
-    $ \(i, color) ->
+  [boxChild True False 10 $ container Box [#orientation := OrientationHorizontal] colorButtons
+  ]
+  where
+    colorButtons =
+      zip [0 ..] colors <&> \(i, color) ->
         boxChild True False 10
           $ let cs = if i == si then ["selected", color] else [color]
             in  widget Button
@@ -70,7 +72,7 @@ main = do
 
   -- Start main loop
   void . async $ do
-    runLoop app
+    void $ runLoop app
     Gtk.mainQuit
   Gtk.main
  where
