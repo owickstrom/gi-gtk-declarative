@@ -13,6 +13,7 @@ category:             Graphics
 build-type:           Simple
 cabal-version:        >=1.10
 extra-source-files:   CHANGELOG.md
+tested-with:          GHC == 8.6.3
 
 library
   exposed-modules:      GI.Gtk.Declarative.App.Simple

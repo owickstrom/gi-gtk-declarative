@@ -9,6 +9,7 @@ copyright:            Oskar Wickström
 category:             Graphics
 build-type:           Simple
 cabal-version:        >=1.10
+tested-with:          GHC == 8.6.3
 
 executable example
   main-is:              Main.hs
