@@ -1,0 +1,33 @@
+site_name: gi-gtk-declarative
+site_description: 'Documentation for the gi-gtk-declarative package.'
+site_author: 'Oskar Wickström'
+copyright: 'Copyright © 2018 Oskar Wickström'
+docs_dir: src
+nav:
+    - 'Home': index.md
+    - 'User Guide':
+        - user-guide/introduction.md
+        - user-guide/installation.md
+        - 'Widgets':
+            - user-guide/widgets/the-widget-type.md
+            - user-guide/widgets/single-widgets.md
+            - user-guide/widgets/bins.md
+            - user-guide/widgets/containers.md
+            - user-guide/widgets/custom-widgets.md
+        - user-guide/properties.md
+        - user-guide/event-handling.md
+        - user-guide/css.md
+        - user-guide/app-simple.md
+    - roadmap.md
+    - contributing.md
+theme:
+  name: 'material'
+  font:
+    text: 'Source Sans Pro'
+    code: 'Source Code Pro'
+extra_css:
+    - css/theme.css
+markdown_extensions:
+  - admonition
+  - def_list
+  - codehilite
