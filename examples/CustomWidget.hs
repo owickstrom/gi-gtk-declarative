@@ -128,12 +128,14 @@ view' (State currentValue) =
 
 -- Helper that vertically and horizontally centers a widget
 centered :: Typeable e => Widget e -> Widget e
-centered w =
-  container Gtk.Box [#orientation := Gtk.OrientationVertical]
-  [
-    boxChild True False 10 $
-    container Gtk.Box [#orientation := Gtk.OrientationHorizontal]
-    [boxChild True False 10 w]
+centered w = container
+  Gtk.Box
+  [#orientation := Gtk.OrientationVertical]
+  [ BoxChild defaultBoxChildProperties { expand = True, padding = 10 }
+      $ container
+          Gtk.Box
+          [#orientation := Gtk.OrientationHorizontal]
+          [BoxChild defaultBoxChildProperties { expand = True, padding = 10 } w]
   ]
 
 update' :: State -> Event -> Transition State Event

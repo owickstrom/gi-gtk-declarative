@@ -37,14 +37,17 @@ incrDecrView State {..} =
     $ container
         Box
         [#orientation := OrientationVertical]
-        [ boxChild True True 0 $ widget Label [#label := Text.pack (show count)]
-        , boxChild False False 0 $ container
+        [ expandingChild $ widget Label [#label := Text.pack (show count)]
+        , BoxChild defaultBoxChildProperties $ container
           Box
           [#orientation := OrientationHorizontal]
-          [ boxChild True True 0 $ clickyButton "-1" $> Decr
-          , boxChild True True 0 $ clickyButton "+1" $> Incr
+          [ expandingChild $ clickyButton "-1" $> Decr
+          , expandingChild $ clickyButton "+1" $> Incr
           ]
         ]
+ where
+  expandingChild =
+    BoxChild defaultBoxChildProperties { expand = True, fill = True }
 
 update' :: State -> Event -> Transition State Event
 update' State {..} Incr   = Transition (State (count + 1)) (return Nothing)
