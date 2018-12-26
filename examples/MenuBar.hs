@@ -30,7 +30,7 @@ view' (Message msg) =
     $ container
         Box
         [#orientation := OrientationVertical]
-        [ boxChild False False 0 $ container
+        [ BoxChild defaultBoxChildProperties $ container
           MenuBar
           []
           [ subMenu
@@ -40,10 +40,11 @@ view' (Message msg) =
             , menuItem MenuItem [on #activate Save]
               $ widget Label [#label := "Save"]
             ]
-          , menuItem MenuItem [on #activate Help] $
-            widget Label [#label := "Help"]
+          , menuItem MenuItem [on #activate Help]
+            $ widget Label [#label := "Help"]
           ]
-        , boxChild True False 0 $ widget Label [#label := msg]
+        , BoxChild defaultBoxChildProperties { expand = True }
+          $ widget Label [#label := msg]
         ]
 
 update' :: State -> Event -> Transition State Event

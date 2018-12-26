@@ -29,16 +29,17 @@ colors = ["red", "green", "blue", "yellow"]
 view' :: State -> AppView Window Event
 view' si =
   bin Window [#title := "CSS Example", on #deleteEvent (const (True, Closed))]
-    $ container Box [#orientation := OrientationVertical]
-  [boxChild True False 10 $ container Box [#orientation := OrientationHorizontal] colorButtons
-  ]
-  where
-    colorButtons =
-      zip [0 ..] colors <&> \(i, color) ->
-        boxChild True False 10
-          $ let cs = if i == si then ["selected", color] else [color]
-            in  widget Button
-                       [#label := color, on #clicked (MoveTo i), classes cs]
+    $ container
+        Box
+        [#orientation := OrientationVertical]
+        [ BoxChild defaultBoxChildProperties { expand = True, padding = 10 }
+            $ container Box [#orientation := OrientationHorizontal] colorButtons
+        ]
+ where
+  colorButtons = zip [0 ..] colors <&> \(i, color) ->
+    BoxChild defaultBoxChildProperties { expand = True, padding = 10 }
+      $ let cs = if i == si then ["selected", color] else [color]
+        in  widget Button [#label := color, on #clicked (MoveTo i), classes cs]
 
 update' :: State -> Event -> Transition State Event
 update' s (MoveTo i)
