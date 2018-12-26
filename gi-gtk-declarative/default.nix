@@ -1,8 +1,9 @@
-{ pkgs ? import <nixpkgs> {}, compiler ? "ghc844", doBenchmark ? false }:
+{ pkgs ? import <nixpkgs> {}, compiler ? "ghc862", doBenchmark ? false }:
 
 let
   haskellPackages = pkgs.haskell.packages.${compiler}.override {
     overrides = self: super: {
+      criterion = self.callHackage "criterion" "1.5.3.0" {};
       haskell-gi-overloading = pkgs.haskell.lib.dontHaddock (self.callHackage "haskell-gi-overloading" "1.0" {});
     };
   };
