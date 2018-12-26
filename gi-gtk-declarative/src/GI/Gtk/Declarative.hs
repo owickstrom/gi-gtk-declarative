@@ -24,3 +24,4 @@ import           GI.Gtk.Declarative.CustomWidget       as Export
 import           GI.Gtk.Declarative.Patch              as Export
 import           GI.Gtk.Declarative.SingleWidget       as Export
 import           GI.Gtk.Declarative.Widget             as Export
+import           GI.Gtk.Declarative.Widget.Conversions as Export ()

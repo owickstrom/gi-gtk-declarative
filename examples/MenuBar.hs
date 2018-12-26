@@ -30,7 +30,7 @@ view' (Message msg) =
     $ container
         Box
         [#orientation := OrientationVertical]
-        [ BoxChild defaultBoxChildProperties $ container
+        [ container
           MenuBar
           []
           [ subMenu
