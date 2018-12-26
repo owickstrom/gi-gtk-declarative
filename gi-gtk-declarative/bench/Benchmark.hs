@@ -18,9 +18,13 @@ import           GI.Gtk.Declarative.State
 
 testView :: [Int] -> Widget ()
 testView ns = bin Window [] $ container Box [] $ ns <&> \n ->
-  boxChild True True 10
+  BoxChild defaultBoxChildProperties { expand  = True
+                                     , fill    = True
+                                     , padding = 10
+                                     }
     $ widget Label [#label := pack (show n), classes ["a", "b"]]
 
+testPatch :: Patchable widget => SomeState -> widget e1 -> widget e2 -> IO SomeState
 testPatch state oldView newView = case patch state oldView newView of
   Modify ma -> do
     ret <- newEmptyMVar
