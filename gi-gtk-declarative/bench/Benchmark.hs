@@ -6,6 +6,7 @@ module Main where
 import           Control.Concurrent
 import           Control.Monad
 import           Criterion.Main
+import           Data.Functor             ((<&>))
 import           Data.Text
 import qualified GI.Gdk                   as Gdk
 import qualified GI.GLib.Constants        as GLib
@@ -16,7 +17,7 @@ import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.State
 
 testView :: [Int] -> Widget ()
-testView ns = bin Window [] $ container Box [] $ forM_ ns $ \n ->
+testView ns = bin Window [] $ container Box [] $ ns <&> \n ->
   boxChild True True 10
     $ widget Label [#label := pack (show n), classes ["a", "b"]]
 
