@@ -22,12 +22,18 @@ data Event
 
 view' :: State -> AppView Window Event
 view' ns =
-  bin Window [#title := "Many Boxes", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
-    $ bin ScrolledWindow []
-    $ container Box []
-    $ ns <&> \n ->
-      boxChild False False 10
-        $ widget Button [#label := pack (show n), on #clicked IncrAll]
+  bin
+      Window
+      [ #title := "Many Boxes"
+      , on #deleteEvent (const (True, Closed))
+      , #widthRequest := 400
+      , #heightRequest := 300
+      ]
+    $   bin ScrolledWindow []
+    $   container Box []
+    $   ns
+    <&> \n -> BoxChild defaultBoxChildProperties { padding = 10 }
+          $ widget Button [#label := pack (show n), on #clicked IncrAll]
 
 update' :: State -> Event -> Transition State Event
 update' ns IncrAll = Transition (map succ ns) (return Nothing)

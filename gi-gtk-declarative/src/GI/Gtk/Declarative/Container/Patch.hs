@@ -124,7 +124,7 @@ instance IsContainer Gtk.ListBox (Bin Gtk.ListBoxRow Widget) where
     Gtk.listBoxInsert box new i
 
 instance IsContainer Gtk.Box BoxChild where
-  appendChild box BoxChild {expand, fill, padding} widget' =
+  appendChild box BoxChild {properties = BoxChildProperties {expand, fill, padding}} widget' =
     Gtk.boxPackStart box widget' expand fill padding
   replaceChild box boxChild' i old new = do
     Gtk.widgetDestroy old

@@ -13,8 +13,9 @@
 
 -- | Implementation of 'Gtk.Box' as a declarative container.
 module GI.Gtk.Declarative.Container.Box
-  ( BoxChild(..)
-  , boxChild
+  ( BoxChild (..)
+  , BoxChildProperties (..)
+  , defaultBoxChildProperties
   )
 where
 
@@ -26,23 +27,22 @@ import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.Widget
 
--- | Described a child widget to be added with 'boxAppend' to a 'Box'.
+-- | Describes a child widget to be added with 'boxAppend' to a 'Box'.
 data BoxChild event = BoxChild
-  { expand  :: Bool
-  , fill    :: Bool
-  , padding :: Word32
-  , child   :: Widget event
+  { properties :: BoxChildProperties
+  , child      :: Widget event
   }
   deriving (Functor)
 
--- | Construct a box child with the given 'boxAppend' parameters.
-boxChild
-  :: Bool
-  -> Bool
-  -> Word32
-  -> Widget event
-  -> BoxChild event
-boxChild expand fill padding child = BoxChild {..}
+data BoxChildProperties = BoxChildProperties
+  { expand  :: Bool
+  , fill    :: Bool
+  , padding :: Word32
+  }
+
+defaultBoxChildProperties :: BoxChildProperties
+defaultBoxChildProperties =
+  BoxChildProperties {expand = False, fill = False, padding = 0}
 
 instance Patchable BoxChild where
   create = create . child

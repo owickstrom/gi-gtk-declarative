@@ -22,25 +22,33 @@ data State = State { lefts :: [Int], rights :: [Int], next :: Int }
 
 addBoxesView :: State -> AppView Window Event
 addBoxesView State {..} =
-  bin Window [#title := "AddBoxes", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
+  bin
+      Window
+      [ #title := "AddBoxes"
+      , on #deleteEvent (const (True, Closed))
+      , #widthRequest := 400
+      , #heightRequest := 300
+      ]
     $ bin
         ScrolledWindow
         [ #hscrollbarPolicy := PolicyTypeAutomatic
         , #vscrollbarPolicy := PolicyTypeNever
         ]
-    $ container Box [#orientation := OrientationVertical]
-    [ renderLane AddLeft  lefts
-    , renderLane AddRight rights
-    ]
+    $ container Box
+                [#orientation := OrientationVertical]
+                [renderLane AddLeft lefts, renderLane AddRight rights]
  where
   renderLane :: Event -> [Int] -> BoxChild Event
-  renderLane onClick children = boxChild True True 10 $
-    container Box []
-    ( boxChild False False 10 btn
-    : map (boxChild False False 5 . renderChild) children
-    )
-    where
-      btn = widget Button [#label := "Add", on #clicked onClick]
+  renderLane onClick children =
+    BoxChild defaultBoxChildProperties { padding = 10 } $ container
+      Box
+      []
+      ( BoxChild defaultBoxChildProperties { padding = 10 } btn
+      : map
+          (BoxChild defaultBoxChildProperties { padding = 5 } . renderChild)
+          children
+      )
+    where btn = widget Button [#label := "Add", on #clicked onClick]
   renderChild :: Int -> Widget Event
   renderChild n = widget Label [#label := Text.pack (show n)]
 

@@ -31,23 +31,24 @@ view' s =
     $ case s of
         Done path ->
           widget Label [#label := (Text.pack path <> " was selected.")]
-        Started currentFile ->
-          container Box [#orientation := OrientationVertical]
-          [boxChild True True 0
-              $ widget
-                  Label
-                  [#label := maybe "No file yet." Text.pack currentFile]
-          , boxChild False False 10 $ widget
-              FileChooserButton
-              [ onM #selectionChanged
-                    (fmap FileSelectionChanged . fileChooserGetFilename)
-              ]
-          , boxChild False False 10 $ widget
-              Button
-              [ #label := "Select"
-              , #tooltipText := "Select the chosen file"
-              , on #clicked ButtonClicked
-              ]
+        Started currentFile -> container
+          Box
+          [#orientation := OrientationVertical]
+          [ BoxChild defaultBoxChildProperties { expand = True, fill = True }
+            $ widget
+                Label
+                [#label := maybe "No file yet." Text.pack currentFile]
+          , BoxChild defaultBoxChildProperties { padding = 10 } $ widget
+            FileChooserButton
+            [ onM #selectionChanged
+                  (fmap FileSelectionChanged . fileChooserGetFilename)
+            ]
+          , BoxChild defaultBoxChildProperties { padding = 10 } $ widget
+            Button
+            [ #label := "Select"
+            , #tooltipText := "Select the chosen file"
+            , on #clicked ButtonClicked
+            ]
           ]
 
 update' :: State -> Event -> Transition State Event
