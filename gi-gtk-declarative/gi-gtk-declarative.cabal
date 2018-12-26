@@ -21,6 +21,7 @@ category:             Graphics
 build-type:           Simple
 cabal-version:        >=1.10
 extra-source-files:   CHANGELOG.md
+tested-with:          GHC == 8.6.3
 
 source-repository head
   type:     git
@@ -48,7 +49,7 @@ library
                       , GI.Gtk.Declarative.SingleWidget
                       , GI.Gtk.Declarative.State
                       , GI.Gtk.Declarative.Widget
-  build-depends:        base >=4.10 && <4.13
+  build-depends:        base >=4.10 && <5
                       , gi-gobject             >= 2    && <3
                       , gi-glib                >= 2    && <3
                       , gi-gtk                 >= 3    && <4
@@ -68,7 +69,7 @@ benchmark gi-gtk-declarative-benchmark
   hs-source-dirs:    bench
   main-is:           Benchmark.hs
   build-depends:     base                 >= 4        && < 5
-                   , criterion
+                   , criterion >= 1.5.3.0
                    , gi-glib
                    , gi-gdk
                    , gi-gtk

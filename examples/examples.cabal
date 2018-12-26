@@ -1,6 +1,10 @@
 name:                 examples
 version:              0.2.0
 synopsis:             Examples of using gi-gtk-declarative and gi-gtk-declarative-app-simple.
+description:          Examples showcasing the use of gi-gtk-declarative and
+                      gi-gtk-declarative-app-simple in a multitude of ways. These try to cover
+                      commonly used widgets and the special features of gi-gtk-declarative atop
+                      the regular GTK+ bindings (gi-gtk).
 license:              MPL-2.0
 license-file:         LICENSE
 author:               Oskar Wickström
@@ -9,6 +13,7 @@ copyright:            Oskar Wickström
 category:             Graphics
 build-type:           Simple
 cabal-version:        >=1.10
+tested-with:          GHC == 8.6.3
 
 executable example
   main-is:              Main.hs
@@ -23,7 +28,7 @@ executable example
                       , ManyBoxes
                       , MenuBar
                       , Paned
-  build-depends:        base >=4.10 && <4.13
+  build-depends:        base >=4.10 && <5
                       , async
                       , bytestring
                       , gi-gobject
