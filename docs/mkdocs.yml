@@ -3,6 +3,7 @@ site_url: https://owickstrom.github.io/gi-gtk-declarative/
 site_description: 'Documentation for the gi-gtk-declarative package.'
 site_author: 'Oskar Wickström'
 repo_url: https://github.com/owickstrom/gi-gtk-declarative/
+edit_uri: edit/master/docs/src
 copyright: 'Copyright © 2018 Oskar Wickström'
 docs_dir: src
 nav:
