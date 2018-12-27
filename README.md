@@ -11,6 +11,10 @@
   </p>
 </div>
 
+## Usage
+
+Learn how to use this package at [the documentation website](https://owickstrom.github.io/gi-gtk-declarative/).
+
 ## Build Instructions
 
 Using newer versions of Cabal, run:
