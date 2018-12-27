@@ -18,6 +18,7 @@ nav:
         - attributes/events.md
         - attributes/css.md
     - app-simple.md
+    - examples.md
     - contributing.md
 theme:
   name: 'material'
