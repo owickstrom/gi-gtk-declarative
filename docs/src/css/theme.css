@@ -1,29 +1,27 @@
 .md-content {
-    padding-bottom: 4em;
+  padding-bottom: 4em;
 }
 
 h1#gi-gtk-declarative {
-    font-size: 300%;
-    font-weight: 600;
-    text-align: center;
-    color: inherit;
-    margin: 0 0 0;
-    text-transform: uppercase;
+  font-size: 300%;
+  font-weight: 600;
+  text-align: center;
+  color: inherit;
+  margin: 0 0 0;
+  text-transform: uppercase;
 }
-#subtitle {
-    margin-top: .5em;
-    font-size: 125%;
-    text-align: center;
+#subtitle, #links {
+  margin-top: .5em;
+  font-size: 125%;
+  text-align: center;
 }
-#subtitle + p {
-    margin-top: 5em;
+#links + p {
+  margin-top: 5em;
 }
-#subtitle + p a:after {
-    display: inline-block;
-    content: '|';
-    color: #aaaaaa;
-    margin: 0 .5em;
+#links a {
+  display: inline-block;
+  margin: 0 .25em;
 }
-#subtitle + p a:last-child:after {
-    content: '';
+#links a:last-child {
+  margin: 0;
 }

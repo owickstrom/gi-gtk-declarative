@@ -4,6 +4,11 @@
 Declarative GTK+ programming in Haskell
 </p>
 
+<p id="links">
+    <a href="https://hackage.haskell.org/package/gi-gtk-declarative"><img src="https://img.shields.io/hackage/v/gi-gtk-declarative.svg?style=flat" alt="Hackage"></a>
+    <a href="https://hackage.haskell.org/package/gi-gtk-declarative-app-simple"><img src="https://img.shields.io/hackage/v/gi-gtk-declarative-app-simple.svg?style=flat" alt="Hackage"></a>
+</p>
+
 Using declarative markup to construct user interfaces, in a purely
 functional fashion, is a great joy. Instead of imperatively building
 up stateful objects in `IO`, you construct a regular data structure
@@ -21,9 +26,11 @@ model, stealing ideas from virtual DOM implementations and web front
 end frameworks, while using the battle-tested native GUI technologies
 on the desktop.
 
-This is the goal of gi-gtk-declarative; a declarative and purely
+This is the goal of [gi-gtk-declarative][]; a declarative and purely
 functional programming model for GTK+ user interfaces. The library
 aims to extend the
 [haskell-gi](https://github.com/haskell-gi/haskell-gi) family of
 packages as transparently as possible, not having to reimplement or
 manually wrap large parts of existing GTK+ widgets.
+
+[gi-gtk-declarative]: https://hackage.haskell.org/package/gi-gtk-declarative
