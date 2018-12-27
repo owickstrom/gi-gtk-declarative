@@ -1,3 +1,5 @@
+* 0.3.0
+    - Return last state from `run` and `runLoop`
 * 0.2.0
     - Require GTK+ windows as top-level widget
 * 0.1.0

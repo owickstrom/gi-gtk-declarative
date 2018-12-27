@@ -1,3 +1,8 @@
+* 0.3.0
+    - Add user documentation
+    - Use record for `BoxChild` properties (breaking change!)
+    - Use lists for child widgets instead of `MarkupOf` monad (breaking change!)
+    - Add support for `Paned` widget
 * 0.2.0
     - Introduce shadow state (breaking change!)
     - Optimized patching (2x-7x faster!)
