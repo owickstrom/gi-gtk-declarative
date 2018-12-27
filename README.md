@@ -6,41 +6,32 @@
     <a href="https://hackage.haskell.org/package/gi-gtk-declarative-app-simple"><img src="https://img.shields.io/hackage/v/gi-gtk-declarative-app-simple.svg?style=flat" alt="Hackage"></a>
     <a href="https://travis-ci.org/owickstrom/gi-gtk-declarative"><img src="https://travis-ci.org/owickstrom/gi-gtk-declarative.svg?branch=master" alt="Build Status"></a>
   </p>
+  <p>
+    <a href="https://owickstrom.github.io/gi-gtk-declarative/">Documentation</a>
+  </p>
 </div>
 
-## Motivation & Goal
+## Build Instructions
 
-Using declarative markup to construct user interfaces, in a purely
-functional fashion, is a great joy. Instead of imperatively building
-up stateful objects in `IO`, you construct a regular data structure
-describing the user interface to render.
+Using newer versions of Cabal, run:
 
-In web development, declarative user interfaces are supported not only
-by HTML and related standards, but more recently also by "virtual DOM"
-technologies, as found in React and Elm. Web technologies have then
-spread to desktop applications through embedded web views, enabled by
-technologies like [Electron](https://electronjs.org/).
+```
+cabal new-build all
+```
 
-But what about regular (non-web) GUI frameworks for desktop, like
-GTK+? We should be able to benefit from the declarative programming
-model, stealing ideas from virtual DOM implementations and web front
-end frameworks, while using the battle-tested native GUI technologies
-on the desktop.
+Or using Stack:
 
-This is the goal of gi-gtk-declarative; a declarative and purely
-functional programming model for GTK+ user interfaces. The library
-aims to extend the
-[haskell-gi](https://github.com/haskell-gi/haskell-gi) family of
-packages as transparently as possible, not having to reimplement or
-manually wrap large parts of existing GTK+ widgets.
+```
+stack build
+```
 
-## The Simple.App Architecture
+You may also use Nix:
 
-In addition to `gi-gtk-declarative` (the markup library), there's an even more
-experimental application architecture in the style of
-[Pux](https://github.com/alexmingoia/purescript-pux), in
-`gi-gtk-declarative-app-simple`. You might use it if you don't want to set up
-your own main loop with `gi-gtk`, and figure out how all of that works.
+```
+nix-shell
+```
+
+The documentation is built using [MkDocs](https://www.mkdocs.org/).
 
 ## Examples
 
