@@ -5,8 +5,8 @@ examples of such widgets are `Box`, `ListBox`, and `Paned`.
 
 Just like single widgets and bins, the `container` function takes as
 arguments a widget constructor and a list of
-[properties](../properties.md). The third argument however, is a
-collection of child widgets.
+[properties](../attributes/properties.md). The third argument however,
+is a collection of child widgets.
 
 ## Container and Children Types
 

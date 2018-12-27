@@ -10,7 +10,7 @@ widget Button []
 ```
 
 Properties can be set on widgets with the attributes list. This is
-described in more detail in [Properties](../properties.md).
+described in more detail in [Properties](../attributes/properties.md).
 
 ``` haskell
 widget Label [#label := "Hello, World!"]
