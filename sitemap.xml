@@ -51,6 +51,11 @@
      <changefreq>daily</changefreq>
     </url>
     <url>
+     <loc>https://owickstrom.github.io/gi-gtk-declarative/examples/</loc>
+     <lastmod>2018-12-27</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+    <url>
      <loc>https://owickstrom.github.io/gi-gtk-declarative/contributing/</loc>
      <lastmod>2018-12-27</lastmod>
      <changefreq>daily</changefreq>
