@@ -10,4 +10,8 @@ in
       project.gi-gtk-declarative-app-simple
       project.examples
     ];
+    buildInputs = [
+      project.docs.packages.mkdocs
+      project.docs.packages.mkdocs-material
+    ];
   }

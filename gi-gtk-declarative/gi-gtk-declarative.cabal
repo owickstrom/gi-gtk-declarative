@@ -49,6 +49,7 @@ library
                       , GI.Gtk.Declarative.SingleWidget
                       , GI.Gtk.Declarative.State
                       , GI.Gtk.Declarative.Widget
+                      , GI.Gtk.Declarative.Widget.Conversions
   build-depends:        base >=4.10 && <5
                       , gi-gobject             >= 2    && <3
                       , gi-glib                >= 2    && <3

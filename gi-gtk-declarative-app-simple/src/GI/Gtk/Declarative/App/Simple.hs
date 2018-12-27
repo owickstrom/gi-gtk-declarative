@@ -46,7 +46,7 @@ data App window state event =
 
 -- | The top-level widget for the 'view' function of an 'App',
 -- requiring a GTK+ 'Window'.
-type AppView window event =  Bin window Widget event
+type AppView window event = Bin window Widget event
 
 -- | The result of applying the 'update' function, deciding if and how to
 -- transition to the next state.
