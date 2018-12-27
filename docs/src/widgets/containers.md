@@ -19,7 +19,7 @@ Things that vary between container widget types are:
 * The types of their child widgets
 * The type of collection used to pass the children as a parameter
 
-### Box
+## Box
 
 In the case of `Box`, the collection of child widgets has type
 `[BoxChild event]`.

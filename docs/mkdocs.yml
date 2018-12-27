@@ -4,21 +4,18 @@ site_author: 'Oskar Wickström'
 copyright: 'Copyright © 2018 Oskar Wickström'
 docs_dir: src
 nav:
-    - 'Home': index.md
-    - 'User Guide':
-        - user-guide/introduction.md
-        - user-guide/installation.md
-        - 'Widgets':
-            - user-guide/widgets/the-widget-type.md
-            - user-guide/widgets/single-widgets.md
-            - user-guide/widgets/bins.md
-            - user-guide/widgets/containers.md
-            - user-guide/widgets/custom-widgets.md
-        - user-guide/properties.md
-        - user-guide/event-handling.md
-        - user-guide/css.md
-        - user-guide/app-simple.md
-    - roadmap.md
+    - installation.md
+    - 'Widgets':
+        - widgets/the-widget-type.md
+        - widgets/single-widgets.md
+        - widgets/bins.md
+        - widgets/containers.md
+        - widgets/custom-widgets.md
+    - 'Attributes':
+        - attributes/properties.md
+        - attributes/events.md
+        - attributes/css.md
+    - app-simple.md
     - contributing.md
 theme:
   name: 'material'

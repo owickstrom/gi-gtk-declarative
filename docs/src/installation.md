@@ -13,4 +13,4 @@ README](https://github.com/haskell-gi/haskell-gi#installation).
     [is not recommended](https://github.com/haskell-gi/haskell-gi#%EF%B8%8F-ghc-82x-%EF%B8%8F)!
 
 Once you have those installed, it should be a regular Haskell package
-install with Cabal, Stack, Nix, or what ever floats your boat.
+install with Cabal, Stack, Nix, or whatever floats your boat.

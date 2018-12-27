@@ -6,14 +6,14 @@ Single widgets have no child widgets. They are constructed using the
 list of attributes.
 
 ```haskell
-myBtn = widget Button []
+widget Button []
 ```
 
 Properties can be set on widgets with the attributes list. This is
 described in more detail in [Properties](../properties.md).
 
 ``` haskell
-myLabel = widget Label [#label := "Hello, World!"]
+widget Label [#label := "Hello, World!"]
 ```
 
 [gi-gtk]: https://hackage.haskell.org/package/gi-gtk

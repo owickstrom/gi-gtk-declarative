@@ -1,11 +1,15 @@
 # Contributing
 
-Komposition is an early-stage software project. You should expect some rough
-edges. If you find a bug, or a place where documentation could be better,
-please [submit an issue on GitHub](https://github.com/owickstrom/komposition).
+This is an experimental package! Expect breaking changes during the
+0.x versions, and be prepared to find bugs, surprising behavior, and
+missing functionality. If you do find something, or think that
+documentation could be better, please [submit an issue on
+GitHub](https://github.com/owickstrom/gi-gtk-declarative).
 
-If you want to help develop Komposition, look around the reported issues on
-Github if there's anything you can pick up. However, as this is a highly
-opinionated piece of software, discussion prior to any change is highly
-encouraged. It would be very sad to reject your pull request becuase it
-hasn't been properly planned beforehand.
+If you want to help develop gi-gtk-declarative:
+
+1. Look around the reported issues on GitHub if there's anything you
+can pick up.
+2. Begin by discussing the issue in the comments, such that we have
+reached a common understanding of the problem and a design.
+3. Announce that you're going to start working on it.
