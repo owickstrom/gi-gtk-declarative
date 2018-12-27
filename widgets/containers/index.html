@@ -1,0 +1,632 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Documentation for the gi-gtk-declarative package.">
+      
+      
+      
+        <meta name="author" content="Oskar Wickström">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-3.1.0">
+    
+    
+      
+        <title>Containers - gi-gtk-declarative</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application.11e41852.css">
+      
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr.20ef595d.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700|Source+Code+Pro">
+        <style>body,input{font-family:"Source Sans Pro","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Source Code Pro","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../../css/theme.css">
+    
+    
+  </head>
+  
+    <body dir="ltr">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#containers" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../.." title="gi-gtk-declarative" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon"></i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            
+              <span class="md-header-nav__topic">
+                gi-gtk-declarative
+              </span>
+              <span class="md-header-nav__topic">
+                Containers
+              </span>
+            
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          
+            <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+            
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+          
+        
+      </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../.." title="gi-gtk-declarative" class="md-nav__button md-logo">
+      
+        <i class="md-icon"></i>
+      
+    </a>
+    gi-gtk-declarative
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../installation/" title="Installation" class="md-nav__link">
+      Installation
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Widgets
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Widgets
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../the-widget-type/" title="The Widget Type" class="md-nav__link">
+      The Widget Type
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../single-widgets/" title="Single Widgets" class="md-nav__link">
+      Single Widgets
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../bins/" title="Bins" class="md-nav__link">
+      Bins
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Containers
+      </label>
+    
+    <a href="./" title="Containers" class="md-nav__link md-nav__link--active">
+      Containers
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#container-and-children-types" title="Container and Children Types" class="md-nav__link">
+    Container and Children Types
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#box" title="Box" class="md-nav__link">
+    Box
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#listbox" title="ListBox" class="md-nav__link">
+    ListBox
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#paned" title="Paned" class="md-nav__link">
+    Paned
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../custom-widgets/" title="Custom Widgets" class="md-nav__link">
+      Custom Widgets
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      Attributes
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Attributes
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../attributes/properties/" title="Properties" class="md-nav__link">
+      Properties
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../attributes/events/" title="Events" class="md-nav__link">
+      Events
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../attributes/css/" title="CSS" class="md-nav__link">
+      CSS
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../app-simple/" title="App.Simple" class="md-nav__link">
+      App.Simple
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../contributing/" title="Contributing" class="md-nav__link">
+      Contributing
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#container-and-children-types" title="Container and Children Types" class="md-nav__link">
+    Container and Children Types
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#box" title="Box" class="md-nav__link">
+    Box
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#listbox" title="ListBox" class="md-nav__link">
+    ListBox
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#paned" title="Paned" class="md-nav__link">
+    Paned
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                <h1 id="containers">Containers</h1>
+<p>Containers are widgets that may contain multiple child widgets. Some
+examples of such widgets are <code>Box</code>, <code>ListBox</code>, and <code>Paned</code>.</p>
+<p>Just like single widgets and bins, the <code>container</code> function takes as
+arguments a widget constructor and a list of
+<a href="../properties.md">properties</a>. The third argument however, is a
+collection of child widgets.</p>
+<h2 id="container-and-children-types">Container and Children Types</h2>
+<p>Different container widgets use different types to help you construct
+a valid widget hierarchy. These types are enforcing the existing GTK+
+widget rules, that otherwise would be printed as warnings or errors.</p>
+<p>Things that vary between container widget types are:</p>
+<ul>
+<li>The types of their child widgets</li>
+<li>The type of collection used to pass the children as a parameter</li>
+</ul>
+<h2 id="box">Box</h2>
+<p>In the case of <code>Box</code>, the collection of child widgets has type
+<code>[BoxChild event]</code>.</p>
+<div class="codehilite"><pre><span></span><span class="nf">container</span> <span class="kt">Box</span> <span class="kt">[]</span>
+  <span class="p">[</span> <span class="kt">BoxChild</span> <span class="n">defaultBoxChildProperties</span> <span class="p">(</span><span class="n">widget</span> <span class="kt">Button</span> <span class="kt">[]</span><span class="p">)</span>
+  <span class="p">,</span> <span class="kt">BoxChild</span> <span class="n">defaultBoxChildProperties</span> <span class="p">(</span><span class="n">widget</span> <span class="kt">CheckButton</span> <span class="kt">[]</span><span class="p">)</span>
+  <span class="p">]</span>
+</pre></div>
+
+
+<p>As <code>BoxChildProperties</code> is a record, it's easy to override the
+defaults with custom values, specifying how the child should be
+<em>packed</em> in the box.</p>
+<div class="codehilite"><pre><span></span><span class="nf">container</span> <span class="kt">Box</span> <span class="kt">[]</span>
+  <span class="p">[</span> <span class="kt">BoxChild</span> <span class="n">defaultBoxChildProperties</span> <span class="p">{</span> <span class="n">padding</span> <span class="ow">=</span> <span class="mi">10</span> <span class="p">}</span>
+      <span class="p">(</span><span class="n">widget</span> <span class="kt">Button</span> <span class="kt">[]</span><span class="p">)</span>
+  <span class="p">,</span> <span class="kt">BoxChild</span> <span class="n">defaultBoxChildProperties</span> <span class="p">{</span> <span class="n">expand</span> <span class="ow">=</span> <span class="kt">True</span> <span class="p">}</span>
+      <span class="p">(</span><span class="n">widget</span> <span class="kt">CheckButton</span> <span class="kt">[]</span><span class="p">)</span>
+  <span class="p">]</span>
+</pre></div>
+
+
+<p>For convenience, widgets can be wrapped in <code>BoxChild</code> values
+automatically using the default box packing properties.</p>
+<div class="codehilite"><pre><span></span><span class="nf">container</span> <span class="kt">Box</span> <span class="kt">[]</span>
+  <span class="p">[</span> <span class="n">widget</span> <span class="kt">Button</span> <span class="kt">[]</span>
+  <span class="p">,</span> <span class="n">widget</span> <span class="kt">CheckButton</span> <span class="kt">[]</span>
+  <span class="p">]</span>
+</pre></div>
+
+
+<h2 id="listbox">ListBox</h2>
+<p>The collection of child widgets used with <code>ListBox</code> is of type <code>[Bin
+ListBoxRow Widget event]</code>, where <code>ListBoxRow</code> is the regular
+constructor defined in the <a href="https://hackage.haskell.org/package/gi-gtk">gi-gtk</a> package. Instead of accepting
+any <code>[Widget event]</code>, the type constrains its usage to only accept
+proper <code>ListBoxRow</code> widgets as children.</p>
+<div class="codehilite"><pre><span></span><span class="nf">container</span> <span class="kt">ListBox</span> <span class="kt">[]</span>
+  <span class="p">[</span> <span class="n">bin</span> <span class="kt">ListBoxRow</span> <span class="kt">[]</span> <span class="p">(</span><span class="n">widget</span> <span class="kt">Button</span> <span class="kt">[]</span><span class="p">)</span>
+  <span class="p">,</span> <span class="n">bin</span> <span class="kt">ListBoxRow</span> <span class="kt">[]</span> <span class="p">(</span><span class="n">widget</span> <span class="kt">CheckButton</span> <span class="kt">[]</span><span class="p">)</span>
+  <span class="p">]</span>
+</pre></div>
+
+
+<h2 id="paned">Paned</h2>
+<p>The <code>Paned</code> widget in GTK+ has two panes, which contain one widget
+each. While <code>Paned</code> widgets can be constructed using the <code>container</code>
+function, the smart constructor <code>paned</code> is recommended. It takes a
+list of attributes, along with to <code>Pane</code> values.</p>
+<div class="codehilite"><pre><span></span><span class="nf">paned</span>
+  <span class="p">[</span><span class="o">#</span><span class="n">wideHandle</span> <span class="kt">:=</span> <span class="kt">True</span><span class="p">]</span>
+  <span class="p">(</span><span class="n">pane</span> <span class="p">(</span><span class="kt">Resize</span> <span class="kt">True</span><span class="p">)</span> <span class="p">(</span><span class="kt">Shrink</span> <span class="kt">True</span><span class="p">)</span> <span class="o">$</span> <span class="n">widget</span> <span class="kt">Label</span> <span class="p">[</span><span class="o">#</span><span class="n">label</span> <span class="kt">:=</span> <span class="s">&quot;Left&quot;</span><span class="p">])</span>
+  <span class="p">(</span><span class="n">pane</span> <span class="p">(</span><span class="kt">Resize</span> <span class="kt">True</span><span class="p">)</span> <span class="p">(</span><span class="kt">Shrink</span> <span class="kt">True</span><span class="p">)</span> <span class="o">$</span> <span class="n">widget</span> <span class="kt">Label</span> <span class="p">[</span><span class="o">#</span><span class="n">label</span> <span class="kt">:=</span> <span class="s">&quot;Right&quot;</span><span class="p">])</span>
+</pre></div>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../bins/" title="Bins" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Bins
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../custom-widgets/" title="Custom Widgets" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Custom Widgets
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            Copyright © 2018 Oskar Wickström
+          </div>
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+        
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application.9e1f3b71.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
+      
+    
+    
+      
+    
+  </body>
+</html>

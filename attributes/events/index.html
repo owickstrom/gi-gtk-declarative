@@ -1,0 +1,753 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Documentation for the gi-gtk-declarative package.">
+      
+      
+      
+        <meta name="author" content="Oskar Wickström">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-3.1.0">
+    
+    
+      
+        <title>Events - gi-gtk-declarative</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application.11e41852.css">
+      
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr.20ef595d.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700|Source+Code+Pro">
+        <style>body,input{font-family:"Source Sans Pro","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Source Code Pro","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../../css/theme.css">
+    
+    
+  </head>
+  
+    <body dir="ltr">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#events" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../.." title="gi-gtk-declarative" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon"></i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            
+              <span class="md-header-nav__topic">
+                gi-gtk-declarative
+              </span>
+              <span class="md-header-nav__topic">
+                Events
+              </span>
+            
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          
+            <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+            
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+          
+        
+      </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../.." title="gi-gtk-declarative" class="md-nav__button md-logo">
+      
+        <i class="md-icon"></i>
+      
+    </a>
+    gi-gtk-declarative
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../installation/" title="Installation" class="md-nav__link">
+      Installation
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+    
+    <label class="md-nav__link" for="nav-2">
+      Widgets
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Widgets
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../widgets/the-widget-type/" title="The Widget Type" class="md-nav__link">
+      The Widget Type
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../widgets/single-widgets/" title="Single Widgets" class="md-nav__link">
+      Single Widgets
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../widgets/bins/" title="Bins" class="md-nav__link">
+      Bins
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../widgets/containers/" title="Containers" class="md-nav__link">
+      Containers
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../widgets/custom-widgets/" title="Custom Widgets" class="md-nav__link">
+      Custom Widgets
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
+    
+    <label class="md-nav__link" for="nav-3">
+      Attributes
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Attributes
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../properties/" title="Properties" class="md-nav__link">
+      Properties
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Events
+      </label>
+    
+    <a href="./" title="Events" class="md-nav__link md-nav__link--active">
+      Events
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pure-event-handlers" title="Pure Event Handlers" class="md-nav__link">
+    Pure Event Handlers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#event-handlers-with-arguments" title="Event Handlers with Arguments" class="md-nav__link">
+    Event Handlers with Arguments
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#impure-event-handlers" title="Impure Event Handlers" class="md-nav__link">
+    Impure Event Handlers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#signal-handler-return-values" title="Signal Handler Return Values" class="md-nav__link">
+    Signal Handler Return Values
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#functors" title="Functors" class="md-nav__link">
+    Functors
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../css/" title="CSS" class="md-nav__link">
+      CSS
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../app-simple/" title="App.Simple" class="md-nav__link">
+      App.Simple
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../contributing/" title="Contributing" class="md-nav__link">
+      Contributing
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pure-event-handlers" title="Pure Event Handlers" class="md-nav__link">
+    Pure Event Handlers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#event-handlers-with-arguments" title="Event Handlers with Arguments" class="md-nav__link">
+    Event Handlers with Arguments
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#impure-event-handlers" title="Impure Event Handlers" class="md-nav__link">
+    Impure Event Handlers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#signal-handler-return-values" title="Signal Handler Return Values" class="md-nav__link">
+    Signal Handler Return Values
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#functors" title="Functors" class="md-nav__link">
+    Functors
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                <h1 id="events">Events</h1>
+<p>To react to user events in the graphical user interface, GTK+ lets you
+connect callbacks to <em>signals</em>. This package takes a more declarative
+approach, and talks about <em>events</em> rather than signals. Widgets emit
+<em>event values</em>, and these values can be mapped and transformed into
+other values as the event propagates up the tree of widgets.</p>
+<h2 id="pure-event-handlers">Pure Event Handlers</h2>
+<p>When working with GTK+ widgets, we transform signals into event values
+using event handlers. Much like <a href="../properties/">properties</a>, event
+handlers for signals are declared in the attributes list, using the
+<code>on</code> function.</p>
+<div class="codehilite"><pre><span></span><span class="kr">data</span> <span class="kt">ButtonEvent</span> <span class="ow">=</span> <span class="kt">ButtonClicked</span>
+
+<span class="nf">counterButton</span> <span class="ow">::</span> <span class="kt">Widget</span> <span class="kt">ButtonEvent</span>
+<span class="nf">counterButton</span> <span class="ow">=</span>
+  <span class="n">widget</span>
+    <span class="kt">Button</span>
+      <span class="p">[</span> <span class="o">#</span><span class="n">label</span> <span class="kt">:=</span> <span class="s">&quot;Click me!&quot;</span>
+      <span class="p">,</span> <span class="n">on</span> <span class="o">#</span><span class="n">clicked</span> <span class="kt">ButtonClicked</span>
+      <span class="p">]</span>
+</pre></div>
+
+
+<p>Some signals in GTK+ carry extra information, supplied as extra
+parameters to signal callbacks. This is supported in
+gi-gtk-declarative as well, by passing those parameters to the event
+handler function.</p>
+<h2 id="event-handlers-with-arguments">Event Handlers with Arguments</h2>
+<p>Looking at <code>WidgetDirectionChangedCallback</code> in gi-gtk, the callback
+type for the <code>direction-changed</code> signal, we see that it's a type
+alias:</p>
+<div class="codehilite"><pre><span></span><span class="kr">type</span> <span class="kt">WidgetDirectionChangedCallback</span> <span class="ow">=</span> <span class="kt">TextDirection</span> <span class="ow">-&gt;</span> <span class="kt">IO</span> <span class="kt">Bool</span>
+</pre></div>
+
+
+<p>In gi-gtk-declarative, when using a pure event handler, the type of
+the event handler will be <code>TextDirection -&gt; event</code>, where <code>event</code> is
+the event data type of the widget. In the following example we declare
+a button and emit an event when it's text direction changes. We map
+the GTK-specific text direction value to our own type.</p>
+<div class="codehilite"><pre><span></span><span class="c1">-- A custom type for text direction</span>
+<span class="kr">data</span> <span class="kt">Dir</span> <span class="ow">=</span> <span class="kt">LTR</span> <span class="o">|</span> <span class="kt">RTL</span>
+
+<span class="c1">-- Our event data type</span>
+<span class="kr">data</span> <span class="kt">MyEvent</span> <span class="ow">=</span> <span class="kt">TextDirectionSet</span> <span class="kt">Dir</span> <span class="o">|</span> <span class="kt">TextDirectionCleared</span>
+
+<span class="nf">textDirAwareEntry</span> <span class="ow">::</span> <span class="kt">Widget</span> <span class="kt">MyEvent</span>
+<span class="nf">textDirAwareEntry</span> <span class="ow">=</span>
+  <span class="n">widget</span> <span class="kt">Entry</span> <span class="p">[</span><span class="n">on</span> <span class="o">#</span><span class="n">directionChanged</span> <span class="n">toEvent</span><span class="p">]</span>
+  <span class="kr">where</span>
+    <span class="c1">-- Map GTK &#39;TextDirection&#39; values to our event type:</span>
+    <span class="n">toEvent</span> <span class="kt">TextDirectionLtr</span> <span class="ow">=</span> <span class="kt">TextDirectionSet</span> <span class="kt">LTR</span>
+    <span class="n">toEvent</span> <span class="kt">TextDirectionRtl</span> <span class="ow">=</span> <span class="kt">TextDirectionSet</span> <span class="kt">RTL</span>
+    <span class="n">toEvent</span> <span class="kr">_</span>                <span class="ow">=</span> <span class="kt">TextDirectionCleared</span>
+</pre></div>
+
+
+<h2 id="impure-event-handlers">Impure Event Handlers</h2>
+<p>When attaching an event handler to a widget signal, it's often
+necessary to query the widget for its current property values.
+Getting properties is not pure, so we need event handlers in <code>IO</code>.
+Using the <code>onM</code> function instead of <code>on</code>, our event handler returns
+the event as <code>IO event</code>. Also, the handler will take the widget itself
+as an extra argument.</p>
+<p>In the following example we attach an event handler to the <code>color-set</code>
+signal. The event handler uses <code>getColorButtonRgba</code> to get the current
+<code>RGBA</code> value from the <code>ColorButton</code> widget, and maps the
+<code>ColorChanged</code> constructor over the IO action.</p>
+<div class="codehilite"><pre><span></span><span class="kr">data</span> <span class="kt">ColorEvent</span> <span class="ow">=</span> <span class="kt">ColorChanged</span> <span class="p">(</span><span class="kt">Maybe</span> <span class="kt">RGBA</span><span class="p">)</span>
+
+<span class="nf">colorButton</span> <span class="ow">::</span> <span class="kt">RGBA</span> <span class="ow">-&gt;</span> <span class="kt">Widget</span> <span class="kt">ColorEvent</span>
+<span class="nf">colorButton</span> <span class="n">color</span> <span class="ow">=</span>
+  <span class="n">widget</span>
+    <span class="kt">ColorButton</span>
+    <span class="p">[</span> <span class="o">#</span><span class="n">title</span> <span class="kt">:=</span> <span class="s">&quot;Selected color&quot;</span>
+    <span class="p">,</span> <span class="o">#</span><span class="n">rgba</span> <span class="kt">:=</span> <span class="n">color</span>
+    <span class="p">,</span> <span class="n">onM</span> <span class="o">#</span><span class="n">colorSet</span> <span class="n">toColorEvent</span>
+    <span class="p">]</span>
+  <span class="kr">where</span>
+    <span class="n">toColorEvent</span> <span class="ow">::</span> <span class="kt">ColorButton</span> <span class="ow">-&gt;</span> <span class="kt">IO</span> <span class="kt">ColorEvent</span>
+    <span class="n">toColorEvent</span> <span class="n">w</span> <span class="ow">=</span> <span class="kt">ColorChanged</span> <span class="o">&lt;$&gt;</span> <span class="n">getColorButtonRgba</span> <span class="n">w</span>
+</pre></div>
+
+
+<p>In case the underlying signal callback type has extra arguments, the
+impure event handler will be a function of those arguments <em>and</em> the
+widget as the last argument. The translation can be described like this:</p>
+<div class="codehilite"><pre><span></span><span class="kr">type</span> <span class="kt">SignalCallback</span> <span class="ow">=</span>
+     <span class="n">arg1</span>
+  <span class="ow">-&gt;</span> <span class="n">arg2</span>
+  <span class="ow">-&gt;</span> <span class="o">...</span>
+  <span class="ow">-&gt;</span> <span class="n">argN</span>
+  <span class="ow">-&gt;</span> <span class="kt">IO</span> <span class="nb">()</span>
+
+<span class="kr">type</span> <span class="kt">ImpureEventHandler</span> <span class="ow">=</span>
+     <span class="n">arg1</span>
+  <span class="ow">-&gt;</span> <span class="n">arg2</span>
+  <span class="ow">-&gt;</span> <span class="o">...</span>
+  <span class="ow">-&gt;</span> <span class="n">argN</span>
+  <span class="ow">-&gt;</span> <span class="n">widget</span>
+  <span class="ow">-&gt;</span> <span class="kt">IO</span> <span class="n">event</span>
+</pre></div>
+
+
+<h2 id="signal-handler-return-values">Signal Handler Return Values</h2>
+<p>Some signal callbacks in GTK+ have return values other than <code>()</code>. It's
+common that callbacks return a <code>Bool</code> value, determining whether to
+propagate the event further or not. One example is
+<code>WidgetFocusCallback</code>, the callback for the <code>focus</code> signal:</p>
+<div class="codehilite"><pre><span></span><span class="kr">type</span> <span class="kt">WidgetFocusCallback</span> <span class="ow">=</span> <span class="kt">DirectionType</span> <span class="ow">-&gt;</span> <span class="kt">IO</span> <span class="kt">Bool</span>
+</pre></div>
+
+
+<p>In gi-gtk-declarative, the return value type of the event handler will
+be a tuple of the callback return value and the event to emit. In the
+case of the <code>focus</code> signal, a pure event handler type would be
+<code>DirectionType -&gt; (Bool, event)</code>. As described above, impure event
+handlers return IO actions, and in the case of the <code>focus</code> signal the
+type would be <code>DirectionType -&gt; IO (Bool, event)</code>.</p>
+<p>The translation to pure and impure event handlers can be described
+like this:</p>
+<div class="codehilite"><pre><span></span><span class="kr">type</span> <span class="kt">SignalCallback</span> <span class="ow">=</span>
+     <span class="n">arg1</span>
+  <span class="ow">-&gt;</span> <span class="n">arg2</span>
+  <span class="ow">-&gt;</span> <span class="o">...</span>
+  <span class="ow">-&gt;</span> <span class="n">argN</span>
+  <span class="ow">-&gt;</span> <span class="kt">IO</span> <span class="n">a</span> <span class="c1">-- where &#39;a&#39; is not &#39;()&#39;</span>
+
+<span class="kr">type</span> <span class="kt">PureEventHandler</span> <span class="ow">=</span>
+     <span class="n">arg1</span>
+  <span class="ow">-&gt;</span> <span class="n">arg2</span>
+  <span class="ow">-&gt;</span> <span class="o">...</span>
+  <span class="ow">-&gt;</span> <span class="n">argN</span>
+  <span class="ow">-&gt;</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+
+<span class="kr">type</span> <span class="kt">ImpureEventHandler</span> <span class="ow">=</span>
+     <span class="n">arg1</span>
+  <span class="ow">-&gt;</span> <span class="n">arg2</span>
+  <span class="ow">-&gt;</span> <span class="o">...</span>
+  <span class="ow">-&gt;</span> <span class="n">argN</span>
+  <span class="ow">-&gt;</span> <span class="n">widget</span> <span class="c1">-- also including the widget!</span>
+  <span class="ow">-&gt;</span> <span class="kt">IO</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+</pre></div>
+
+
+<h2 id="functors">Functors</h2>
+<p>Widgets that emit events have <code>Functor</code> instances, meaning that you
+can use regular <code>fmap</code> and friends to map event values using pure
+functions.</p>
+<p>As an example, say that we have another library provide a
+<code>clickyButton</code> that emits <code>ButtonEvent</code>s.</p>
+<div class="codehilite"><pre><span></span><span class="kr">data</span> <span class="kt">ButtonEvent</span> <span class="ow">=</span> <span class="kt">ButtonClicked</span>
+
+<span class="nf">clickyButton</span> <span class="ow">::</span> <span class="kt">Text</span> <span class="ow">-&gt;</span> <span class="kt">Widget</span> <span class="kt">ButtonEvent</span>
+</pre></div>
+
+
+<p>In our own widget declaration, we can use the clicky button to
+increment or decrement some counter, by mapping the <code>ButtonClicked</code>
+events to values of type <code>MyEvent</code>.</p>
+<div class="codehilite"><pre><span></span><span class="kr">import</span> <span class="nn">Data.Functor</span> <span class="p">((</span><span class="o">$&gt;</span><span class="p">))</span>
+
+<span class="kr">data</span> <span class="kt">MyEvent</span> <span class="ow">=</span> <span class="kt">Incr</span> <span class="o">|</span> <span class="kt">Decr</span>
+
+<span class="nf">incrDecrButtons</span> <span class="ow">::</span> <span class="kt">Widget</span> <span class="kt">MyEvent</span>
+<span class="nf">incrDecrButtons</span> <span class="ow">=</span>
+  <span class="n">container</span> <span class="kt">Box</span> <span class="p">[</span><span class="o">#</span><span class="n">orientation</span> <span class="kt">:=</span> <span class="kt">OrientationHorizontal</span><span class="p">]</span>
+    <span class="p">[</span> <span class="n">clickyButton</span> <span class="s">&quot;-1&quot;</span> <span class="o">$&gt;</span> <span class="kt">Decr</span>
+    <span class="p">,</span> <span class="n">clickyButton</span> <span class="s">&quot;+1&quot;</span> <span class="o">$&gt;</span> <span class="kt">Incr</span>
+    <span class="p">]</span>
+</pre></div>
+
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>(a $&gt; b)</code> is equivalent to <code>(const b &lt;$&gt; a)</code>.</p>
+</div>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../properties/" title="Properties" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Properties
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../css/" title="CSS" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                CSS
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            Copyright © 2018 Oskar Wickström
+          </div>
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+        
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application.9e1f3b71.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
+      
+    
+    
+      
+    
+  </body>
+</html>

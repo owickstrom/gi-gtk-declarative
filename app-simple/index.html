@@ -1,0 +1,606 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Documentation for the gi-gtk-declarative package.">
+      
+      
+      
+        <meta name="author" content="Oskar Wickström">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-3.1.0">
+    
+    
+      
+        <title>App.Simple - gi-gtk-declarative</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/application.11e41852.css">
+      
+      
+    
+    
+      <script src="../assets/javascripts/modernizr.20ef595d.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700|Source+Code+Pro">
+        <style>body,input{font-family:"Source Sans Pro","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Source Code Pro","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../css/theme.css">
+    
+    
+  </head>
+  
+    <body dir="ltr">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#appsimple" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href=".." title="gi-gtk-declarative" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon"></i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            
+              <span class="md-header-nav__topic">
+                gi-gtk-declarative
+              </span>
+              <span class="md-header-nav__topic">
+                App.Simple
+              </span>
+            
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          
+            <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+            
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+          
+        
+      </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href=".." title="gi-gtk-declarative" class="md-nav__button md-logo">
+      
+        <i class="md-icon"></i>
+      
+    </a>
+    gi-gtk-declarative
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../installation/" title="Installation" class="md-nav__link">
+      Installation
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+    
+    <label class="md-nav__link" for="nav-2">
+      Widgets
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Widgets
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../widgets/the-widget-type/" title="The Widget Type" class="md-nav__link">
+      The Widget Type
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../widgets/single-widgets/" title="Single Widgets" class="md-nav__link">
+      Single Widgets
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../widgets/bins/" title="Bins" class="md-nav__link">
+      Bins
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../widgets/containers/" title="Containers" class="md-nav__link">
+      Containers
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../widgets/custom-widgets/" title="Custom Widgets" class="md-nav__link">
+      Custom Widgets
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      Attributes
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Attributes
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../attributes/properties/" title="Properties" class="md-nav__link">
+      Properties
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../attributes/events/" title="Events" class="md-nav__link">
+      Events
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../attributes/css/" title="CSS" class="md-nav__link">
+      CSS
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        App.Simple
+      </label>
+    
+    <a href="./" title="App.Simple" class="md-nav__link md-nav__link--active">
+      App.Simple
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#app" title="App" class="md-nav__link">
+    App
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-application" title="Running the Application" class="md-nav__link">
+    Running the Application
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../contributing/" title="Contributing" class="md-nav__link">
+      Contributing
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#app" title="App" class="md-nav__link">
+    App
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-application" title="Running the Application" class="md-nav__link">
+    Running the Application
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                <h1 id="appsimple">App.Simple</h1>
+<p>The <em>App.Simple</em> framework, provided by the
+<a href="https://hackage.haskell.org/package/gi-gtk-declarative-app-simple-0.2.0">gi-gtk-declarative-app-simple</a> package, build on gi-gtk-declarative
+to provide a simple application architecture. It's based on a state
+reducer, inspired by <a href="http://purescript-pux.org/">PureScript's
+Pux</a>. It also draws inspiration from with
+the earlier versions of <a href="https://guide.elm-lang.org/architecture/">the Elm
+architecture</a>.</p>
+<h2 id="app">App</h2>
+<p>The central abstraction is the <code>App</code>:</p>
+<div class="codehilite"><pre><span></span><span class="kr">data</span> <span class="kt">App</span> <span class="n">window</span> <span class="n">state</span> <span class="n">event</span> <span class="ow">=</span>
+  <span class="kt">App</span>
+    <span class="p">{</span> <span class="n">update</span>       <span class="ow">::</span> <span class="n">state</span> <span class="ow">-&gt;</span> <span class="n">event</span> <span class="ow">-&gt;</span> <span class="kt">Transition</span> <span class="n">state</span> <span class="n">event</span>
+    <span class="p">,</span> <span class="n">view</span>         <span class="ow">::</span> <span class="n">state</span> <span class="ow">-&gt;</span> <span class="kt">AppView</span> <span class="n">window</span> <span class="n">event</span>
+    <span class="p">,</span> <span class="n">inputs</span>       <span class="ow">::</span> <span class="p">[</span><span class="kt">Producer</span> <span class="n">event</span> <span class="kt">IO</span> <span class="nb">()</span><span class="p">]</span>
+    <span class="p">,</span> <span class="n">initialState</span> <span class="ow">::</span> <span class="n">state</span>
+    <span class="p">}</span>
+</pre></div>
+
+
+<p>Let's look at the individual parts:</p>
+<ul>
+<li>The <code>update</code> function transition from the current state, based on an
+  event, to another state. It may also exit the application, using the
+  <code>Exit</code> constructor of <code>Transition</code>.</li>
+<li>
+<p>The <code>view</code> function renders the current state as a window widget.
+  <code>AppView</code> is a type alias that constrains the widget to be a window
+  bin widget:</p>
+<div class="codehilite"><pre><span></span>type AppView window event = Bin window Widget event
+</pre></div>
+
+
+</li>
+<li>
+<p><code>inputs</code> is a list of <a href="http://hackage.haskell.org/package/pipes">Pipes</a> producers, emitting events that feed
+  into the state reducer loop. This is useful to emit events at regular
+  intervals or from some external source.</p>
+</li>
+<li>The <code>initialState</code> is the state value that we begin with.</li>
+</ul>
+<h2 id="running-the-application">Running the Application</h2>
+<p>The easiest way to run an <code>App</code> is the <code>run</code> function. Given that we
+have the following definitions:</p>
+<div class="codehilite"><pre><span></span><span class="kr">data</span> <span class="kt">MyState</span> <span class="ow">=</span> <span class="o">...</span>
+<span class="kr">data</span> <span class="kt">MyEvent</span> <span class="ow">=</span> <span class="o">...</span>
+
+<span class="nf">view&#39;</span> <span class="ow">::</span> <span class="kt">AppView</span> <span class="kt">Window</span> <span class="kt">MyEvent</span>
+
+<span class="nf">update&#39;</span> <span class="ow">::</span> <span class="kt">MyState</span> <span class="ow">-&gt;</span> <span class="kt">MyEvent</span> <span class="ow">-&gt;</span> <span class="kt">Transition</span> <span class="kt">MyState</span> <span class="kt">MyEvent</span>
+
+<span class="nf">clockTicks</span> <span class="ow">::</span> <span class="kt">Producer</span> <span class="kt">MyEvent</span> <span class="kt">IO</span> <span class="nb">()</span>
+</pre></div>
+
+
+<p>We then define our <code>main</code> action to run an application:</p>
+<div class="codehilite"><pre><span></span><span class="nf">main</span> <span class="ow">::</span> <span class="kt">IO</span> <span class="nb">()</span>
+<span class="nf">main</span> <span class="ow">=</span> <span class="n">void</span> <span class="o">$</span> <span class="n">run</span> <span class="kt">App</span>
+  <span class="p">{</span> <span class="n">view</span>         <span class="ow">=</span> <span class="n">view&#39;</span>
+  <span class="p">,</span> <span class="n">update</span>       <span class="ow">=</span> <span class="n">update&#39;</span>
+  <span class="p">,</span> <span class="n">inputs</span>       <span class="ow">=</span> <span class="p">[</span><span class="n">clockTicks</span><span class="p">]</span>
+  <span class="p">,</span> <span class="n">initialState</span> <span class="ow">=</span> <span class="kt">Initial</span>
+  <span class="p">}</span>
+</pre></div>
+
+
+<p>As <code>run</code> returns the last state, we ignore it using <code>void</code>. Accessing
+the last state can be useful if you want to embed a declarative <code>App</code>
+inside a larger GTK+ application.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you need more control over GTK+ initialization and the setup, for
+instance when using <a href="../attributes/css/">CSS</a>, use the <code>runLoop</code> function.</p>
+</div>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../attributes/css/" title="CSS" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                CSS
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../contributing/" title="Contributing" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Contributing
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            Copyright © 2018 Oskar Wickström
+          </div>
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+        
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/application.9e1f3b71.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
+      
+    
+    
+      
+    
+  </body>
+</html>
