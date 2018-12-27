@@ -74,13 +74,21 @@ container ListBox []
 The `Paned` widget in GTK+ has two panes, which contain one widget
 each. While `Paned` widgets can be constructed using the `container`
 function, the smart constructor `paned` is recommended. It takes a
-list of attributes, along with to `Pane` values.
+list of attributes, along with two `Pane` values.
 
 ``` haskell
 paned
   [#wideHandle := True]
-  (pane (Resize True) (Shrink True) $ widget Label [#label := "Left"])
-  (pane (Resize True) (Shrink True) $ widget Label [#label := "Right"])
+  (pane defaultPaneProperties { resize = True } $
+    widget Label [#label := "Left"])
+  (pane defaultPaneProperties { resize = True, shrink = False } $
+    widget Label [#label := "Right"])
 ```
+
+Each `Pane` is constructed using the `pane` function, which takes a
+`PaneProperties` value and a child widget. These pane property values
+are used to call the underlying `pack1`/`pack2` functions on the GTK+
+widget.
+
 
 [gi-gtk]: https://hackage.haskell.org/package/gi-gtk

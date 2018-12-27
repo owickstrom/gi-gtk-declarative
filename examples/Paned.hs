@@ -23,10 +23,10 @@ view' =
       , #widthRequest := 400
       , #heightRequest := 300
       ]
-    $ paned
-        [#wideHandle := True]
-        (pane (Resize True) (Shrink True) $ widget Label [#label := "Left"])
-        (pane (Resize True) (Shrink True) $ widget Label [#label := "Right"])
+    $ paned [#wideHandle := True]
+            (pane paneProps $ widget Label [#label := "Left"])
+            (pane paneProps $ widget Label [#label := "Right"])
+  where paneProps = defaultPaneProperties { resize = True }
 
 update' :: State -> Event -> Transition State Event
 update' _ Closed      = Exit
