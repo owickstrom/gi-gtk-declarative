@@ -47,11 +47,14 @@ data Pane event = Pane
   }
   deriving (Functor)
 
+-- | Values used when packing a pane into a 'Gtk.Paned'.
 data PaneProperties = PaneProperties
   { resize :: Bool
   , shrink :: Bool
   }
 
+-- | Defaults for 'PaneProperties'. Use these and override specific
+-- fields.
 defaultPaneProperties :: PaneProperties
 defaultPaneProperties = PaneProperties {resize = False, shrink = True}
 
@@ -67,6 +70,7 @@ instance Patchable Pane where
 instance EventSource Pane where
   subscribe Pane{..} = subscribe paneChild
 
+-- | Construct a 'Gtk.Paned' based on attributes and two child 'Pane's.
 paned :: Typeable event => Vector (Attribute Gtk.Paned event) -> Pane event -> Pane event -> Widget event
 paned attrs p1 p2 = container Gtk.Paned attrs (Panes p1 p2)
 

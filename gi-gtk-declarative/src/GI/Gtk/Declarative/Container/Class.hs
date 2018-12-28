@@ -2,6 +2,8 @@
 {-# LANGUAGE DefaultSignatures      #-}
 {-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE TypeFamilies           #-}
+
+-- | Shared interfaces for containers.
 module GI.Gtk.Declarative.Container.Class where
 
 import qualified GI.Gtk                           as Gtk
@@ -27,9 +29,11 @@ class IsContainer container child | container -> child where
     -> Gtk.Widget   -- ^ New GTK widget to replace with
     -> IO ()
 
+-- | Common collection type for child widgets, used when patching containers.
 newtype Children child event = Children { unChildren :: Vector (child event) }
   deriving (Functor)
 
+-- | Converts a specific collection type to 'Children'.
 class ToChildren widget parent child | widget -> parent, widget -> child where
   toChildren :: (Gtk.ManagedPtr widget -> widget) -> parent (child event) -> Children child event
 

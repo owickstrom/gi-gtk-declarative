@@ -32,11 +32,15 @@ import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.State
 import           GI.Gtk.Declarative.Widget
 
+-- | A menu item widget used for 'Gtk.Menu' children.
 data MenuItem event where
+  -- | A single menu item in a 'Gtk.Menu'.
   MenuItem
     :: (Gtk.IsMenuItem item, BinChild item Widget, Typeable item)
     => Bin item Widget event
     -> MenuItem event
+  -- | A sub menu in a 'Gtk.Menu', with a text label and the list of
+  -- child menu items.
   SubMenu
     :: Text -> Container Gtk.Menu (Children MenuItem) event -> MenuItem event
 
@@ -48,6 +52,7 @@ instance ToChildren Gtk.Menu [] MenuItem
 
 instance ToChildren Gtk.MenuBar [] MenuItem
 
+-- | Construct a single menu item for a 'Gtk.Menu'.
 menuItem
   :: ( Gtk.IsMenuItem item
      , Typeable event
@@ -63,6 +68,8 @@ menuItem
   -> MenuItem event
 menuItem item attrs = MenuItem . Bin item attrs
 
+-- | Construct a sub menu for a 'Gtk.Menu', wit a text label and the
+-- child menu items.
 subMenu
   :: (Typeable event)
   => Text

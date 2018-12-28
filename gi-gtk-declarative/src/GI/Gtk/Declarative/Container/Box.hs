@@ -34,12 +34,15 @@ data BoxChild event = BoxChild
   }
   deriving (Functor)
 
+-- | Values used when /packing/ child widgets into boxes.
 data BoxChildProperties = BoxChildProperties
   { expand  :: Bool
   , fill    :: Bool
   , padding :: Word32
   }
 
+-- | Defaults for 'BoxChildProperties'. Use these and override
+-- specific fields.
 defaultBoxChildProperties :: BoxChildProperties
 defaultBoxChildProperties =
   BoxChildProperties {expand = False, fill = False, padding = 0}
