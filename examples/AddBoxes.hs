@@ -7,6 +7,8 @@ module AddBoxes where
 
 import           Control.Monad                 (void)
 import qualified Data.Text                     as Text
+import           Data.Vector                   (Vector)
+import qualified Data.Vector                   as Vector
 
 import           GI.Gtk                        (Box (..), Button (..),
                                                 Label (..), Orientation (..),
@@ -18,7 +20,7 @@ import           GI.Gtk.Declarative.App.Simple
 
 data Event = AddLeft | AddRight | Closed
 
-data State = State { lefts :: [Int], rights :: [Int], next :: Int }
+data State = State { lefts :: Vector Int, rights :: Vector Int, next :: Int }
 
 addBoxesView :: State -> AppView Window Event
 addBoxesView State {..} =
@@ -38,13 +40,13 @@ addBoxesView State {..} =
                 [#orientation := OrientationVertical]
                 [renderLane AddLeft lefts, renderLane AddRight rights]
  where
-  renderLane :: Event -> [Int] -> BoxChild Event
+  renderLane :: Event -> Vector Int -> BoxChild Event
   renderLane onClick children =
     BoxChild defaultBoxChildProperties { padding = 10 } $ container
       Box
       []
       ( BoxChild defaultBoxChildProperties { padding = 10 } btn
-      : map
+      `Vector.cons` Vector.map
           (BoxChild defaultBoxChildProperties { padding = 5 } . renderChild)
           children
       )
@@ -54,10 +56,10 @@ addBoxesView State {..} =
 
 update' :: State -> Event -> Transition State Event
 update' state@State {..} AddLeft = Transition
-  state { lefts = lefts ++ [next], next = succ next }
+  state { lefts = lefts `Vector.snoc` next, next = succ next }
   (return Nothing)
 update' state@State {..} AddRight = Transition
-  state { rights = rights ++ [next], next = succ next }
+  state { rights = rights `Vector.snoc` next, next = succ next }
   (return Nothing)
 update' _ Closed = Exit
 

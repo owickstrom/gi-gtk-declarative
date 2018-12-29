@@ -1,15 +1,15 @@
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE DefaultSignatures      #-}
 {-# LANGUAGE DeriveFunctor          #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE TypeFamilies           #-}
 
 -- | Shared interfaces for containers.
 module GI.Gtk.Declarative.Container.Class where
 
-import qualified GI.Gtk                           as Gtk
-import           Data.Vector                             (Vector)
-import qualified Data.Vector                             as Vector
-import           Data.Int                         (Int32)
+import           Data.Int    (Int32)
+import           Data.Vector (Vector)
+import qualified GI.Gtk      as Gtk
 
 -- | Describes supported GTK+ containers and their specialized APIs for
 -- appending and replacing child widgets.
@@ -37,5 +37,5 @@ newtype Children child event = Children { unChildren :: Vector (child event) }
 class ToChildren widget parent child | widget -> parent, widget -> child where
   toChildren :: (Gtk.ManagedPtr widget -> widget) -> parent (child event) -> Children child event
 
-  default toChildren :: parent ~ [] => (Gtk.ManagedPtr widget -> widget) -> parent (child event) -> Children child event
-  toChildren _ = Children . Vector.fromList
+  default toChildren :: parent ~ Vector => (Gtk.ManagedPtr widget -> widget) -> parent (child event) -> Children child event
+  toChildren _ = Children
