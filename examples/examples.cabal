@@ -42,5 +42,6 @@ executable example
                       , pipes
                       , pipes-extras
                       , text
+                      , vector
   default-language:     Haskell2010
   ghc-options:          -O2 -Wall -threaded

@@ -9,6 +9,7 @@ import           Control.Monad                 (void)
 import           Data.Function                 ((&))
 import           Data.Functor                  ((<&>))
 import           Data.Text                     (Text)
+import           Data.Vector                   (Vector)
 import           Pipes
 import qualified Pipes.Extras                  as Pipes
 
@@ -17,7 +18,7 @@ import           GI.Gtk                        (Label (..), ListBox (..),
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
-newtype State = State { greetings :: [Text] }
+newtype State = State { greetings :: Vector Text }
 
 data Event = Greet Text | Closed
 

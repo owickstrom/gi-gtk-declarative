@@ -4,12 +4,13 @@
 
 module CSS where
 
-import           Data.ByteString               (ByteString)
-import           Data.Text                     (Text)
-
 import           Control.Concurrent.Async      (async)
 import           Control.Monad                 (void)
+import           Data.ByteString               (ByteString)
 import           Data.Functor                  ((<&>))
+import           Data.Text                     (Text)
+import           Data.Vector                   (Vector)
+import qualified Data.Vector                   as Vector
 import qualified GI.Gdk                        as Gdk
 import           GI.Gtk                        (Box (..), Button (..),
                                                 Orientation (..), Window (..))
@@ -23,7 +24,7 @@ data Event
   = MoveTo Int
   | Closed
 
-colors :: [Text]
+colors :: Vector Text
 colors = ["red", "green", "blue", "yellow"]
 
 view' :: State -> AppView Window Event
@@ -36,7 +37,7 @@ view' si =
             $ container Box [#orientation := OrientationHorizontal] colorButtons
         ]
  where
-  colorButtons = zip [0 ..] colors <&> \(i, color) ->
+  colorButtons = Vector.indexed colors <&> \(i, color) ->
     BoxChild defaultBoxChildProperties { expand = True, padding = 10 }
       $ let cs = if i == si then ["selected", color] else [color]
         in  widget Button [#label := color, on #clicked (MoveTo i), classes cs]

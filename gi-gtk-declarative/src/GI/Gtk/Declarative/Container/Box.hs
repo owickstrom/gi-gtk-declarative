@@ -19,6 +19,7 @@ module GI.Gtk.Declarative.Container.Box
   )
 where
 
+import           Data.Vector                        (Vector)
 import           Data.Word                          (Word32)
 import qualified GI.Gtk                             as Gtk
 
@@ -54,4 +55,4 @@ instance Patchable BoxChild where
 instance EventSource BoxChild where
   subscribe BoxChild{..} = subscribe child
 
-instance ToChildren Gtk.Box [] BoxChild
+instance ToChildren Gtk.Box Vector BoxChild

@@ -1,3 +1,5 @@
+* 0.4.0
+    - Use `Vector` instead of `[]` for child widgets
 * 0.3.0
     - Add user documentation
     - Use record for `BoxChild` properties (breaking change!)

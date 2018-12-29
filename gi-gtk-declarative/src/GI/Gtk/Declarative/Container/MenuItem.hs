@@ -46,11 +46,11 @@ data MenuItem event where
 
 instance Functor MenuItem where
   fmap f (MenuItem item)          = MenuItem (fmap f item)
-  fmap f (SubMenu label subMenu')=SubMenu label (fmap f subMenu')
+  fmap f (SubMenu label subMenu') = SubMenu label (fmap f subMenu')
 
-instance ToChildren Gtk.Menu [] MenuItem
+instance ToChildren Gtk.Menu Vector MenuItem
 
-instance ToChildren Gtk.MenuBar [] MenuItem
+instance ToChildren Gtk.MenuBar Vector MenuItem
 
 -- | Construct a single menu item for a 'Gtk.Menu'.
 menuItem
@@ -73,7 +73,7 @@ menuItem item attrs = MenuItem . Bin item attrs
 subMenu
   :: (Typeable event)
   => Text
-  -> [MenuItem event]
+  -> Vector (MenuItem event)
   -> MenuItem event
 subMenu label = SubMenu label . container Gtk.Menu mempty
 

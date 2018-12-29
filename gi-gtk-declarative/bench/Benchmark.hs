@@ -8,6 +8,8 @@ import           Control.Monad
 import           Criterion.Main
 import           Data.Functor             ((<&>))
 import           Data.Text
+import           Data.Vector              (Vector)
+import qualified Data.Vector              as Vector
 import qualified GI.Gdk                   as Gdk
 import qualified GI.GLib.Constants        as GLib
 
@@ -16,7 +18,7 @@ import qualified GI.Gtk                   as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.State
 
-testView :: [Int] -> Widget ()
+testView :: Vector Int -> Widget ()
 testView ns = bin Window [] $ container Box [] $ ns <&> \n ->
   BoxChild defaultBoxChildProperties { expand  = True
                                      , fill    = True
@@ -37,7 +39,7 @@ testPatch state oldView newView = case patch state oldView newView of
 main :: IO ()
 main = do
   _ <- Gtk.init Nothing
-  let initialView = testView [1 .. 100]
+  let initialView = testView (Vector.enumFromN 1 100)
   initialState <- create initialView
   #showAll =<< someStateWidget initialState
   _ <- forkOS $ do
@@ -49,7 +51,7 @@ main = do
             void $ testPatch s1 initialView initialView
           , bench "Modify (diff)" . whnfIO . replicateM_ 10 $ do
             s1 <- testPatch initialState initialView initialView
-            void $ testPatch s1 initialView (testView [2 .. 101])
+            void $ testPatch s1 initialView (testView (Vector.enumFromN 2 101))
           ]
       ]
     Gtk.mainQuit
