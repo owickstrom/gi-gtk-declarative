@@ -22,7 +22,6 @@ import qualified GI.Gdk                         as Gdk
 import qualified GI.GLib.Constants              as GLib
 import qualified GI.Gtk                         as Gtk
 import           GI.Gtk.Declarative
-import           GI.Gtk.Declarative.Bin
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.State
 import           Pipes
@@ -46,7 +45,7 @@ data App window state event =
 
 -- | The top-level widget for the 'view' function of an 'App',
 -- requiring a GTK+ 'Window'.
-type AppView window event = Bin window Widget event
+type AppView window event = Bin window event
 
 -- | The result of applying the 'update' function, deciding if and how to
 -- transition to the next state.
@@ -69,7 +68,7 @@ instance Exception GtkMainExitedException
 -- convenience function that is highly recommended. If you need more
 -- flexibility, e.g. to set up GTK+ yourself, use 'runLoop' instead.
 run
-  :: (Typeable event, BinChild window Widget)
+  :: (Typeable event, Gtk.IsWindow window, Gtk.IsBin window)
   => App window state event      -- ^ Application to run
   -> IO state
 run app = do
@@ -93,7 +92,7 @@ run app = do
 --       Gtk.mainQuit
 --     Gtk.main
 -- @
-runLoop :: (Typeable event, BinChild window Widget) => App window state event -> IO state
+runLoop :: (Typeable event, Gtk.IsWindow window, Gtk.IsBin window) => App window state event -> IO state
 runLoop App {..} = do
   let firstMarkup = view initialState
   events                  <- newChan

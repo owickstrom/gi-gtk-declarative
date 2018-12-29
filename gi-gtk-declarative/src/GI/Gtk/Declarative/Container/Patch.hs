@@ -31,7 +31,6 @@ import           GI.Gtk.Declarative.Container.Box
 import           GI.Gtk.Declarative.Container.Class
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.State
-import           GI.Gtk.Declarative.Widget
 
 -- | Patch all children in a container. This does not feature any ID checking,
 -- as seen in React, so reordering children in a container can produce many
@@ -116,7 +115,7 @@ patchInContainer (StateTreeContainer top children) container os' ns' = do
 padMaybes :: Int -> Vector a -> Vector (Maybe a)
 padMaybes len xs = Vector.generate len (xs !?)
 
-instance IsContainer Gtk.ListBox (Bin Gtk.ListBoxRow Widget) where
+instance IsContainer Gtk.ListBox (Bin Gtk.ListBoxRow) where
   appendChild box _ widget' =
     Gtk.listBoxInsert box widget' (-1)
   replaceChild box _ i old new = do
