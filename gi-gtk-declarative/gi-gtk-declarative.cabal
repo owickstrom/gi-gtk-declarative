@@ -8,14 +8,14 @@ description:          A declarative programming model for GTK+ user
                       a reusable library for multiple application architectures
                       and styles.
 
-                      See [the project README](https://github.com/owickstrom/gi-gtk-declarative#readme)
-                      for more information.
+                      See [the project website](https://owickstrom.github.io/gi-gtk-declarative/)
+                      for user guides and more information.
 license:              MPL-2.0
 license-file:         LICENSE
 author:               Oskar Wickström
 maintainer:           oskar.wickstrom@gmail.com
 copyright:            Oskar Wickström
-homepage:             https://github.com/owickstrom/gi-gtk-declarative
+homepage:             https://owickstrom.github.io/gi-gtk-declarative/
 bug-reports:          https://github.com/owickstrom/gi-gtk-declarative/issues
 category:             Graphics
 build-type:           Simple

@@ -2,13 +2,17 @@ name:                 gi-gtk-declarative-app-simple
 version:              0.3.0
 synopsis:             Declarative GTK+ programming in Haskell in the style of Pux.
 description:          Experimental application architecture in the style of
-                      PureScript Pux, built on top of gi-gtk-declarative. Learn
-                      more in the README below.
+                      PureScript Pux, built on top of gi-gtk-declarative.
+
+                      See [the project website](https://owickstrom.github.io/gi-gtk-declarative/)
+                      for user guides and more information.
 license:              MPL-2.0
 license-file:         LICENSE
 author:               Oskar Wickström
 maintainer:           oskar.wickstrom@gmail.com
 copyright:            Oskar Wickström
+homepage:             https://owickstrom.github.io/gi-gtk-declarative/
+bug-reports:          https://github.com/owickstrom/gi-gtk-declarative/issues
 category:             Graphics
 build-type:           Simple
 cabal-version:        >=1.10
