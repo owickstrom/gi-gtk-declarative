@@ -36,8 +36,8 @@ import           GI.Gtk.Declarative.Widget
 data MenuItem event where
   -- | A single menu item in a 'Gtk.Menu'.
   MenuItem
-    :: (Gtk.IsMenuItem item, BinChild item Widget, Typeable item)
-    => Bin item Widget event
+    :: (Gtk.IsMenuItem item, Gtk.IsBin item, Typeable item)
+    => Bin item event
     -> MenuItem event
   -- | A sub menu in a 'Gtk.Menu', with a text label and the list of
   -- child menu items.
@@ -56,7 +56,6 @@ instance ToChildren Gtk.MenuBar Vector MenuItem
 menuItem
   :: ( Gtk.IsMenuItem item
      , Typeable event
-     , BinChild item Widget
      , Typeable item
      , Gtk.IsContainer item
      , Gtk.IsBin item
@@ -98,7 +97,7 @@ instance Patchable MenuItem where
     \case
       MenuItem item -> create item
       SubMenu label subMenu' -> newSubMenuItem label (create subMenu')
-  patch state (MenuItem (c1 :: Bin i1 Widget e1)) (MenuItem (c2 :: Bin i2 Widget e2)) =
+  patch state (MenuItem (c1 :: Bin i1 e1)) (MenuItem (c2 :: Bin i2 e2)) =
     case eqT @i1 @i2 of
       Just Refl -> patch state c1 c2
       Nothing   -> Replace (create c2)

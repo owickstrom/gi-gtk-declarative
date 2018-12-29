@@ -1,21 +1,19 @@
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedLabels       #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeApplications       #-}
-{-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedLabels      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 -- | A declarative representation of 'Gtk.Bin' in GTK.
 module GI.Gtk.Declarative.Bin
   ( Bin(..)
   , bin
-  , BinChild
   )
 where
 
@@ -32,50 +30,37 @@ import           GI.Gtk.Declarative.State
 import           GI.Gtk.Declarative.Widget
 
 
--- | Supported 'Gtk.Bin's.
-class BinChild bin (child :: * -> *) | bin -> child
-
-instance BinChild Gtk.ScrolledWindow Widget where
-instance BinChild Gtk.ListBoxRow Widget where
-instance BinChild Gtk.Window Widget where
-instance BinChild Gtk.ApplicationWindow Widget where
-instance BinChild Gtk.Dialog Widget where
-instance BinChild Gtk.MenuItem Widget where
-
 -- | Declarative version of a /bin/ widget, i.e. a widget with exactly one
 -- child.
-data Bin widget child event where
+data Bin widget event where
   Bin
     :: ( Typeable widget
        , Gtk.IsContainer widget
        , Gtk.IsBin widget
        , Gtk.IsWidget widget
-       , Functor child
        )
     => (Gtk.ManagedPtr widget -> widget)
     -> Vector (Attribute widget event)
-    -> child event
-    -> Bin widget child event
+    -> Widget event
+    -> Bin widget event
 
-instance Functor (Bin widget child) where
+instance Functor (Bin widget) where
   fmap f (Bin ctor attrs child) =
     Bin ctor (fmap f <$> attrs) (fmap f child)
 
 -- | Construct a /bin/ widget, i.e. a widget with exactly one child.
 bin
-  :: ( Patchable (Bin widget child)
+  :: ( Patchable (Bin widget)
      , Typeable widget
-     , Typeable child
      , Typeable event
-     , Functor child
      , Gtk.IsContainer widget
      , Gtk.IsBin widget
      , Gtk.IsWidget widget
-     , FromWidget (Bin widget child) target
+     , FromWidget (Bin widget) target
      )
   => (Gtk.ManagedPtr widget -> widget) -- ^ A bin widget constructor from the underlying gi-gtk library.
   -> Vector (Attribute widget event)   -- ^ List of 'Attribute's.
-  -> child event                       -- ^ The bin's child widget, whose type is decided by the 'BinChild' instance.
+  -> Widget event                       -- ^ The bin's child widget
   -> target event                      -- ^ The target, whose type is decided by 'FromWidget'.
 bin ctor attrs = fromWidget . Bin ctor attrs
 
@@ -83,7 +68,7 @@ bin ctor attrs = fromWidget . Bin ctor attrs
 -- Patchable
 --
 
-instance (BinChild parent child, Patchable child) => Patchable (Bin parent child) where
+instance Gtk.IsBin parent => Patchable (Bin parent) where
   create (Bin ctor attrs child) = do
     let collected = collectAttributes attrs
     widget' <- Gtk.new ctor (constructProperties collected)
@@ -128,8 +113,7 @@ instance (BinChild parent child, Patchable child) => Patchable (Bin parent child
 -- EventSource
 --
 
-instance (BinChild parent child, EventSource child) =>
-         EventSource (Bin parent child) where
+instance Gtk.IsBin parent => EventSource (Bin parent) where
   subscribe (Bin ctor props child) (SomeState st) cb =
     case st of
       StateTreeBin top childState -> do
@@ -138,9 +122,5 @@ instance (BinChild parent child, EventSource child) =>
         (<> handlers') <$> subscribe child childState cb
       _ -> error "Cannot subscribe to Bin events with a non-bin state tree."
 
-instance (a ~ b, c ~ d) => FromWidget (Bin a c) (Bin b d) where
+instance a ~ b => FromWidget (Bin a) (Bin b) where
   fromWidget = id
-
-instance (BinChild widget child, Patchable child, EventSource child)
-         => FromWidget (Bin widget child) Widget where
-  fromWidget = Widget

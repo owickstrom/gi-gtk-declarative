@@ -10,6 +10,5 @@ import qualified GI.Gtk                             as Gtk
 
 import           GI.Gtk.Declarative.Bin
 import           GI.Gtk.Declarative.Container.Class
-import           GI.Gtk.Declarative.Widget
 
-instance ToChildren Gtk.ListBox Vector (Bin Gtk.ListBoxRow Widget)
+instance ToChildren Gtk.ListBox Vector (Bin Gtk.ListBoxRow)
