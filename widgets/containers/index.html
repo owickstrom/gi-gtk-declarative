@@ -620,12 +620,20 @@ proper <code>ListBoxRow</code> widgets as children.</p>
 <p>The <code>Paned</code> widget in GTK+ has two panes, which contain one widget
 each. While <code>Paned</code> widgets can be constructed using the <code>container</code>
 function, the smart constructor <code>paned</code> is recommended. It takes a
-list of attributes, along with to <code>Pane</code> values.</p>
+list of attributes, along with two <code>Pane</code> values.</p>
 <div class="codehilite"><pre><span></span><span class="nf">paned</span>
   <span class="p">[</span><span class="o">#</span><span class="n">wideHandle</span> <span class="kt">:=</span> <span class="kt">True</span><span class="p">]</span>
-  <span class="p">(</span><span class="n">pane</span> <span class="p">(</span><span class="kt">Resize</span> <span class="kt">True</span><span class="p">)</span> <span class="p">(</span><span class="kt">Shrink</span> <span class="kt">True</span><span class="p">)</span> <span class="o">$</span> <span class="n">widget</span> <span class="kt">Label</span> <span class="p">[</span><span class="o">#</span><span class="n">label</span> <span class="kt">:=</span> <span class="s">&quot;Left&quot;</span><span class="p">])</span>
-  <span class="p">(</span><span class="n">pane</span> <span class="p">(</span><span class="kt">Resize</span> <span class="kt">True</span><span class="p">)</span> <span class="p">(</span><span class="kt">Shrink</span> <span class="kt">True</span><span class="p">)</span> <span class="o">$</span> <span class="n">widget</span> <span class="kt">Label</span> <span class="p">[</span><span class="o">#</span><span class="n">label</span> <span class="kt">:=</span> <span class="s">&quot;Right&quot;</span><span class="p">])</span>
+  <span class="p">(</span><span class="n">pane</span> <span class="n">defaultPaneProperties</span> <span class="p">{</span> <span class="n">resize</span> <span class="ow">=</span> <span class="kt">True</span> <span class="p">}</span> <span class="o">$</span>
+    <span class="n">widget</span> <span class="kt">Label</span> <span class="p">[</span><span class="o">#</span><span class="n">label</span> <span class="kt">:=</span> <span class="s">&quot;Left&quot;</span><span class="p">])</span>
+  <span class="p">(</span><span class="n">pane</span> <span class="n">defaultPaneProperties</span> <span class="p">{</span> <span class="n">resize</span> <span class="ow">=</span> <span class="kt">True</span><span class="p">,</span> <span class="n">shrink</span> <span class="ow">=</span> <span class="kt">False</span> <span class="p">}</span> <span class="o">$</span>
+    <span class="n">widget</span> <span class="kt">Label</span> <span class="p">[</span><span class="o">#</span><span class="n">label</span> <span class="kt">:=</span> <span class="s">&quot;Right&quot;</span><span class="p">])</span>
 </pre></div>
+
+
+<p>Each <code>Pane</code> is constructed using the <code>pane</code> function, which takes a
+<code>PaneProperties</code> value and a child widget. These pane property values
+are used to call the underlying <code>pack1</code>/<code>pack2</code> functions on the GTK+
+widget.</p>
                 
                   
                 
