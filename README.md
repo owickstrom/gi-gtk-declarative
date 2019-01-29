@@ -68,6 +68,9 @@ described in the haskell-gi package
 documentation](https://github.com/haskell-gi/haskell-gi), i.e. you
 cannot compile this package with GHC 8.2.x.
 
+Executables using gi-gtk-declarative should be built with the `-threaded` option to GHC.
+If you are not seeing a window, check this first.
+
 ## License
 
 Copyright 2018 Ⓒ Oskar Wickström
