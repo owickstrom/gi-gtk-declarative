@@ -75,4 +75,4 @@ If you are not seeing a window, check this first.
 
 Copyright 2018 Ⓒ Oskar Wickström
 
-[Mozilla Public License Version 2.0](LICENSE)
+[Mozilla Public License Version 2.0](gi-gtk-declarative/LICENSE)
