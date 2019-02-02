@@ -26,6 +26,8 @@ import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.State
 import           Pipes
 import           Pipes.Concurrent
+import           System.Exit
+import           System.IO
 
 -- | Describes an state reducer application.
 data App window state event =
@@ -72,6 +74,7 @@ run
   => App window state event      -- ^ Application to run
   -> IO state
 run app = do
+  assertRuntimeSupportsBoundThreads
   void $ Gtk.init Nothing
   Async.withAsync (runLoop app <* Gtk.mainQuit) $ \lastState -> do
     Gtk.main
@@ -138,6 +141,17 @@ runLoop App {..} = do
           -- Finally, we loop.
           loop newState newMarkup events sub newModel
         Exit -> return oldModel
+
+-- | Assert that the program was linked using the @-threaded@ flag, to
+-- enable the threaded runtime required by this module.
+assertRuntimeSupportsBoundThreads :: IO ()
+assertRuntimeSupportsBoundThreads =
+  unless rtsSupportsBoundThreads $ do
+    hPutStrLn stderr "GI.Gtk.Declarative.App.Simple requires the program to \
+                     \be linked using the threaded runtime of GHC (-threaded \
+                     \flag)."
+    exitFailure
+
 
 publishEvent :: Chan event -> event -> IO ()
 publishEvent mvar = void . writeChan mvar
