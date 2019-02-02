@@ -33,4 +33,7 @@ aims to extend the
 packages as transparently as possible, not having to reimplement or
 manually wrap large parts of existing GTK+ widgets.
 
+Get started by checking out [the installation
+instructions](installation.md)!
+
 [gi-gtk-declarative]: https://hackage.haskell.org/package/gi-gtk-declarative
