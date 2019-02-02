@@ -2,7 +2,7 @@
 
 
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="no-js">
   <head>
     
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-3.1.0">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-3.3.0">
     
     
       
@@ -46,12 +46,12 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application.11e41852.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application.572ca0f0.css">
       
       
     
     
-      <script src="../assets/javascripts/modernizr.20ef595d.js"></script>
+      <script src="../assets/javascripts/modernizr.962652e9.js"></script>
     
     
       
@@ -64,6 +64,9 @@
     
     
       <link rel="stylesheet" href="../css/theme.css">
+    
+    
+      
     
     
   </head>
@@ -250,9 +253,58 @@
       
     
     
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Installation
+      </label>
+    
     <a href="./" title="Installation" class="md-nav__link md-nav__link--active">
       Installation
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cabal-example" title="Cabal Example" class="md-nav__link">
+    Cabal Example
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-dependencies" title="Adding Dependencies" class="md-nav__link">
+    Adding Dependencies
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#installing-and-building" title="Installing and Building" class="md-nav__link">
+    Installing and Building
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -454,6 +506,42 @@
     
   
   
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cabal-example" title="Cabal Example" class="md-nav__link">
+    Cabal Example
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-dependencies" title="Adding Dependencies" class="md-nav__link">
+    Adding Dependencies
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#installing-and-building" title="Installing and Building" class="md-nav__link">
+    Installing and Building
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -468,19 +556,72 @@
                 
                 
                 <h1 id="installation">Installation</h1>
+<p>To install the gi-gtk-declarative package in your project, follow
+these steps and guidelines:</p>
+<ul>
+<li>
 <p>The gi-gtk-declarative package builds on
-<a href="https://hackage.haskell.org/package/gi-gtk">gi-gtk</a>, and thus depend
-on the same libraries. For instructions on how to install GTK+
-dependencies using your package manager of choice, have a look at <a href="https://github.com/haskell-gi/haskell-gi#installation">the
-project
-README</a>.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Using gi-gtk and this package with GHC 8.2.x
-<a href="https://github.com/haskell-gi/haskell-gi#%EF%B8%8F-ghc-82x-%EF%B8%8F">is not recommended</a>!</p>
-</div>
-<p>Once you have those installed, it should be a regular Haskell package
-install with Cabal, Stack, Nix, or whatever floats your boat.</p>
+  <a href="https://hackage.haskell.org/package/gi-gtk">gi-gtk</a>, and thus
+  depend on the same libraries. First, follow the instructions on how
+  to install GTK+ dependencies using your package manager of choice
+  over at <a href="https://github.com/haskell-gi/haskell-gi#installation">the gi-gtk
+  README</a>.</p>
+</li>
+<li>
+<p>Make sure you're not using gi-gtk and this package with GHC 8.2.x (<a href="https://github.com/haskell-gi/haskell-gi#%EF%B8%8F-ghc-82x-%EF%B8%8F">read more here</a>)!</p>
+</li>
+<li>
+<p>Once you have the GTK+ system libraries installed, it should be a
+  regular Haskell package install with Cabal, Stack, Nix, or whatever
+  floats your boat.</p>
+</li>
+<li>
+<p>Executables using gi-gtk-declarative must be built with the
+  <code>-threaded</code> option passed to GHC. If you are not seeing a window,
+  check this first.</p>
+</li>
+</ul>
+<h2 id="cabal-example">Cabal Example</h2>
+<p>Let's look at an example of using Cabal to build a gi-gtk-declarative
+project. It's assumed you're running Cabal 2.x, and that you have an
+existing project to work with. If you don't have a project, and you're
+unsure how to set one up, have look at <a href="https://haskell-at-work.com/episodes/2018-05-13-introduction-to-cabal.html">Introduction to
+Cabal</a>.</p>
+<h3 id="adding-dependencies">Adding Dependencies</h3>
+<p>Begin by including</p>
+<ul>
+<li><code>gi-gtk</code>,</li>
+<li><code>gi-gtk-declarative</code>, and</li>
+<li><code>gi-gtk-declarative-app-simple</code></li>
+</ul>
+<p>in the <code>build-depends</code> list of your library or executable:</p>
+<div class="codehilite"><pre><span></span><span class="n">name</span><span class="o">:</span> <span class="n">your</span><span class="o">-</span><span class="n">project</span>
+<span class="o">...</span>
+
+<span class="n">executable</span> <span class="n">your</span><span class="o">-</span><span class="n">executable</span>
+  <span class="n">build</span><span class="o">-</span><span class="n">depends</span><span class="o">:</span>
+    <span class="n">gi</span><span class="o">-</span><span class="n">gtk</span>
+    <span class="o">,</span> <span class="n">gi</span><span class="o">-</span><span class="n">gtk</span><span class="o">-</span><span class="n">declarative</span>
+    <span class="o">,</span> <span class="n">gi</span><span class="o">-</span><span class="n">gtk</span><span class="o">-</span><span class="n">declarative</span><span class="o">-</span><span class="n">app</span><span class="o">-</span><span class="n">simple</span>
+    <span class="o">,</span> <span class="o">...</span>
+  <span class="n">ghc</span><span class="o">-</span><span class="n">options</span><span class="o">:</span>      <span class="o">-</span><span class="n">threaded</span>
+  <span class="k">default</span><span class="o">-</span><span class="n">language</span><span class="o">:</span> <span class="n">Haskell2010</span>
+</pre></div>
+
+
+<p>Note that <code>gi-gtk-declarative-app-simple</code> is not strictly required,
+unless you want to write your application using the
+<a href="../app-simple/">App.Simple</a> architecture.</p>
+<h3 id="installing-and-building">Installing and Building</h3>
+<p>Install dependencies and build your executable:</p>
+<div class="codehilite"><pre><span></span>cabal v2-build your-executable
+</pre></div>
+
+
+<p>You are now ready to explore gi-gtk-declarative! To find inspiration,
+check out the <a href="https://github.com/owickstrom/gi-gtk-declarative/blob/master/examples/">full runnable examples in the
+repository</a>,
+or <a href="../widgets/the-widget-type/">dive right into the documentation</a>.</p>
                 
                   
                 
@@ -542,12 +683,9 @@ install with Cabal, Stack, Nix, or whatever floats your boat.</p>
       
     </div>
     
-      <script src="../assets/javascripts/application.9e1f3b71.js"></script>
+      <script src="../assets/javascripts/application.a353778b.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
-      
-    
-    
       
     
   </body>
