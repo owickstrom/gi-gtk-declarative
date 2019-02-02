@@ -11,65 +11,17 @@
   </p>
 </div>
 
-## Usage
-
-Learn how to use this package at [the documentation website](https://owickstrom.github.io/gi-gtk-declarative/).
-
-## Build Instructions
-
-Using newer versions of Cabal, run:
-
-```
-cabal new-build all
-```
-
-Or using Stack:
-
-```
-stack build
-```
-
-You may also use Nix:
-
-```
-nix-shell
-```
-
-The documentation is built using [MkDocs](https://www.mkdocs.org/).
-
-## Examples
-
-There are some examples in [examples/](examples/), using the
-`GI.Gtk.Declarative.App.Simple` architecture, which also showcase
-`GI.Gtk.Declarative` (the markup library.)
-
-As an example, to run the `examples/Hello.hs` example, follow these steps
-(assuming you have a recent version of Cabal):
-
-``` shell
-cabal new-run example Hello
-```
-
-You might also build in a Cabal sandbox, using Stack, or with Nix.
-
 ## Status
 
 **EXPERIMENTAL!** Do not bet your business on this quite yet.
 
-## Requirements
+## Usage
 
-Follow the installation instructions at
-[haskell-gi](https://github.com/haskell-gi/haskell-gi#installation) to
-make sure you have the required GObject and GTK+ libraries installed.
+Learn how to use this package in your project at [the documentation
+website](https://owickstrom.github.io/gi-gtk-declarative/).
 
-As this package relies heavily on `OverloadedLabels` and the
-`haskell-gi-overloading` functionality, the restrictions apply [as
-described in the haskell-gi package
-documentation](https://github.com/haskell-gi/haskell-gi), i.e. you
-cannot compile this package with GHC 8.2.x.
-
-Executables using gi-gtk-declarative should be built with the `-threaded` option to GHC.
-If you are not seeing a window, check this first.
+If you want to hack on this project itself, see [the build
+instructions](BUILD.md).
 
 ## License
 
