@@ -20,6 +20,7 @@ executable example
   other-modules:        AddBoxes
                       , CSS
                       , CustomWidget
+                      , Dialog
                       , Exit
                       , FileChooserButton
                       , Functor

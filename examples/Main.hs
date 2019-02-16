@@ -7,6 +7,7 @@ import           System.IO
 import qualified AddBoxes
 import qualified CSS
 import qualified CustomWidget
+import qualified Dialog
 import qualified Exit
 import qualified FileChooserButton
 import qualified Functor
@@ -29,6 +30,7 @@ main =
                  , ("MenuBar", MenuBar.main)
                  , ("CSS", CSS.main)
                  , ("Paned", Paned.main)
+                 , ("Dialog", Dialog.main)
                  ]
   in getArgs >>= \case
     [example] ->

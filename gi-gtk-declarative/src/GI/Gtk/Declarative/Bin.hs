@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedLabels      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -68,8 +69,8 @@ bin ctor attrs = fromWidget . Bin ctor attrs
 -- Patchable
 --
 
-instance Gtk.IsBin parent => Patchable (Bin parent) where
-  create (Bin ctor attrs child) = do
+instance (Gtk.IsBin parent) => Patchable (Bin parent) where
+  create (Bin (ctor :: Gtk.ManagedPtr w -> w) attrs child) = do
     let collected = collectAttributes attrs
     widget' <- Gtk.new ctor (constructProperties collected)
     Gtk.widgetShow widget'
@@ -81,7 +82,11 @@ instance Gtk.IsBin parent => Patchable (Bin parent) where
 
     childState <- create child
     childWidget <- someStateWidget childState
-    Gtk.containerAdd widget' childWidget
+    Gtk.castTo Gtk.Dialog widget' >>= \case
+      Just dialog -> do
+        content <- Gtk.dialogGetContentArea dialog
+        Gtk.containerAdd content childWidget
+      Nothing   -> Gtk.containerAdd widget' childWidget
     return (SomeState (StateTreeBin (StateTreeNode widget' sc collected ()) childState))
 
   patch (SomeState (st :: StateTree stateType w1 c1 e1 cs))
@@ -104,7 +109,11 @@ instance Gtk.IsBin parent => Patchable (Bin parent) where
               newChildState <- createNew
               childWidget <- someStateWidget newChildState
               Gtk.widgetShow childWidget
-              Gtk.containerAdd binWidget childWidget
+              Gtk.castTo Gtk.Dialog binWidget >>= \case
+                Just dialog -> do
+                  content <- Gtk.dialogGetContentArea dialog
+                  Gtk.containerAdd content childWidget
+                Nothing   -> Gtk.containerAdd binWidget childWidget
               return (SomeState (StateTreeBin top' newChildState))
             Keep -> return (SomeState st)
       _ -> Replace (create (Bin ctor newAttributes newChild))
