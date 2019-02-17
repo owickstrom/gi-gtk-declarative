@@ -82,11 +82,8 @@ instance (Gtk.IsBin parent) => Patchable (Bin parent) where
 
     childState <- create child
     childWidget <- someStateWidget childState
-    Gtk.castTo Gtk.Dialog widget' >>= \case
-      Just dialog -> do
-        content <- Gtk.dialogGetContentArea dialog
-        Gtk.containerAdd content childWidget
-      Nothing   -> Gtk.containerAdd widget' childWidget
+    maybe (pure ()) Gtk.widgetDestroy =<< Gtk.binGetChild widget'
+    Gtk.containerAdd widget' childWidget
     return (SomeState (StateTreeBin (StateTreeNode widget' sc collected ()) childState))
 
   patch (SomeState (st :: StateTree stateType w1 c1 e1 cs))
@@ -109,11 +106,8 @@ instance (Gtk.IsBin parent) => Patchable (Bin parent) where
               newChildState <- createNew
               childWidget <- someStateWidget newChildState
               Gtk.widgetShow childWidget
-              Gtk.castTo Gtk.Dialog binWidget >>= \case
-                Just dialog -> do
-                  content <- Gtk.dialogGetContentArea dialog
-                  Gtk.containerAdd content childWidget
-                Nothing   -> Gtk.containerAdd binWidget childWidget
+              maybe (pure ()) Gtk.widgetDestroy =<< Gtk.binGetChild binWidget
+              Gtk.containerAdd binWidget childWidget
               return (SomeState (StateTreeBin top' newChildState))
             Keep -> return (SomeState st)
       _ -> Replace (create (Bin ctor newAttributes newChild))
