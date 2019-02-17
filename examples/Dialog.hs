@@ -9,23 +9,39 @@
 module Dialog where
 
 import           Control.Monad                 (void)
+import           Data.Maybe
 
-import           GI.Gtk                        (Dialog (..), Label (..))
+import           Data.Text                     (Text)
+import           GI.Gtk                        (Box (..), Button (..),
+                                                Dialog (..), Label (..),
+                                                Orientation (..))
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
-data State = Initial
+newtype State = State (Maybe Text)
 
 data Event = Confirmed | Cancelled | Closed
 
 view' :: State -> AppView Dialog Event
-view' Initial =
-  bin Dialog [#title := "Hello", on #deleteEvent (const (True, Closed))] $
-    widget Label [#label := "Nothing here yet."]
+view' (State msg) =
+  bin Dialog [ #title := "Hello"
+             , on #deleteEvent (const (True, Closed))
+             , #widthRequest := 300
+             , #heightRequest := 200
+             ] $
+    container Box [#orientation := OrientationVertical]
+    [ BoxChild defaultBoxChildProperties { expand = True, fill = True } msgLabel
+    , container Box []
+      [ widget Button [#label := "Cancel", on #clicked Cancelled]
+      , widget Button [#label := "OK", on #clicked Confirmed]
+      ]
+    ]
+  where
+    msgLabel = widget Label [#label := fromMaybe "Nothing here yet." msg]
 
 update' :: State -> Event -> Transition State Event
-update' _ Confirmed = Exit
-update' _ Cancelled = Exit
+update' _ Confirmed = Transition (State (Just "Confirmed.")) (pure Nothing)
+update' _ Cancelled = Transition (State (Just "Cancelled.")) (pure Nothing)
 update' _ Closed    = Exit
 
 main :: IO ()
@@ -33,6 +49,6 @@ main = void $ run App
   { view         = view'
   , update       = update'
   , inputs       = []
-  , initialState = Initial
+  , initialState = State Nothing
   }
 

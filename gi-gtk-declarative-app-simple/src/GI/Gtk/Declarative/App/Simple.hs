@@ -95,7 +95,10 @@ run app = do
 --       Gtk.mainQuit
 --     Gtk.main
 -- @
-runLoop :: (Typeable event, Gtk.IsWindow window, Gtk.IsBin window) => App window state event -> IO state
+runLoop
+  :: (Typeable event, Gtk.IsWindow window, Gtk.IsBin window)
+  => App window state event
+  -> IO state
 runLoop App {..} = do
   let firstMarkup = view initialState
   events                  <- newChan
