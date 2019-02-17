@@ -55,8 +55,13 @@ instance EventSource Widget where
 -- some specifically typed widget, depending on the context in which it's
 -- used.
 class FromWidget widget target where
-  fromWidget :: (Typeable widget, Typeable event) => widget event -> target event
+  fromWidget :: widget event -> target event
 
-instance (Patchable (parent child), Functor (parent child), EventSource (parent child))
+instance ( Typeable parent
+         , Typeable child
+         , Patchable (parent child)
+         , Functor (parent child)
+         , EventSource (parent child)
+         )
          => FromWidget (parent child) Widget where
   fromWidget = Widget

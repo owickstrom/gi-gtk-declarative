@@ -1,10 +1,11 @@
-{-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE OverloadedLabels      #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -56,3 +57,11 @@ instance EventSource BoxChild where
   subscribe BoxChild{..} = subscribe child
 
 instance ToChildren Gtk.Box Vector BoxChild
+
+instance IsContainer Gtk.Box BoxChild where
+  appendChild box BoxChild {properties = BoxChildProperties {expand, fill, padding}} widget' =
+    Gtk.boxPackStart box widget' expand fill padding
+  replaceChild box boxChild' i old new = do
+    Gtk.widgetDestroy old
+    appendChild box boxChild' new
+    Gtk.boxReorderChild box new i

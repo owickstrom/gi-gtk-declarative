@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedLabels      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -68,8 +69,8 @@ bin ctor attrs = fromWidget . Bin ctor attrs
 -- Patchable
 --
 
-instance Gtk.IsBin parent => Patchable (Bin parent) where
-  create (Bin ctor attrs child) = do
+instance (Gtk.IsBin parent) => Patchable (Bin parent) where
+  create (Bin (ctor :: Gtk.ManagedPtr w -> w) attrs child) = do
     let collected = collectAttributes attrs
     widget' <- Gtk.new ctor (constructProperties collected)
     Gtk.widgetShow widget'
@@ -81,6 +82,7 @@ instance Gtk.IsBin parent => Patchable (Bin parent) where
 
     childState <- create child
     childWidget <- someStateWidget childState
+    maybe (pure ()) Gtk.widgetDestroy =<< Gtk.binGetChild widget'
     Gtk.containerAdd widget' childWidget
     return (SomeState (StateTreeBin (StateTreeNode widget' sc collected ()) childState))
 
@@ -104,6 +106,7 @@ instance Gtk.IsBin parent => Patchable (Bin parent) where
               newChildState <- createNew
               childWidget <- someStateWidget newChildState
               Gtk.widgetShow childWidget
+              maybe (pure ()) Gtk.widgetDestroy =<< Gtk.binGetChild binWidget
               Gtk.containerAdd binWidget childWidget
               return (SomeState (StateTreeBin top' newChildState))
             Keep -> return (SomeState st)

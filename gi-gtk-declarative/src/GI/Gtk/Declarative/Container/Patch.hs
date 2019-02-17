@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -9,7 +9,6 @@
 {-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE OverloadedLabels      #-}
 {-# LANGUAGE OverloadedLists       #-}
-{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -26,8 +25,6 @@ import           Data.Vector                        (Vector, (!?))
 import qualified Data.Vector                        as Vector
 import qualified GI.Gtk                             as Gtk
 
-import           GI.Gtk.Declarative.Bin
-import           GI.Gtk.Declarative.Container.Box
 import           GI.Gtk.Declarative.Container.Class
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.State
@@ -114,18 +111,3 @@ patchInContainer (StateTreeContainer top children) container os' ns' = do
 
 padMaybes :: Int -> Vector a -> Vector (Maybe a)
 padMaybes len xs = Vector.generate len (xs !?)
-
-instance IsContainer Gtk.ListBox (Bin Gtk.ListBoxRow) where
-  appendChild box _ widget' =
-    Gtk.listBoxInsert box widget' (-1)
-  replaceChild box _ i old new = do
-    Gtk.widgetDestroy old
-    Gtk.listBoxInsert box new i
-
-instance IsContainer Gtk.Box BoxChild where
-  appendChild box BoxChild {properties = BoxChildProperties {expand, fill, padding}} widget' =
-    Gtk.boxPackStart box widget' expand fill padding
-  replaceChild box boxChild' i old new = do
-    Gtk.widgetDestroy old
-    appendChild box boxChild' new
-    Gtk.boxReorderChild box new i
