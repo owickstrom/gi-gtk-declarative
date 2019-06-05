@@ -70,7 +70,7 @@ instance EventSource (SingleWidget widget) where
     case (st, eqT @w1 @w2) of
       (StateTreeWidget top, Just Refl) ->
         foldMap (addSignalHandler cb (stateTreeWidget top)) props
-      _ -> fail ""
+      _ -> pure (fromCancellation (pure ()))
 
 -- instance (Typeable widget, Functor (SingleWidget widget))
 --   => FromWidget (SingleWidget widget) Widget where
