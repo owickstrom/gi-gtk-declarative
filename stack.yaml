@@ -1,4 +1,4 @@
-resolver: lts-12.21
+resolver: lts-13.24
 
 packages:
 - gi-gtk-declarative
