@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {}, compiler ? "ghc862", doBenchmark ? true }:
+{ pkgs ? import <nixpkgs> {}, compiler ? "ghc865", doBenchmark ? true }:
 let
   haskellPackages = pkgs.haskell.packages.${compiler};
   project = import ./. { inherit compiler doBenchmark; };
