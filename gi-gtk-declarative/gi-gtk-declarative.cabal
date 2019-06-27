@@ -1,5 +1,5 @@
 name:                 gi-gtk-declarative
-version:              0.4.2
+version:              0.4.3
 synopsis:             Declarative GTK+ programming in Haskell
 description:          A declarative programming model for GTK+ user
                       interfaces, implementing support for various widgets
@@ -54,8 +54,8 @@ library
                       , gi-gobject             >= 2    && <3
                       , gi-glib                >= 2    && <3
                       , gi-gtk                 >= 3    && <4
-                      , haskell-gi             >= 0.21 && <0.22
-                      , haskell-gi-base        >= 0.21 && <0.22
+                      , haskell-gi             >= 0.21 && <0.23
+                      , haskell-gi-base        >= 0.21 && <0.23
                       , haskell-gi-overloading == 1.0
                       , mtl
                       , text

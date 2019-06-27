@@ -63,6 +63,7 @@ numberInput customData = Widget
   -- A function that computes a patch for our custom widget. Here we
   -- compare the NumberInputProperties value to decide whether to
   -- modify the widget.
+  customPatch :: SomeState -> NumberInputProperties -> NumberInputProperties -> CustomPatch Gtk.SpinButton customData
   customPatch (SomeState st) old new
     | old == new = CustomKeep
     | otherwise = CustomModify $ \(spin :: Gtk.SpinButton) -> do
