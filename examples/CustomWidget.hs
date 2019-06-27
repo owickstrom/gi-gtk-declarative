@@ -5,17 +5,15 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module CustomWidget where
 
-import           Control.Monad                           (void)
-import           Data.Typeable                           (Typeable)
+import           Control.Monad                  (void)
+import           Data.Typeable                  (Typeable)
 import           Data.Word
 
-import qualified GI.GObject                              as GI
-import qualified GI.Gtk                                  as Gtk
+import qualified GI.GObject                     as GI
+import qualified GI.Gtk                         as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
-import           GI.Gtk.Declarative.Attributes.Collected
-import           GI.Gtk.Declarative.EventSource          (fromCancellation)
-import           GI.Gtk.Declarative.State
+import           GI.Gtk.Declarative.EventSource (fromCancellation)
 
 
 -- * Custom widget for ranged 'Double' inputs
@@ -35,53 +33,51 @@ newtype NumberInputEvent = NumberInputChanged Double
 numberInput
   :: NumberInputProperties
   -> Widget NumberInputEvent
-numberInput customData = Widget
+numberInput customParams = Widget
   (CustomWidget
     { customWidget
     , customCreate
     , customPatch
     , customSubscribe
-    , customData
+    , customParams
     }
   )
  where
   -- The constructor for the underlying GTK widget.
-  customWidget = Gtk.SpinButton
+  customWidget = Gtk.Box
   -- A function that creates a widget (of the same type as
-  -- customWidget), used on first render and on 'CustomReplace'.
+  -- customWidget), used on first render and on 'CustomReplace'. It's
+  -- also returning our internal state, a reference to the spin button
+  -- widget.
   customCreate props = do
+    box <- Gtk.new Gtk.Box [ #orientation Gtk.:= Gtk.OrientationVertical
+                           , #spacing Gtk.:= 10
+                           ]
+    lbl <- Gtk.new Gtk.Label [#label Gtk.:= "I'm a custom wiget."]
     spin <- Gtk.new Gtk.SpinButton []
     adj  <- propsToAdjustment props
     Gtk.spinButtonSetAdjustment spin adj
     Gtk.spinButtonSetDigits spin (digits props)
-    -- We need to construct and return a 'SomeState'.
-    sc <- Gtk.widgetGetStyleContext spin
-    updateClasses sc mempty (numberInputClasses props)
-    Gtk.widgetShow spin
-    return (SomeState (StateTreeWidget (StateTreeNode spin sc mempty ())))
+    #packStart box lbl True True 0
+    #packStart box spin False False 0
+    return (box, spin)
 
   -- A function that computes a patch for our custom widget. Here we
-  -- compare the NumberInputProperties value to decide whether to
-  -- modify the widget.
-  customPatch :: SomeState -> NumberInputProperties -> NumberInputProperties -> CustomPatch Gtk.SpinButton customData
-  customPatch (SomeState st) old new
+  -- compare the params value of type 'NumberInputProperties' to
+  -- decide whether to modify the spin button widget or not. Note that
+  -- the spin button widget is passed through the internal state.
+  customPatch old new spin
     | old == new = CustomKeep
-    | otherwise = CustomModify $ \(spin :: Gtk.SpinButton) -> do
-      -- If we need to modify it, we set all properties and update the
-      -- style context's classes. The 'updateClasses' function is
-      -- provided by gi-gtk-declarative.
+    | otherwise = CustomModify $ \_box -> do
       adj <- propsToAdjustment new
       Gtk.spinButtonSetAdjustment spin adj
       Gtk.spinButtonSetDigits spin (digits new)
-      updateClasses (stateTreeStyleContext (stateTreeNode st))
-                    (numberInputClasses old)
-                    (numberInputClasses new)
-      -- Again, we return a 'SomeState'.
-      return (SomeState st)
+      return spin
 
   -- Finally, we subscribe to widget signals to emit
-  -- 'NumberInputChanged' events.
-  customSubscribe _ (spin :: Gtk.SpinButton) cb = do
+  -- 'NumberInputChanged' events from the spin button reference
+  -- carried by the internal state.
+  customSubscribe (spin :: Gtk.SpinButton) _box cb = do
     h <- Gtk.on spin #valueChanged $ cb . NumberInputChanged =<< #getValue spin
     -- This creates a 'Subscription' from an IO action that
     -- disconnects the signal handler.
