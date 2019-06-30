@@ -9,7 +9,9 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 module GI.Gtk.Declarative.CustomWidgetTest where
 
-import           Control.Concurrent.MVar
+import           Control.Concurrent
+import           Control.Concurrent.STM
+import           Control.Concurrent.STM.TBQueue
 import           Control.Monad.IO.Class
 import           Control.Exception.Safe
 import           Control.Monad (replicateM_)
@@ -54,9 +56,7 @@ prop_emits_correct_number_of_click_events = property $ do
   start       <- forAll (Gen.int (Range.linear 0 10))
   clicks      <- forAll (Gen.int (Range.linear 0 10))
 
-  counts       <- liftIO (newMVar ([] :: [Int]))
-  let addToCounts c = modifyMVar_ counts (\cs -> pure (cs <> [c]))
-
+  values       <- liftIO (newTBQueueIO (fromIntegral clicks))
   runUI . bracket (Gtk.new Gtk.Window []) #destroy $ \window ->
     do
       let markup = testWidget start
@@ -66,14 +66,14 @@ prop_emits_correct_number_of_click_events = property $ do
         >>= Gtk.unsafeCastTo Gtk.Button
         &   liftIO
       #add window btn
-      sub <- subscribe markup first addToCounts
+      sub <- subscribe markup first (atomically . writeTBQueue values)
       Gtk.widgetShowAll window
       replicateM_ clicks (Gtk.buttonClicked btn)
       cancel sub
 
-  let expectedCounts = take clicks [succ start..]
-  actualCounts <- liftIO (readMVar counts)
-  expectedCounts === actualCounts
+  let expectedValues = take clicks [succ start..]
+  actualValues <- liftIO (atomically (flushTBQueue values))
+  expectedValues === actualValues
 
 
 -- * Test widget and helpers
