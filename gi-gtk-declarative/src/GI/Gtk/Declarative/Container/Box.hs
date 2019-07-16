@@ -20,6 +20,7 @@ module GI.Gtk.Declarative.Container.Box
   )
 where
 
+import           Data.Default.Class                 (Default (def))
 import           Data.Vector                        (Vector)
 import           Data.Word                          (Word32)
 import qualified GI.Gtk                             as Gtk
@@ -48,6 +49,9 @@ data BoxChildProperties = BoxChildProperties
 defaultBoxChildProperties :: BoxChildProperties
 defaultBoxChildProperties =
   BoxChildProperties {expand = False, fill = False, padding = 0}
+
+instance Default BoxChildProperties where
+  def = defaultBoxChildProperties
 
 instance Patchable BoxChild where
   create = create . child

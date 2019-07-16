@@ -25,6 +25,7 @@ module GI.Gtk.Declarative.Container.Paned
 where
 
 import           Data.Coerce                        (coerce)
+import           Data.Default.Class                 (Default (def))
 import           Data.Typeable
 import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as Vector
@@ -57,6 +58,9 @@ data PaneProperties = PaneProperties
 -- fields.
 defaultPaneProperties :: PaneProperties
 defaultPaneProperties = PaneProperties {resize = False, shrink = True}
+
+instance Default PaneProperties where
+  def = defaultPaneProperties
 
 -- | Construct a pane to be packed with
 -- 'Gtk.panePack1'/'Gtk.panePack2' in a 'Gtk.Paned'.
