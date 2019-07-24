@@ -51,6 +51,7 @@ library
                       , GI.Gtk.Declarative.Widget
                       , GI.Gtk.Declarative.Widget.Conversions
   build-depends:        base >=4.10 && <5
+                      , data-default-class     >= 0.1  && <0.2
                       , gi-gobject             >= 2    && <3
                       , gi-glib                >= 2    && <3
                       , gi-gtk                 >= 3    && <4
