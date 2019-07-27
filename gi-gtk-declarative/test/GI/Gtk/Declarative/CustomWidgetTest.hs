@@ -1,22 +1,25 @@
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE NamedFieldPuns    #-}
-{-# LANGUAGE OverloadedLabels  #-}
-{-# LANGUAGE OverloadedLists   #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeApplications  #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE NamedFieldPuns      #-}
+{-# LANGUAGE OverloadedLabels    #-}
+{-# LANGUAGE OverloadedLists     #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE TypeApplications    #-}
 
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 module GI.Gtk.Declarative.CustomWidgetTest where
 
 import           Control.Concurrent
 import           Control.Concurrent.STM
-import           Control.Concurrent.STM.TBQueue
 import           Control.Exception.Safe
 import           Control.Monad                  (replicateM_)
 import           Control.Monad.IO.Class
 import           Data.Function                  ((&))
+import qualified Data.HashSet                   as HashSet
 import qualified Data.Text                      as Text
+import           Data.Vector                    (Vector)
 import qualified GI.Gdk                         as Gdk
 import qualified GI.GLib.Constants              as GLib
 import qualified GI.GObject                     as GI
@@ -36,7 +39,7 @@ prop_sets_the_button_label = property $ do
 
   buttonLabel <- runUI . bracket (Gtk.new Gtk.Window []) #destroy $ \window ->
     do
-      let markup = testWidget start
+      let markup = testWidget [] start
       first <- create markup
       btn <-
         someStateWidget first
@@ -59,7 +62,7 @@ prop_emits_correct_number_of_click_events = property $ do
   values       <- liftIO (newTBQueueIO (fromIntegral clicks))
   runUI . bracket (Gtk.new Gtk.Window []) #destroy $ \window ->
     do
-      let markup = testWidget start
+      let markup = testWidget [] start
       first <- create markup
       btn <-
         someStateWidget first
@@ -75,18 +78,38 @@ prop_emits_correct_number_of_click_events = property $ do
   actualValues <- liftIO (atomically (flushTBQueue values))
   expectedValues === actualValues
 
+prop_sets_classes = property $ do
+  let genClasses =
+        Gen.list (Range.linear 0 5) (Gen.text (Range.linear 1 5) Gen.alphaNum)
+  initialClasses                <- forAll genClasses
+  finalClasses                  <- forAll genClasses
+
+  (classesBefore, classesAfter) <-
+    liftIO
+    $ bracket (runUI (Gtk.new Gtk.Window [])) (runUI . #destroy)
+    $ \window -> do
+        let markup1 = testWidget [classes initialClasses] 0
+            markup2 = testWidget [classes finalClasses] 0
+        first <- runUI (create markup1)
+        btn   <- someStateWidget first >>= Gtk.unsafeCastTo Gtk.Button & liftIO
+        sc    <- runUI $ do
+          #add window btn
+          Gtk.widgetShowAll window
+          #getStyleContext btn
+        beforeUpdate <- runUI (#listClasses sc)
+        _second      <- patch' first markup1 markup2
+        afterUpdate  <- runUI (#listClasses sc)
+        pure (beforeUpdate, afterUpdate)
+
+  HashSet.fromList ("text-button" : initialClasses)
+    === HashSet.fromList classesBefore
+  HashSet.fromList ("text-button" : finalClasses)
+    === HashSet.fromList classesAfter
 
 -- * Test widget and helpers
 
-testWidget :: Int -> Widget Int
-testWidget customParams = Widget
-  (CustomWidget { customWidget
-                , customCreate
-                , customPatch
-                , customSubscribe
-                , customParams
-                }
-  )
+testWidget :: Vector (Attribute Gtk.Button Int) -> Int -> Widget Int
+testWidget customAttributes customParams = Widget (CustomWidget { .. })
  where
   customWidget = Gtk.Button
   customCreate start = do
@@ -96,7 +119,7 @@ testWidget customParams = Widget
 
   customPatch :: Int -> Int -> MVar Int -> CustomPatch Gtk.Button (MVar Int)
   customPatch _ new clicks = CustomModify $ \btn -> do
-    putMVar clicks new
+    -- putMVar clicks new
     Gtk.set btn [#label Gtk.:= Text.pack (show new)]
     return clicks
 
@@ -112,9 +135,14 @@ testWidget customParams = Widget
 runUI ma = do
   ret <- liftIO newEmptyMVar
   _ <- Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT $ do
-      ma >>= putMVar ret
-      return False
+    ma >>= putMVar ret
+    return False
   liftIO (takeMVar ret)
+
+patch' state markup1 markup2 = case patch state markup1 markup2 of
+  Keep      -> pure state
+  Modify  f -> runUI f
+  Replace f -> runUI f
 
 -- * Test collection
 

@@ -15,7 +15,10 @@ module GI.Gtk.Declarative.CustomWidget
 where
 
 import           Data.Typeable
-import qualified GI.Gtk                         as Gtk
+import           Data.Vector                             (Vector)
+import qualified GI.Gtk                                  as Gtk
+import           GI.Gtk.Declarative.Attributes
+import           GI.Gtk.Declarative.Attributes.Collected
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.State
@@ -46,6 +49,8 @@ data CustomWidget widget params internalState event =
   -- old custom data, and new custom data
   , customSubscribe :: params -> internalState -> widget -> (event -> IO ()) -> IO Subscription
   -- ^ Action that creates an event subscription for the custom widget
+  , customAttributes :: Vector (Attribute widget event)
+  -- ^ Parameters passed when constructing the declarative custom widget
   , customParams :: params
   -- ^ Parameters passed when constructing the declarative custom widget
   } deriving (Functor)
@@ -57,13 +62,16 @@ instance ( Typeable widget
   => Patchable (CustomWidget widget params internalState) where
   create custom = do
     (widget, internalState) <- customCreate custom (customParams custom)
-    sc <- Gtk.widgetGetStyleContext widget
     Gtk.widgetShow widget
-    -- TODO: attributes
-    pure (SomeState (StateTreeWidget (StateTreeNode widget sc mempty internalState)))
+
+    let collected = collectAttributes (customAttributes custom)
+    sc <- Gtk.widgetGetStyleContext widget
+    updateClasses sc mempty (collectedClasses collected)
+
+    pure (SomeState (StateTreeWidget (StateTreeNode widget sc collected internalState)))
   patch (SomeState (stateTree :: StateTree st w e c cs)) old new =
-    case eqT @cs @internalState of
-      Just Refl ->
+    case (eqT @cs @internalState, eqT @widget @w) of
+      (Just Refl, Just Refl) ->
         case customPatch
                new
                (customParams old)
@@ -72,12 +80,20 @@ instance ( Typeable widget
         of
           CustomReplace -> Replace (create new)
           CustomModify f -> Modify $ do
+            let widget' = stateTreeNodeWidget stateTree
+
+            let oldCollected = stateTreeCollectedAttributes (stateTreeNode stateTree)
+                newCollected = collectAttributes (customAttributes new)
+            updateProperties widget' (collectedProperties oldCollected) (collectedProperties newCollected)
+            updateClasses (stateTreeStyleContext (stateTreeNode stateTree)) (collectedClasses oldCollected) (collectedClasses newCollected)
             internalState' <-
-              f =<< Gtk.unsafeCastTo (customWidget new) (stateTreeNodeWidget stateTree)
+              f =<< Gtk.unsafeCastTo (customWidget new) widget'
             let node = stateTreeNode stateTree
-            return (SomeState (StateTreeWidget node { stateTreeCustomState = internalState' }))
+            return (SomeState (StateTreeWidget node { stateTreeCustomState = internalState'
+                                                    , stateTreeCollectedAttributes = newCollected
+                                                    }))
           CustomKeep -> Keep
-      Nothing -> Replace (create new)
+      _ -> Replace (create new)
 
 instance (Typeable internalState, Gtk.GObject widget)
   => EventSource (CustomWidget widget params internalState) where
