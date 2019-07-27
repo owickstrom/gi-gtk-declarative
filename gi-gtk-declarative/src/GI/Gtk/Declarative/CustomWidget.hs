@@ -44,7 +44,7 @@ data CustomWidget widget params internalState event =
   , customPatch :: params -> params -> internalState -> CustomPatch widget internalState
   -- ^ Patch function, calculating a 'CustomPatch' based on the state,
   -- old custom data, and new custom data
-  , customSubscribe :: internalState -> widget -> (event -> IO ()) -> IO Subscription
+  , customSubscribe :: params -> internalState -> widget -> (event -> IO ()) -> IO Subscription
   -- ^ Action that creates an event subscription for the custom widget
   , customParams :: params
   -- ^ Parameters passed when constructing the declarative custom widget
@@ -85,5 +85,5 @@ instance (Typeable internalState, Gtk.GObject widget)
     case eqT @cs @internalState of
       Just Refl -> do
         w' <- Gtk.unsafeCastTo (customWidget custom) (stateTreeNodeWidget stateTree)
-        customSubscribe custom (stateTreeCustomState (stateTreeNode stateTree)) w' cb
+        customSubscribe custom (customParams custom) (stateTreeCustomState (stateTreeNode stateTree)) w' cb
       Nothing -> pure (fromCancellation (pure ()))

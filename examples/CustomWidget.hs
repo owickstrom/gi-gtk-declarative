@@ -77,7 +77,7 @@ numberInput customParams = Widget
   -- Finally, we subscribe to widget signals to emit
   -- 'NumberInputChanged' events from the spin button reference
   -- carried by the internal state.
-  customSubscribe (spin :: Gtk.SpinButton) _box cb = do
+  customSubscribe _params (spin :: Gtk.SpinButton) _box cb = do
     h <- Gtk.on spin #valueChanged $ cb . NumberInputChanged =<< #getValue spin
     -- This creates a 'Subscription' from an IO action that
     -- disconnects the signal handler.
