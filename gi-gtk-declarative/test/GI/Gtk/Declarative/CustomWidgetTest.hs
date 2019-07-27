@@ -12,14 +12,14 @@ module GI.Gtk.Declarative.CustomWidgetTest where
 import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Concurrent.STM.TBQueue
-import           Control.Monad.IO.Class
 import           Control.Exception.Safe
-import           Control.Monad (replicateM_)
+import           Control.Monad                  (replicateM_)
+import           Control.Monad.IO.Class
 import           Data.Function                  ((&))
 import qualified Data.Text                      as Text
+import qualified GI.Gdk                         as Gdk
+import qualified GI.GLib.Constants              as GLib
 import qualified GI.GObject                     as GI
-import qualified GI.Gdk                   as Gdk
-import qualified GI.GLib.Constants        as GLib
 import qualified GI.Gtk                         as Gtk
 
 import           Hedgehog
@@ -101,8 +101,8 @@ testWidget customParams = Widget
     return clicks
 
   customSubscribe
-    :: MVar Int -> Gtk.Button -> (Int -> IO ()) -> IO Subscription
-  customSubscribe clicks btn cb = do
+    :: Int -> MVar Int -> Gtk.Button -> (Int -> IO ()) -> IO Subscription
+  customSubscribe _params clicks btn cb = do
     h <- Gtk.on btn #clicked $ do
       current <- modifyMVar clicks $ \x -> pure (succ x, succ x)
       cb current
