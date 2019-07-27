@@ -85,21 +85,18 @@ prop_sets_classes = property $ do
   finalClasses                  <- forAll genClasses
 
   (classesBefore, classesAfter) <-
-    liftIO
-    $ bracket (runUI (Gtk.new Gtk.Window [])) (runUI . #destroy)
-    $ \window -> do
-        let markup1 = testWidget [classes initialClasses] 0
-            markup2 = testWidget [classes finalClasses] 0
-        first <- runUI (create markup1)
-        btn   <- someStateWidget first >>= Gtk.unsafeCastTo Gtk.Button & liftIO
-        sc    <- runUI $ do
-          #add window btn
-          Gtk.widgetShowAll window
-          #getStyleContext btn
-        beforeUpdate <- runUI (#listClasses sc)
-        _second      <- patch' first markup1 markup2
-        afterUpdate  <- runUI (#listClasses sc)
-        pure (beforeUpdate, afterUpdate)
+    runUI . bracket (Gtk.new Gtk.Window []) #destroy $ \window -> do
+      let markup1 = testWidget [classes initialClasses] 0
+          markup2 = testWidget [classes finalClasses] 0
+      first <- create markup1
+      btn   <- someStateWidget first >>= Gtk.unsafeCastTo Gtk.Button & liftIO
+      #add window btn
+      Gtk.widgetShowAll window
+      sc           <- #getStyleContext btn
+      beforeUpdate <- #listClasses sc
+      _second      <- patch' first markup1 markup2
+      afterUpdate  <- #listClasses sc
+      pure (beforeUpdate, afterUpdate)
 
   HashSet.fromList ("text-button" : initialClasses)
     === HashSet.fromList classesBefore
@@ -141,8 +138,8 @@ runUI ma = do
 
 patch' state markup1 markup2 = case patch state markup1 markup2 of
   Keep      -> pure state
-  Modify  f -> runUI f
-  Replace f -> runUI f
+  Modify  f -> f
+  Replace f -> f
 
 -- * Test collection
 
