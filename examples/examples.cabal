@@ -1,5 +1,5 @@
 name:                 examples
-version:              0.3.0
+version:              0.5.0
 synopsis:             Examples of using gi-gtk-declarative and gi-gtk-declarative-app-simple.
 description:          Examples showcasing the use of gi-gtk-declarative and
                       gi-gtk-declarative-app-simple in a multitude of ways. These try to cover
