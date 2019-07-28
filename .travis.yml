@@ -17,9 +17,9 @@ script:
   # building `examples` will also build the libraries
   if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
      cachix push gi-gtk-declarative --watch-store&
-     xvfb-run -e /dev/stdout nix-build -j2 -A examples | cachix push gi-gtk-declarative
+     nix-build -j2 -A examples | cachix push gi-gtk-declarative
   else
-     xvfb-run -e /dev/stdout nix-build -j2 -A examples
+     nix-build -j2 -A examples
   fi
 env:
   global:
