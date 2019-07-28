@@ -1,13 +1,10 @@
 language: nix
 sudo: required
 
-before_script:
-  # xvfb
-  - sudo apt install xvfb
-  - "export DISPLAY=:99.0"
-  - "xvfb :99 &"
-  - sleep 3 # give xvfb some time to start
+services:
+  - xvfb
 
+before_script:
   # cachix
   - sudo mount -o remount,exec,size=4G,mode=755 /run/user || true
 
