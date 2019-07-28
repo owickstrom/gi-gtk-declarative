@@ -50,7 +50,8 @@ data CustomWidget widget params internalState event =
   , customSubscribe :: params -> internalState -> widget -> (event -> IO ()) -> IO Subscription
   -- ^ Action that creates an event subscription for the custom widget
   , customAttributes :: Vector (Attribute widget event)
-  -- ^ Parameters passed when constructing the declarative custom widget
+  -- ^ Declarative 'Attribute's for the custom widget (properties and
+  -- classes are handled automatically in patching)
   , customParams :: params
   -- ^ Parameters passed when constructing the declarative custom widget
   } deriving (Functor)
@@ -65,6 +66,7 @@ instance ( Typeable widget
     Gtk.widgetShow widget
 
     let collected = collectAttributes (customAttributes custom)
+    updateProperties widget mempty (collectedProperties collected)
     sc <- Gtk.widgetGetStyleContext widget
     updateClasses sc mempty (collectedClasses collected)
 

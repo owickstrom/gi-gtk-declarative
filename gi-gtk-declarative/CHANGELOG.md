@@ -1,3 +1,7 @@
+* 0.5.0
+  - New `CustomWidget` API:
+    - easier-to-use internal state
+    - pass-through attributes to top widget
 * 0.4.0
     - Use `Vector` instead of `[]` for child widgets
 * 0.3.0
