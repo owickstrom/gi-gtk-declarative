@@ -15,6 +15,7 @@ script:
 - cachix use gi-gtk-declarative
 - |
   # building `examples` will also build the libraries
+  export DISPLAY=:99.0
   if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
      cachix push gi-gtk-declarative --watch-store&
      nix-build -j2 -A examples | cachix push gi-gtk-declarative
