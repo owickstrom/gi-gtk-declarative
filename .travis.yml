@@ -1,7 +1,7 @@
 language: nix
 sudo: required
 services:
-  xvfb: true
+  - xvfb
 before_script:
 - sudo mount -o remount,exec,size=4G,mode=755 /run/user || true
 script:
