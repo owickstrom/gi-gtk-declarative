@@ -5,7 +5,7 @@ before_script:
   # xvfb
   - sudo apt install xvfb
   - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
+  - "xvfb :99 &"
   - sleep 3 # give xvfb some time to start
 
   # cachix
