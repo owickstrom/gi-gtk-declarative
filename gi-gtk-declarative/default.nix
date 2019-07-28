@@ -10,7 +10,7 @@ let
       haskell-gi-overloading = pkgs.haskell.lib.dontHaddock (self.callHackage "haskell-gi-overloading" "1.0" {});
     };
   };
-  applyCheck = if doCheck then pkgs.haskell.lib.doCheck else pkgs.lib.id;
+  applyCheck = if doCheck then pkgs.lib.id else pkgs.haskell.lib.dontCheck;
   applyBench = if doBenchmark then pkgs.haskell.lib.doBenchmark else pkgs.lib.id;
   drv = applyCheck (applyBench (haskellPackages.callCabal2nix "gi-gtk-declarative" ./. {}));
 in
