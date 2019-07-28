@@ -1,6 +1,12 @@
 language: nix
 sudo: required
 
+addons:
+  apt:
+    packages:
+      - xauth
+      - libgtk-3.0
+
 before_script:
   # cachix
   - sudo mount -o remount,exec,size=4G,mode=755 /run/user || true
@@ -10,7 +16,6 @@ script:
   https://cachix.cachix.org --trusted-public-keys 'cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
   cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM='
 - cachix use gi-gtk-declarative
-- nix-env -iA nixpkgs.gtk3
 - |
   # building `examples` will also build the libraries
   export DISPLAY=:99.0
