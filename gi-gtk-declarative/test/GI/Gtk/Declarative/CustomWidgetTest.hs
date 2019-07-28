@@ -89,7 +89,7 @@ prop_sets_classes = property $ do
       let markup1 = testWidget [classes initialClasses] 0
           markup2 = testWidget [classes finalClasses] 0
       first <- create markup1
-      btn   <- someStateWidget first >>= Gtk.unsafeCastTo Gtk.Button & liftIO
+      btn   <- liftIO (someStateWidget first >>= Gtk.unsafeCastTo Gtk.Button)
       #add window btn
       Gtk.widgetShowAll window
       sc           <- #getStyleContext btn
