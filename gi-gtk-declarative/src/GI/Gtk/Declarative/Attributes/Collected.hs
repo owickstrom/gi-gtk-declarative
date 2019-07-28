@@ -124,9 +124,10 @@ updateProperties (widget' :: widget) oldProps newProps = do
 
 -- | Update the style context's classes to only include the new set of
 -- classes (last argument).
-updateClasses :: Gtk.StyleContext -> ClassSet -> ClassSet -> IO ()
-updateClasses sc old new = do
+updateClasses
+  :: Gtk.StyleContext -> ClassSet -> ClassSet -> IO ()
+updateClasses ctx old new = do
   let toAdd    = HashSet.difference new old
       toRemove = HashSet.difference old new
-  mapM_ (Gtk.styleContextAddClass sc)    toAdd
-  mapM_ (Gtk.styleContextRemoveClass sc) toRemove
+  mapM_ (Gtk.styleContextAddClass ctx)    toAdd
+  mapM_ (Gtk.styleContextRemoveClass ctx) toRemove
