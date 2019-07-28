@@ -7,6 +7,7 @@ module CustomWidget where
 
 import           Control.Monad                  (void)
 import           Data.Typeable                  (Typeable)
+import           Data.Vector                    (Vector)
 import           Data.Word
 
 import qualified GI.GObject                     as GI
@@ -20,25 +21,26 @@ import           GI.Gtk.Declarative.EventSource (fromCancellation)
 -------------------------------------------
 
 data NumberInputProperties = NumberInputProperties
-  { value              :: Double
-  , range              :: (Double, Double)
-  , step               :: Double
-  , digits             :: Word32
-  , numberInputClasses :: ClassSet
+  { value  :: Double
+  , range  :: (Double, Double)
+  , step   :: Double
+  , digits :: Word32
   } deriving (Eq, Show)
 
 
 newtype NumberInputEvent = NumberInputChanged Double
 
 numberInput
-  :: NumberInputProperties
+  :: Vector (Attribute Gtk.Box NumberInputEvent)
+  -> NumberInputProperties
   -> Widget NumberInputEvent
-numberInput customParams = Widget
+numberInput customAttributes customParams = Widget
   (CustomWidget
     { customWidget
     , customCreate
     , customPatch
     , customSubscribe
+    , customAttributes
     , customParams
     }
   )
@@ -50,10 +52,8 @@ numberInput customParams = Widget
   -- also returning our internal state, a reference to the spin button
   -- widget.
   customCreate props = do
-    box <- Gtk.new Gtk.Box [ #orientation Gtk.:= Gtk.OrientationVertical
-                           , #spacing Gtk.:= 10
-                           ]
-    lbl <- Gtk.new Gtk.Label [#label Gtk.:= "I'm a custom wiget."]
+    box <- Gtk.new Gtk.Box [#orientation Gtk.:= Gtk.OrientationVertical]
+    lbl <- Gtk.new Gtk.Label [#label Gtk.:= "I'm a custom widget."]
     spin <- Gtk.new Gtk.SpinButton []
     adj  <- propsToAdjustment props
     Gtk.spinButtonSetAdjustment spin adj
@@ -113,13 +113,17 @@ view' (State currentValue) =
  where
   -- Construct our custom widget with some properties for the
   -- underlying SpinButton
-  numberSetter = numberInput NumberInputProperties
-    { value              = currentValue
-    , range              = (0, 10)
-    , step               = 0.1
-    , digits             = 1
-    , numberInputClasses = ["my-number-input"]
-    }
+  numberSetter = numberInput
+    -- Pass attributes (classes or GTK properties) to the widget
+    [ classes ["my-number-input"]
+    , #spacing := round (currentValue * 10) -- weird, but fun
+    ]
+    -- And our custom properties
+    NumberInputProperties { value  = currentValue
+                          , range  = (0, 10)
+                          , step   = 0.1
+                          , digits = 1
+                          }
   -- Map the custom widget's event to our app 'Event' type
   toNumberEvent (NumberInputChanged d) = NumberSet d
 
