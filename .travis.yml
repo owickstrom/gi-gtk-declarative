@@ -1,15 +1,14 @@
 language: nix
 sudo: required
 
-# xvfb
 before_script:
+  # xvfb
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
 
-# cachix
-before_script:
-- sudo mount -o remount,exec,size=4G,mode=755 /run/user || true
+  # cachix
+  - sudo mount -o remount,exec,size=4G,mode=755 /run/user || true
 
 script:
 - nix-env -if https://github.com/cachix/cachix/tarball/master --extra-substituters
