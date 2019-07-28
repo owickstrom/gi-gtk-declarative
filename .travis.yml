@@ -1,9 +1,6 @@
 language: nix
 sudo: required
 
-services:
-  - xvfb
-
 before_script:
   # cachix
   - sudo mount -o remount,exec,size=4G,mode=755 /run/user || true
@@ -16,6 +13,7 @@ script:
 - |
   # building `examples` will also build the libraries
   export DISPLAY=:99.0
+  Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
   if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
      cachix push gi-gtk-declarative --watch-store&
      nix-build -j2 -A examples | cachix push gi-gtk-declarative
