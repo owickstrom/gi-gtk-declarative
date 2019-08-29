@@ -1,7 +1,6 @@
 {-# LANGUAGE DefaultSignatures      #-}
 {-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE TypeFamilies           #-}
 
 -- | Shared interfaces for containers.

@@ -1,7 +1,5 @@
 {-# LANGUAGE DataKinds  #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE RecordWildCards  #-}
 {-# LANGUAGE GADTs      #-}
 {-# LANGUAGE LambdaCase #-}
 

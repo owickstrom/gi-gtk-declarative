@@ -79,8 +79,6 @@ instance EventSource (SingleWidget widget) where
 -- | Construct a /leaf/ widget, i.e. one without any children.
 widget
   :: ( Typeable widget
-     , Typeable event
-     , Functor (Attribute widget)
      , Gtk.IsWidget widget
      , FromWidget (SingleWidget widget) target
      )

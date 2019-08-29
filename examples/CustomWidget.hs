@@ -6,7 +6,6 @@
 module CustomWidget where
 
 import           Control.Monad                  (void)
-import           Data.Typeable                  (Typeable)
 import           Data.Vector                    (Vector)
 import           Data.Word
 
@@ -84,11 +83,11 @@ numberInput customAttributes customParams = Widget
     return (fromCancellation (GI.signalHandlerDisconnect spin h))
 
 propsToAdjustment :: NumberInputProperties -> IO Gtk.Adjustment
-propsToAdjustment NumberInputProperties { value, range, step } =
+propsToAdjustment NumberInputProperties { value, range = (begin, end), step } =
   Gtk.adjustmentNew
     value
-    (fst range)
-    (snd range)
+    begin
+    end
     step
     0.1
     0
@@ -128,7 +127,7 @@ view' (State currentValue) =
   toNumberEvent (NumberInputChanged d) = NumberSet d
 
 -- Helper that vertically and horizontally centers a widget
-centered :: Typeable e => Widget e -> Widget e
+centered :: Widget e -> Widget e
 centered w = container
   Gtk.Box
   [#orientation := Gtk.OrientationVertical]

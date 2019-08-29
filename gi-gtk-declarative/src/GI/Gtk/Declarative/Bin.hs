@@ -3,7 +3,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedLabels      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -51,9 +50,7 @@ instance Functor (Bin widget) where
 
 -- | Construct a /bin/ widget, i.e. a widget with exactly one child.
 bin
-  :: ( Patchable (Bin widget)
-     , Typeable widget
-     , Typeable event
+  :: ( Typeable widget
      , Gtk.IsContainer widget
      , Gtk.IsBin widget
      , Gtk.IsWidget widget

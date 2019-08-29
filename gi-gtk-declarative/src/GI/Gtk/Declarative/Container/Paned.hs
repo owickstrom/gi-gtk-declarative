@@ -26,7 +26,6 @@ where
 
 import           Data.Coerce                        (coerce)
 import           Data.Default.Class                 (Default (def))
-import           Data.Typeable
 import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as Vector
 import           GHC.Ptr                            (nullPtr)
@@ -75,7 +74,7 @@ instance EventSource Pane where
   subscribe Pane{..} = subscribe paneChild
 
 -- | Construct a 'Gtk.Paned' based on attributes and two child 'Pane's.
-paned :: Typeable event => Vector (Attribute Gtk.Paned event) -> Pane event -> Pane event -> Widget event
+paned :: Vector (Attribute Gtk.Paned event) -> Pane event -> Pane event -> Widget event
 paned attrs p1 p2 = container Gtk.Paned attrs (Panes p1 p2)
 
 data Panes child = Panes child child

@@ -59,10 +59,7 @@ instance Functor (Container widget children) where
 
 -- | Construct a /container/ widget, i.e. a widget with zero or more children.
 container
-  :: ( Patchable (Container widget (Children child))
-     , Typeable widget
-     , Typeable child
-     , Typeable event
+  :: ( Typeable widget
      , Functor child
      , Gtk.IsWidget widget
      , Gtk.IsContainer widget
@@ -117,7 +114,7 @@ instance (Patchable child, Typeable child, IsContainer container child) =>
 -- EventSource
 --
 
-instance (Typeable child, EventSource child) =>
+instance EventSource child =>
          EventSource (Container widget (Children child)) where
   subscribe (Container ctor props children) (SomeState st) cb =
     case st of
@@ -138,7 +135,6 @@ instance ( Typeable widget
          , Typeable children
          , Patchable (Container widget children)
          , EventSource (Container widget children)
-         , Functor (Container widget children)
          ) =>
          FromWidget (Container widget children) Widget where
   fromWidget = Widget
