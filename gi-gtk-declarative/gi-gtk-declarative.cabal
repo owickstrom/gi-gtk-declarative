@@ -55,8 +55,8 @@ library
                       , gi-gobject             >= 2    && <3
                       , gi-glib                >= 2    && <3
                       , gi-gtk                 >= 3    && <4
-                      , haskell-gi             >= 0.21 && <0.23
-                      , haskell-gi-base        >= 0.21 && <0.23
+                      , haskell-gi             >= 0.21 && <0.24
+                      , haskell-gi-base        >= 0.21 && <0.24
                       , haskell-gi-overloading == 1.0
                       , mtl
                       , text
