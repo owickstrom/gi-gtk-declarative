@@ -70,7 +70,7 @@ instance Exception GtkMainExitedException
 -- convenience function that is highly recommended. If you need more
 -- flexibility, e.g. to set up GTK+ yourself, use 'runLoop' instead.
 run
-  :: (Typeable event, Gtk.IsWindow window, Gtk.IsBin window)
+  :: Gtk.IsBin window
   => App window state event      -- ^ Application to run
   -> IO state
 run app = do
@@ -96,7 +96,7 @@ run app = do
 --     Gtk.main
 -- @
 runLoop
-  :: (Typeable event, Gtk.IsWindow window, Gtk.IsBin window)
+  :: Gtk.IsBin window
   => App window state event
   -> IO state
 runLoop App {..} = do

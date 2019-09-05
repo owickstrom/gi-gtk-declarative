@@ -85,3 +85,4 @@ test-suite gi-gtk-declarative-tests
                    , unordered-containers
   ghc-options:       -Wall -O2 -rtsopts -with-rtsopts=-N -threaded
   default-language:  Haskell2010
+  other-modules:     GI.Gtk.Declarative.CustomWidgetTest

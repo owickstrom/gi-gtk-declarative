@@ -39,6 +39,6 @@ main = void $ run App
  where
   greetings =
     cycle ["Joe", "Mike"]
-      & map (\n -> (Greet ("Hello, " <> n)))
+      & map (\n -> Greet ("Hello, " <> n))
       & Pipes.each
       & (>-> Pipes.delay 1.0)

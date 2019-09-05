@@ -55,7 +55,6 @@ instance ToChildren Gtk.MenuBar Vector MenuItem
 -- | Construct a single menu item for a 'Gtk.Menu'.
 menuItem
   :: ( Gtk.IsMenuItem item
-     , Typeable event
      , Typeable item
      , Gtk.IsContainer item
      , Gtk.IsBin item
@@ -69,11 +68,7 @@ menuItem item attrs = MenuItem . Bin item attrs
 
 -- | Construct a sub menu for a 'Gtk.Menu', wit a text label and the
 -- child menu items.
-subMenu
-  :: (Typeable event)
-  => Text
-  -> Vector (MenuItem event)
-  -> MenuItem event
+subMenu :: Text -> Vector (MenuItem event) -> MenuItem event
 subMenu label = SubMenu label . container Gtk.Menu mempty
 
 newSubMenuItem :: Text -> IO SomeState -> IO SomeState

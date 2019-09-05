@@ -6,7 +6,6 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE OverloadedLabels      #-}
 {-# LANGUAGE OverloadedLists       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
