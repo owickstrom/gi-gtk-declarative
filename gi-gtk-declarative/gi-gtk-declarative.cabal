@@ -42,6 +42,7 @@ library
                       , GI.Gtk.Declarative.Container.Class
                       , GI.Gtk.Declarative.Container.ListBox
                       , GI.Gtk.Declarative.Container.MenuItem
+                      , GI.Gtk.Declarative.Container.Notebook
                       , GI.Gtk.Declarative.Container.Paned
                       , GI.Gtk.Declarative.Container.Patch
                       , GI.Gtk.Declarative.EventSource

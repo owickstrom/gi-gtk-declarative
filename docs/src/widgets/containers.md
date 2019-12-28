@@ -90,5 +90,20 @@ Each `Pane` is constructed using the `pane` function, which takes a
 are used to call the underlying `pack1`/`pack2` functions on the GTK+
 widget.
 
+## Notebook
+
+The `Notebook` widget has multiple children - called "pages" - and
+tabs that allow you to view one page at a time. You should construct
+Notebooks with the `notebook`, `page`, and `pageWithTab` functions.
+
+``` haskell
+notebook []
+  [ page "First tab label" (widget Label [#label := "First tab content..."])
+  , pageWithTab
+      (widget Button [#label := "Using a button as the tab label widget"])
+      (widget Label [#label := "Second tab content..."])
+  ]
+```
+
 
 [gi-gtk]: https://hackage.haskell.org/package/gi-gtk

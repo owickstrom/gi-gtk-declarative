@@ -28,6 +28,7 @@ executable example
                       , ListBox
                       , ManyBoxes
                       , MenuBar
+                      , Notebook
                       , Paned
   build-depends:        base >=4.10 && <5
                       , async
