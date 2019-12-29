@@ -1,5 +1,12 @@
+* 0.6.1
+    - Fix Nix build issue
+* 0.6.0
+    - Allow dependency haskell-gi-0.23
+    - Remove redundant code
 * 0.5.0
-    - New `CustomWidget` API
+  - New `CustomWidget` API:
+    - easier-to-use internal state
+    - pass-through attributes to top widget
 * 0.4.3
     - Bump upper bound on haskell-gi
 * 0.4.2
