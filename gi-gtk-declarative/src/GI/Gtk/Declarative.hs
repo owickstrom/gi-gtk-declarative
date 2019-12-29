@@ -14,6 +14,7 @@ import           GI.Gtk.Declarative.Bin                as Export (Bin, bin)
 import           GI.Gtk.Declarative.Container          as Export (Container,
                                                                   container)
 import           GI.Gtk.Declarative.Container.Box      as Export
+import           GI.Gtk.Declarative.Container.Grid     as Export ()
 import           GI.Gtk.Declarative.Container.ListBox  as Export ()
 import           GI.Gtk.Declarative.Container.MenuItem as Export
 import           GI.Gtk.Declarative.Container.Paned    as Export

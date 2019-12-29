@@ -11,6 +11,7 @@ import qualified Dialog
 import qualified Exit
 import qualified FileChooserButton
 import qualified Functor
+import qualified Grid
 import qualified Hello
 import qualified ListBox
 import qualified ManyBoxes
@@ -26,6 +27,7 @@ main =
                  , ("Hello", Hello.main)
                  , ("ListBox", ListBox.main)
                  , ("Functor", Functor.main)
+                 , ("Grid", Grid.main)
                  , ("Exit", Exit.main)
                  , ("ManyBoxes", ManyBoxes.main)
                  , ("MenuBar", MenuBar.main)
