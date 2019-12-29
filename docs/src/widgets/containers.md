@@ -54,6 +54,24 @@ container Box []
   ]
 ```
 
+## Grid
+
+`Grid` is similar to `Box`, except that the child widgets occupy
+a grid (possibly taking up multiple cells) instead of being arranged
+in a simple line.
+
+The collection of child widgets has type `[GridChild event]` and a
+`GridChildProperties` value specifies size and location in the grid.
+
+``` haskell
+container Grid []
+  [ GridChild defaultGridChildProperties
+      (widget Label [#label := "Input"])
+  , GridChild defaultGridChildProperties { leftAttach = 1 }
+      (widget Entry [#hexpand := True])
+  ]
+```
+
 ## ListBox
 
 The collection of child widgets used with `ListBox` is of type `[Bin
