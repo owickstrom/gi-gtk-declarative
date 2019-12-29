@@ -15,6 +15,7 @@ import qualified Hello
 import qualified ListBox
 import qualified ManyBoxes
 import qualified MenuBar
+import qualified Notebook
 import qualified Paned
 
 main :: IO ()
@@ -28,6 +29,7 @@ main =
                  , ("Exit", Exit.main)
                  , ("ManyBoxes", ManyBoxes.main)
                  , ("MenuBar", MenuBar.main)
+                 , ("Notebook", Notebook.main)
                  , ("CSS", CSS.main)
                  , ("Paned", Paned.main)
                  , ("Dialog", Dialog.main)
