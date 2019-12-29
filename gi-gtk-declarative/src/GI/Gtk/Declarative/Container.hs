@@ -84,7 +84,6 @@ instance (Patchable child, Typeable child, IsContainer container child) =>
     Gtk.widgetShow widget'
     sc <- Gtk.widgetGetStyleContext widget'
     updateClasses sc mempty (collectedClasses collected)
-    mapM_ (applyAfterCreated widget') attrs
     childStates <-
       forM (unChildren children) $ \child -> do
         childState <- create child

@@ -48,8 +48,6 @@ instance Patchable (SingleWidget widget) where
         Gtk.widgetShow widget'
         sc <- Gtk.widgetGetStyleContext widget'
         updateClasses sc mempty (collectedClasses collected)
-        mapM_ (applyAfterCreated widget') attrs
-
         return (SomeState (StateTreeWidget (StateTreeNode widget' sc collected ())))
   patch (SomeState (st :: StateTree stateType w child event cs))
         (SingleWidget (_    :: Gtk.ManagedPtr w1 -> w1) _)

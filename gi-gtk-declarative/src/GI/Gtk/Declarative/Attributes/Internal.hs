@@ -6,8 +6,7 @@
 -- | Internal helpers for applying attributes and signal handlers to GTK+
 -- widgets.
 module GI.Gtk.Declarative.Attributes.Internal
-  ( applyAfterCreated
-  , addSignalHandler
+  ( addSignalHandler
   )
 where
 
@@ -19,11 +18,6 @@ import qualified GI.Gtk                        as Gtk
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Attributes.Internal.Conversions
 import           GI.Gtk.Declarative.EventSource
-
-applyAfterCreated :: widget -> Attribute widget event -> IO ()
-applyAfterCreated widget = \case
-  (AfterCreated f) -> f widget
-  _                -> return ()
 
 addSignalHandler
   :: (Gtk.IsWidget widget, MonadIO m)
