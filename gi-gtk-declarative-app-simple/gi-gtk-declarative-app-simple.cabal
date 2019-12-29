@@ -1,5 +1,5 @@
 name:                 gi-gtk-declarative-app-simple
-version:              0.6.1
+version:              0.6.2
 synopsis:             Declarative GTK+ programming in Haskell in the style of Pux.
 description:          Experimental application architecture in the style of
                       PureScript Pux, built on top of gi-gtk-declarative.

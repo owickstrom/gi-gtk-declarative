@@ -1,3 +1,5 @@
+* 0.6.2
+    - Add `Notebook` container widget
 * 0.6.1
     - Fix Nix build issue
 * 0.6.0
