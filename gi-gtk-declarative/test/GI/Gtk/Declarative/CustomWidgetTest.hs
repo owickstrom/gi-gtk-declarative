@@ -31,6 +31,8 @@ import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.State
 
+import           GI.Gtk.Declarative.TestUtils
+
 prop_sets_the_button_label = property $ do
   start       <- forAll (Gen.int (Range.linear 0 10))
   clicks      <- forAll (Gen.int (Range.linear 0 10))
@@ -126,18 +128,6 @@ testWidget customAttributes customParams = Widget (CustomWidget { .. })
       cb current
       Gtk.set btn [#label Gtk.:= Text.pack (show current)]
     return (fromCancellation (GI.signalHandlerDisconnect btn h))
-
-runUI ma = do
-  ret <- liftIO newEmptyMVar
-  _ <- Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT $ do
-    ma >>= putMVar ret
-    return False
-  liftIO (takeMVar ret)
-
-patch' state markup1 markup2 = case patch state markup1 markup2 of
-  Keep      -> pure state
-  Modify  f -> f
-  Replace f -> f
 
 -- * Test collection
 
