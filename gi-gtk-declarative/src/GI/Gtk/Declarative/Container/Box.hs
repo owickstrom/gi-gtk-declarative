@@ -42,7 +42,7 @@ data BoxChildProperties = BoxChildProperties
   { expand  :: Bool
   , fill    :: Bool
   , padding :: Word32
-  }
+  } deriving (Eq, Show)
 
 -- | Defaults for 'BoxChildProperties'. Use these and override
 -- specific fields.
@@ -55,7 +55,9 @@ instance Default BoxChildProperties where
 
 instance Patchable BoxChild where
   create = create . child
-  patch s b1 b2 = patch s (child b1) (child b2)
+  patch s b1 b2
+    | properties b1 == properties b2 = patch s (child b1) (child b2)
+    | otherwise = Replace (create b2)
 
 instance EventSource BoxChild where
   subscribe BoxChild{..} = subscribe child

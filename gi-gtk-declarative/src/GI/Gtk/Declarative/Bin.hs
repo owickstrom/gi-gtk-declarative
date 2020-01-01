@@ -86,25 +86,29 @@ instance (Gtk.IsBin parent) => Patchable (Bin parent) where
         (Bin (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes newChild) =
     case (st, eqT @w1 @w2) of
       (StateTreeBin top oldChildState, Just Refl) ->
-        Modify $ do
-          binWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
-          let oldCollected = stateTreeCollectedAttributes top
-              newCollected = collectAttributes newAttributes
-          updateProperties binWidget (collectedProperties oldCollected) (collectedProperties newCollected)
-          updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
+        let oldCollected = stateTreeCollectedAttributes top
+            newCollected = collectAttributes newAttributes
+            oldCollectedProps = collectedProperties oldCollected
+            newCollectedProps = collectedProperties newCollected
+         in if oldCollectedProps `canBeModifiedTo` newCollectedProps
+              then Modify $ do
+                binWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
+                updateProperties binWidget oldCollectedProps newCollectedProps
+                updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
 
-          let top' = top { stateTreeCollectedAttributes = newCollected }
-          case patch oldChildState oldChild newChild of
-            Modify modify -> SomeState . StateTreeBin top' <$> modify
-            Replace createNew -> do
-              Gtk.widgetDestroy =<< someStateWidget oldChildState
-              newChildState <- createNew
-              childWidget <- someStateWidget newChildState
-              Gtk.widgetShow childWidget
-              maybe (pure ()) Gtk.widgetDestroy =<< Gtk.binGetChild binWidget
-              Gtk.containerAdd binWidget childWidget
-              return (SomeState (StateTreeBin top' newChildState))
-            Keep -> return (SomeState st)
+                let top' = top { stateTreeCollectedAttributes = newCollected }
+                case patch oldChildState oldChild newChild of
+                  Modify modify -> SomeState . StateTreeBin top' <$> modify
+                  Replace createNew -> do
+                    Gtk.widgetDestroy =<< someStateWidget oldChildState
+                    newChildState <- createNew
+                    childWidget <- someStateWidget newChildState
+                    Gtk.widgetShow childWidget
+                    maybe (pure ()) Gtk.widgetDestroy =<< Gtk.binGetChild binWidget
+                    Gtk.containerAdd binWidget childWidget
+                    return (SomeState (StateTreeBin top' newChildState))
+                  Keep -> return (SomeState st)
+              else Replace (create (Bin ctor newAttributes newChild))
       _ -> Replace (create (Bin ctor newAttributes newChild))
 
 --

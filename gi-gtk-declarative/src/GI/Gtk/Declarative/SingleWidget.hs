@@ -53,14 +53,19 @@ instance Patchable (SingleWidget widget) where
         (SingleWidget (_    :: Gtk.ManagedPtr w1 -> w1) _)
         (SingleWidget (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes) =
     case (st, eqT @w @w1, eqT @w1 @w2) of
-      (StateTreeWidget top, Just Refl, Just Refl) -> Modify $ do
-        let w = stateTreeWidget top
+      (StateTreeWidget top, Just Refl, Just Refl) ->
         let oldCollected = stateTreeCollectedAttributes top
             newCollected = collectAttributes newAttributes
-        updateProperties w (collectedProperties oldCollected) (collectedProperties newCollected)
-        updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
-        let top' = top { stateTreeCollectedAttributes = newCollected }
-        return (SomeState (StateTreeWidget top' { stateTreeCollectedAttributes = newCollected }))
+            oldCollectedProps = collectedProperties oldCollected
+            newCollectedProps = collectedProperties newCollected
+         in if oldCollectedProps `canBeModifiedTo` newCollectedProps
+            then Modify $ do
+              let w = stateTreeWidget top
+              updateProperties w oldCollectedProps newCollectedProps
+              updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
+              let top' = top { stateTreeCollectedAttributes = newCollected }
+              return (SomeState (StateTreeWidget top' { stateTreeCollectedAttributes = newCollected }))
+            else Replace (create (SingleWidget ctor newAttributes))
       _ -> Replace (create (SingleWidget ctor newAttributes))
 
 instance EventSource (SingleWidget widget) where
