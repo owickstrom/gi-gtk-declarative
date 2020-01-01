@@ -1,0 +1,6 @@
+cradle:
+  direct:
+    arguments:
+      - -igi-gtk-declarative/src
+      - -igi-gtk-declarative-app-simple/src
+      - -iexamples
