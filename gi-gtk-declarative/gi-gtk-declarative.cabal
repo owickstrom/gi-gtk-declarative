@@ -91,3 +91,4 @@ test-suite gi-gtk-declarative-tests
   other-modules:     GI.Gtk.Declarative.CustomWidgetTest
                    , GI.Gtk.Declarative.PatchTest
                    , GI.Gtk.Declarative.TestUtils
+                   , GI.Gtk.Declarative.TestWidget

@@ -4,7 +4,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module GI.Gtk.Declarative.Gen where
+module GI.Gtk.Declarative.TestWidget where
 
 import Control.Monad.Except
 import Control.Monad.IO.Class
@@ -23,6 +23,10 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Prelude
 
+-- | GTK widgets cannot (in any practical, generic sense) be compared and shown
+-- in tests, so we represent widgets in property tests using this data
+-- structure. We convert between this representation, declarative widgets, and
+-- instantiated GTK widgets.
 data TestWidget
   = TestButton Text
   | TestLabel Text
@@ -30,16 +34,16 @@ data TestWidget
   | TestBox Gtk.Orientation [TestWidget]
   deriving (Eq, Show)
 
-toWidget :: TestWidget -> Widget Void
-toWidget = \case
+toTestWidget :: TestWidget -> Widget Void
+toTestWidget = \case
   TestLabel label -> Gtk.widget Gtk.Label [#label := label]
   TestButton label -> Gtk.widget Gtk.Button [#label := label]
-  TestScrolledWindow child -> bin Gtk.ScrolledWindow [] (toWidget child)
+  TestScrolledWindow child -> bin Gtk.ScrolledWindow [] (toTestWidget child)
   TestBox orientation children ->
     container
       Gtk.Box
       [#orientation := orientation]
-      (Vector.map (BoxChild defaultBoxChildProperties . toWidget) (Vector.fromList children))
+      (Vector.map (BoxChild defaultBoxChildProperties . toTestWidget) (Vector.fromList children))
 
 fromGtkWidget :: (MonadIO m) => Gtk.Widget -> m (Either Text TestWidget)
 fromGtkWidget = runExceptT . go
@@ -70,33 +74,33 @@ fromGtkWidget = runExceptT . go
       Just w' -> f w'
       Nothing -> throwError "Failed to cast widget"
 
-widget :: Gen TestWidget
-widget =
+genTestWidget :: Gen TestWidget
+genTestWidget =
   Gen.recursive
     Gen.choice
-    [ label,
-      button
+    [ genLabel,
+      genButton
     ]
     ( subwidgets (\ws -> (\o -> TestBox o ws) <$> genOrientation)
-        <> [Gen.subterm widget TestScrolledWindow]
+        <> [Gen.subterm genTestWidget TestScrolledWindow]
     )
   where
     -- In lack of `subtermN` (https://github.com/hedgehogqa/haskell-hedgehog/issues/119), we use this terrible hack:
     subwidgets :: ([TestWidget] -> Gen TestWidget) -> [Gen TestWidget]
     subwidgets f =
       [ f [],
-        Gen.subtermM widget (\w -> f [w]),
-        Gen.subtermM2 widget widget (\w1 w2 -> f [w1, w2]),
-        Gen.subtermM3 widget widget widget (\w1 w2 w3 -> f [w1, w2, w3])
+        Gen.subtermM genTestWidget (\w -> f [w]),
+        Gen.subtermM2 genTestWidget genTestWidget (\w1 w2 -> f [w1, w2]),
+        Gen.subtermM3 genTestWidget genTestWidget genTestWidget (\w1 w2 w3 -> f [w1, w2, w3])
       ]
 
 genOrientation :: Gen Gtk.Orientation
 genOrientation = Gen.choice [pure Gtk.OrientationVertical, pure Gtk.OrientationHorizontal]
 
-label :: Gen TestWidget
-label = do
+genLabel :: Gen TestWidget
+genLabel = do
   TestLabel <$> Gen.text (Range.linear 0 10) Gen.unicode
 
-button :: Gen TestWidget
-button = do
+genButton :: Gen TestWidget
+genButton = do
   TestButton <$> Gen.text (Range.linear 0 10) Gen.unicode
