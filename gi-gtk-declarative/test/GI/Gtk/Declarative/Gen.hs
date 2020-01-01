@@ -26,6 +26,7 @@ import Prelude
 data TestWidget
   = TestButton Text
   | TestLabel Text
+  | TestScrolledWindow TestWidget
   | TestBox Gtk.Orientation [TestWidget]
   deriving (Eq, Show)
 
@@ -33,6 +34,7 @@ toWidget :: TestWidget -> Widget Void
 toWidget = \case
   TestLabel label -> Gtk.widget Gtk.Label [#label := label]
   TestButton label -> Gtk.widget Gtk.Button [#label := label]
+  TestScrolledWindow child -> bin Gtk.ScrolledWindow [] (toWidget child)
   TestBox orientation children ->
     container
       Gtk.Box
@@ -48,6 +50,11 @@ fromGtkWidget = runExceptT . go
       case name of
         "GtkButton" -> withCast w Gtk.Button (\btn -> TestButton <$> Gtk.get btn #label)
         "GtkLabel" -> withCast w Gtk.Label (\lbl -> TestLabel <$> Gtk.get lbl #label)
+        "GtkScrolledWindow" -> withCast w Gtk.ScrolledWindow $ \win -> do
+          w' <- #getChild win >>= maybe (throwError "No viewport in scrolled window") pure
+          withCast w' Gtk.Viewport $ \viewport -> do
+            child <- #getChild viewport >>= maybe (throwError "No child in scrolled window") pure
+            TestScrolledWindow <$> go child
         "GtkBox" -> withCast w Gtk.Box $ \box -> do
           childWidgets <- traverse go =<< #getChildren box
           orientation <- Gtk.get box #orientation
@@ -70,7 +77,9 @@ widget =
     [ label,
       button
     ]
-    (subwidgets (\ws -> (\o -> TestBox o ws) <$> genOrientation))
+    ( subwidgets (\ws -> (\o -> TestBox o ws) <$> genOrientation)
+        <> [Gen.subterm widget TestScrolledWindow]
+    )
   where
     -- In lack of `subtermN` (https://github.com/hedgehogqa/haskell-hedgehog/issues/119), we use this terrible hack:
     subwidgets :: ([TestWidget] -> Gen TestWidget) -> [Gen TestWidget]
