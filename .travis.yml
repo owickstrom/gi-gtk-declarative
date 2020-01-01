@@ -9,6 +9,8 @@ script:
 - nix-env -iA cachix -f https://cachix.org/api/v1/install --extra-substituters https://cachix.cachix.org --trusted-public-keys 'cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM='
 - cachix use gi-gtk-declarative
 - |
+  # build and run tests
+  nix-build -j2 -A gi-gtk-declarative --arg doCheck true
   # building `examples` will also build the libraries
   if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
      cachix push gi-gtk-declarative --watch-store&
