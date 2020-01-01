@@ -39,7 +39,8 @@ import qualified Hedgehog.Range as Range
 prop_history_of_prior_patches_has_no_effect_on_resulting_widget = property $ do
   (first : intermediate) <- forAll (Gen.list (Range.linear 1 100) genTestWidget)
   last <- forAll genTestWidget
-  cover 10 "nested widgets" (case last of TestBox _ (_:_) -> True; _ -> False)
+  cover 10 "prior include nested widgets" (any isNested (first : intermediate))
+  cover 10 "last is nested widget" (isNested last)
   -- Directly creating the 'last' widget.
   widget <- assertRight =<< patchAllInNewWindow last []
   -- Creating and patching all prior widgets before patching with the 'last' widget.

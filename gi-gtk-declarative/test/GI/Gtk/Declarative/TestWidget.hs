@@ -34,6 +34,13 @@ data TestWidget
   | TestBox Gtk.Orientation [TestWidget]
   deriving (Eq, Show)
 
+isNested :: TestWidget -> Bool
+isNested = \case
+  TestButton{} -> False
+  TestLabel{} -> False
+  (TestScrolledWindow _) -> True
+  (TestBox _ children) -> not (null children)
+
 toTestWidget :: TestWidget -> Widget Void
 toTestWidget = \case
   TestLabel label -> Gtk.widget Gtk.Label [#label := label]
@@ -73,6 +80,8 @@ fromGtkWidget = runExceptT . go
     withCast w ctor f = liftIO (Gtk.castTo ctor w) >>= \case
       Just w' -> f w'
       Nothing -> throwError "Failed to cast widget"
+
+-- * Generators
 
 genTestWidget :: Gen TestWidget
 genTestWidget =
