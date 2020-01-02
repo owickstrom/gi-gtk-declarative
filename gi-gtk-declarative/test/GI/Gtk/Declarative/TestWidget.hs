@@ -10,12 +10,12 @@ import Control.Monad.Except
 import Control.Monad.IO.Class
 import Data.Text (Text)
 import qualified Data.Text as Text
+import Data.Traversable (for)
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
 import Data.Void
 import qualified GI.Gtk as Gtk
-import GI.Gtk.Declarative hiding (widget)
-import qualified GI.Gtk.Declarative as Gtk (widget)
+import GI.Gtk.Declarative
 import GI.Gtk.Declarative.EventSource
 import GI.Gtk.Declarative.State
 import Hedgehog hiding (label)
@@ -31,26 +31,32 @@ data TestWidget
   = TestButton Text
   | TestLabel Text
   | TestScrolledWindow TestWidget
-  | TestBox Gtk.Orientation [TestWidget]
+  | TestBox Gtk.Orientation [TestBoxChild]
+  deriving (Eq, Show)
+
+data TestBoxChild = TestBoxChild BoxChildProperties TestWidget
   deriving (Eq, Show)
 
 isNested :: TestWidget -> Bool
 isNested = \case
-  TestButton{} -> False
-  TestLabel{} -> False
+  TestButton {} -> False
+  TestLabel {} -> False
   (TestScrolledWindow _) -> True
   (TestBox _ children) -> not (null children)
 
 toTestWidget :: TestWidget -> Widget Void
 toTestWidget = \case
-  TestLabel label -> Gtk.widget Gtk.Label [#label := label]
-  TestButton label -> Gtk.widget Gtk.Button [#label := label]
+  TestLabel label -> widget Gtk.Label [#label := label]
+  TestButton label -> widget Gtk.Button [#label := label]
   TestScrolledWindow child -> bin Gtk.ScrolledWindow [] (toTestWidget child)
   TestBox orientation children ->
     container
       Gtk.Box
       [#orientation := orientation]
-      (Vector.map (BoxChild defaultBoxChildProperties . toTestWidget) (Vector.fromList children))
+      ( Vector.map
+          (\(TestBoxChild props child) -> BoxChild props (toTestWidget child))
+          (Vector.fromList children)
+      )
 
 fromGtkWidget :: (MonadIO m) => Gtk.Widget -> m (Either Text TestWidget)
 fromGtkWidget = runExceptT . go
@@ -67,9 +73,13 @@ fromGtkWidget = runExceptT . go
             child <- #getChild viewport >>= maybe (throwError "No child in scrolled window") pure
             TestScrolledWindow <$> go child
         "GtkBox" -> withCast w Gtk.Box $ \box -> do
-          childWidgets <- traverse go =<< #getChildren box
+          childGtkWidgets <- #getChildren box
+          boxChildProps <- for childGtkWidgets $ \childGtkWidget -> do
+            (expand, fill, padding, _) <- #queryChildPacking box childGtkWidget
+            pure (BoxChildProperties expand fill padding)
+          childWidgets <- traverse go childGtkWidgets
           orientation <- Gtk.get box #orientation
-          pure (TestBox orientation childWidgets)
+          pure (TestBox orientation (zipWith TestBoxChild boxChildProps childWidgets))
         _ -> throwError ("Unsupported TestWidget: " <> name)
     withCast ::
       (MonadIO m, Gtk.GObject w, Gtk.GObject w') =>
@@ -90,7 +100,7 @@ genTestWidget =
     [ genLabel,
       genButton
     ]
-    ( subwidgets (\ws -> (\o -> TestBox o ws) <$> genOrientation)
+    ( subwidgets genTestBoxFrom
         <> [Gen.subterm genTestWidget TestScrolledWindow]
     )
   where
@@ -102,9 +112,21 @@ genTestWidget =
         Gen.subtermM2 genTestWidget genTestWidget (\w1 w2 -> f [w1, w2]),
         Gen.subtermM3 genTestWidget genTestWidget genTestWidget (\w1 w2 w3 -> f [w1, w2, w3])
       ]
+    genTestBoxFrom ws = do
+      children <- for ws $ \w -> do
+        props <- genBoxChildProperties
+        pure (TestBoxChild props w)
+      o <- genOrientation
+      pure (TestBox o children)
 
 genOrientation :: Gen Gtk.Orientation
 genOrientation = Gen.choice [pure Gtk.OrientationVertical, pure Gtk.OrientationHorizontal]
+
+genBoxChildProperties :: Gen BoxChildProperties
+genBoxChildProperties = BoxChildProperties
+  <$> Gen.bool
+  <*> Gen.bool
+  <*> Gen.word32 (Range.linear 0 10)
 
 genLabel :: Gen TestWidget
 genLabel = do
