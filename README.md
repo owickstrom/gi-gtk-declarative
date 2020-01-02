@@ -13,7 +13,10 @@
 
 ## Status
 
-**EXPERIMENTAL!** Do not bet your business on this quite yet.
+This is an experimental package, although used heavily and with great
+results in
+[Komposition](https://github.com/owickstrom/komposition). Maybe you
+shouldn't bet your business on this package quite yet, though.
 
 ## Usage
 
