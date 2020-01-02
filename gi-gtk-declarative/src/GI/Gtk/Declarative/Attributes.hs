@@ -25,16 +25,17 @@ module GI.Gtk.Declarative.Attributes
   )
 where
 
-import qualified Data.GI.Base.Attributes                            as GI
-import qualified Data.GI.Base.Signals                               as GI
-import           Data.HashSet (HashSet)
-import qualified Data.HashSet                                       as HashSet
-import qualified Data.Text                                          as T
-import           Data.Text    (Text)
+import qualified Data.GI.Base.Attributes       as GI
+import qualified Data.GI.Base.Signals          as GI
+import           Data.HashSet                   ( HashSet )
+import qualified Data.HashSet                  as HashSet
+import qualified Data.Text                     as T
+import           Data.Text                      ( Text )
 import           Data.Typeable
-import           GHC.TypeLits                                       (KnownSymbol,
-                                                                     Symbol)
-import qualified GI.Gtk                                             as Gtk
+import           GHC.TypeLits                   ( KnownSymbol
+                                                , Symbol
+                                                )
+import qualified GI.Gtk                        as Gtk
 
 import           GI.Gtk.Declarative.Attributes.Internal.EventHandler
 import           GI.Gtk.Declarative.Attributes.Internal.Conversions
@@ -50,7 +51,7 @@ data Attribute widget event where
   -- GTK-defined attribute name. The underlying GI object needs to support
   -- the /construct/, /get/, and /set/ operations for the given attribute.
   (:=)
-    :: (GI.AttrOpAllowed 'GI.AttrConstruct info widget
+    ::(GI.AttrOpAllowed 'GI.AttrConstruct info widget
       , GI.AttrOpAllowed 'GI.AttrSet info widget
       , GI.AttrGetC info widget attr getValue
       , GI.AttrSetTypeConstraint info setValue
@@ -63,13 +64,13 @@ data Attribute widget event where
   -- | Defines a set of CSS classes for the underlying widget's style context.
   -- Use the 'classes' function instead of this constructor directly.
   Classes
-    :: Gtk.IsWidget widget
+    ::Gtk.IsWidget widget
     => ClassSet
     -> Attribute widget event
   -- | Emit events using a pure event handler. Use the 'on' function, instead of this
   -- constructor directly.
   OnSignalPure
-    :: ( Gtk.GObject widget
+    ::( Gtk.GObject widget
        , GI.SignalInfo info
        , gtkCallback ~ GI.HaskellCallbackType info
        , ToGtkCallback gtkCallback Pure
@@ -80,7 +81,7 @@ data Attribute widget event where
   -- | Emit events using a pure event handler. Use the 'on' function, instead of this
   -- constructor directly.
   OnSignalImpure
-    :: ( Gtk.GObject widget
+    ::( Gtk.GObject widget
        , GI.SignalInfo info
        , gtkCallback ~ GI.HaskellCallbackType info
        , ToGtkCallback gtkCallback Impure
@@ -96,9 +97,9 @@ type ClassSet = HashSet Text
 -- event handler.
 instance Functor (Attribute widget) where
   fmap f = \case
-    attr := value -> attr := value
-    Classes cs -> Classes cs
-    OnSignalPure signal eh -> OnSignalPure signal (fmap f eh)
+    attr := value            -> attr := value
+    Classes cs               -> Classes cs
+    OnSignalPure   signal eh -> OnSignalPure signal (fmap f eh)
     OnSignalImpure signal eh -> OnSignalImpure signal (fmap f eh)
 
 -- | Define the CSS classes for the underlying widget's style context. For these

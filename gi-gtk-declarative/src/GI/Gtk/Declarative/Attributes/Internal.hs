@@ -10,8 +10,8 @@ module GI.Gtk.Declarative.Attributes.Internal
   )
 where
 
-import           Control.Monad                            ( (>=>) )
-import           Control.Monad.IO.Class                   ( MonadIO )
+import           Control.Monad                  ( (>=>) )
+import           Control.Monad.IO.Class         ( MonadIO )
 import qualified GI.GObject                    as GI
 import qualified GI.Gtk                        as Gtk
 

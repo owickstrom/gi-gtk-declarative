@@ -12,20 +12,18 @@ module GI.Gtk.Declarative.CustomWidgetTest where
 import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Exception.Safe
-import           Control.Monad                  (replicateM_)
+import           Control.Monad                  ( replicateM_ )
 import           Control.Monad.IO.Class
-import           Data.Function                  ((&))
-import qualified Data.HashSet                   as HashSet
-import qualified Data.Text                      as Text
-import           Data.Vector                    (Vector)
-import qualified GI.Gdk                         as Gdk
-import qualified GI.GLib.Constants              as GLib
-import qualified GI.GObject                     as GI
-import qualified GI.Gtk                         as Gtk
+import           Data.Function                  ( (&) )
+import qualified Data.HashSet                  as HashSet
+import qualified Data.Text                     as Text
+import           Data.Vector                    ( Vector )
+import qualified GI.GObject                    as GI
+import qualified GI.Gtk                        as Gtk
 
 import           Hedgehog
-import qualified Hedgehog.Gen                   as Gen
-import qualified Hedgehog.Range                 as Range
+import qualified Hedgehog.Gen                  as Gen
+import qualified Hedgehog.Range                as Range
 
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.EventSource
@@ -41,10 +39,7 @@ prop_sets_the_button_label = property $ do
     do
       let markup = testWidget [] start
       first <- create markup
-      btn <-
-        someStateWidget first
-        >>= Gtk.unsafeCastTo Gtk.Button
-        &   liftIO
+      btn   <- someStateWidget first >>= Gtk.unsafeCastTo Gtk.Button & liftIO
       #add window btn
       sub <- subscribe markup first (const (pure ()))
       Gtk.widgetShowAll window
@@ -56,25 +51,21 @@ prop_sets_the_button_label = property $ do
   expectedLabel === buttonLabel
 
 prop_emits_correct_number_of_click_events = property $ do
-  start       <- forAll (Gen.int (Range.linear 0 10))
-  clicks      <- forAll (Gen.int (Range.linear 0 10))
+  start  <- forAll (Gen.int (Range.linear 0 10))
+  clicks <- forAll (Gen.int (Range.linear 0 10))
 
-  values       <- liftIO (newTBQueueIO (fromIntegral clicks))
-  runUI . bracket (Gtk.new Gtk.Window []) #destroy $ \window ->
-    do
-      let markup = testWidget [] start
-      first <- create markup
-      btn <-
-        someStateWidget first
-        >>= Gtk.unsafeCastTo Gtk.Button
-        &   liftIO
-      #add window btn
-      sub <- subscribe markup first (atomically . writeTBQueue values)
-      Gtk.widgetShowAll window
-      replicateM_ clicks (Gtk.buttonClicked btn)
-      cancel sub
+  values <- liftIO (newTBQueueIO (fromIntegral clicks))
+  runUI . bracket (Gtk.new Gtk.Window []) #destroy $ \window -> do
+    let markup = testWidget [] start
+    first <- create markup
+    btn   <- someStateWidget first >>= Gtk.unsafeCastTo Gtk.Button & liftIO
+    #add window btn
+    sub <- subscribe markup first (atomically . writeTBQueue values)
+    Gtk.widgetShowAll window
+    replicateM_ clicks (Gtk.buttonClicked btn)
+    cancel sub
 
-  let expectedValues = take clicks [succ start..]
+  let expectedValues = take clicks [succ start ..]
   actualValues <- liftIO (atomically (flushTBQueue values))
   expectedValues === actualValues
 
@@ -132,5 +123,4 @@ testWidget customAttributes customParams = Widget (CustomWidget { .. })
 -- * Test collection
 
 tests :: IO Bool
-tests =
-  checkParallel $$(discover)
+tests = checkParallel $$(discover)

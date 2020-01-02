@@ -6,15 +6,18 @@ module Main where
 import           Control.Concurrent
 import           Control.Monad
 import           Criterion.Main
-import           Data.Functor             ((<&>))
+import           Data.Functor                   ( (<&>) )
 import           Data.Text
-import           Data.Vector              (Vector)
-import qualified Data.Vector              as Vector
-import qualified GI.Gdk                   as Gdk
-import qualified GI.GLib.Constants        as GLib
+import           Data.Vector                    ( Vector )
+import qualified Data.Vector                   as Vector
+import qualified GI.Gdk                        as Gdk
+import qualified GI.GLib.Constants             as GLib
 
-import           GI.Gtk                   (Box (..), Label (..), Window (..))
-import qualified GI.Gtk                   as Gtk
+import           GI.Gtk                         ( Box(..)
+                                                , Label(..)
+                                                , Window(..)
+                                                )
+import qualified GI.Gtk                        as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.State
 
@@ -26,7 +29,8 @@ testView ns = bin Window [] $ container Box [] $ ns <&> \n ->
                                      }
     $ widget Label [#label := pack (show n), classes ["a", "b"]]
 
-testPatch :: Patchable widget => SomeState -> widget e1 -> widget e2 -> IO SomeState
+testPatch
+  :: Patchable widget => SomeState -> widget e1 -> widget e2 -> IO SomeState
 testPatch state oldView newView = case patch state oldView newView of
   Modify ma -> do
     ret <- newEmptyMVar

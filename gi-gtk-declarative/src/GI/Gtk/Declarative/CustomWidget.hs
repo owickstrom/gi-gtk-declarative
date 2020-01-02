@@ -9,19 +9,19 @@
 -- on the custom behavior of your widget. You still need to think
 -- about and implement a patching function, but in an easier way.
 module GI.Gtk.Declarative.CustomWidget
-  ( CustomPatch (..),
-    CustomWidget (..),
+  ( CustomPatch(..)
+  , CustomWidget(..)
   )
 where
 
-import Data.Typeable
-import Data.Vector (Vector)
-import qualified GI.Gtk as Gtk
-import GI.Gtk.Declarative.Attributes
-import GI.Gtk.Declarative.Attributes.Collected
-import GI.Gtk.Declarative.EventSource
-import GI.Gtk.Declarative.Patch
-import GI.Gtk.Declarative.State
+import           Data.Typeable
+import           Data.Vector                    ( Vector )
+import qualified GI.Gtk                        as Gtk
+import           GI.Gtk.Declarative.Attributes
+import           GI.Gtk.Declarative.Attributes.Collected
+import           GI.Gtk.Declarative.EventSource
+import           GI.Gtk.Declarative.Patch
+import           GI.Gtk.Declarative.State
 
 -- | Similar to 'Patch', describing a possible action to perform on a
 -- 'Gtk.Widget', decided by 'customPatch'.
@@ -72,42 +72,51 @@ instance
     updateProperties widget mempty (collectedProperties collected)
     sc <- Gtk.widgetGetStyleContext widget
     updateClasses sc mempty (collectedClasses collected)
-    pure (SomeState (StateTreeWidget (StateTreeNode widget sc collected internalState)))
+    pure
+      (SomeState
+        (StateTreeWidget (StateTreeNode widget sc collected internalState))
+      )
 
   patch (SomeState (stateTree :: StateTree st w e c cs)) old new =
     case (eqT @cs @internalState, eqT @widget @w) of
       (Just Refl, Just Refl) ->
-        let oldCollected = stateTreeCollectedAttributes (stateTreeNode stateTree)
-            newCollected = collectAttributes (customAttributes new)
-            oldCollectedProps = collectedProperties oldCollected
-            newCollectedProps = collectedProperties newCollected
-            canBeModified = oldCollectedProps `canBeModifiedTo` newCollectedProps
-         in case customPatch
-              new
-              (customParams old)
-              (customParams new)
-              (stateTreeCustomState (stateTreeNode stateTree)) of
-              CustomReplace -> Replace (create new)
-              p
-                | canBeModified -> Modify $ do
-                  let widget' = stateTreeNodeWidget stateTree
-                  updateProperties widget' oldCollectedProps newCollectedProps
-                  updateClasses (stateTreeStyleContext (stateTreeNode stateTree)) (collectedClasses oldCollected) (collectedClasses newCollected)
-                  let node = stateTreeNode stateTree
-                  internalState' <- case p of
-                    CustomModify f -> f =<< Gtk.unsafeCastTo (customWidget new) widget'
-                    CustomKeep -> pure (stateTreeCustomState node)
-                    CustomReplace -> pure (stateTreeCustomState node) -- already handled above
-                  return
-                    ( SomeState
-                        ( StateTreeWidget
-                            node
-                              { stateTreeCustomState = internalState',
-                                stateTreeCollectedAttributes = newCollected
-                              }
-                        )
+        let
+          oldCollected = stateTreeCollectedAttributes (stateTreeNode stateTree)
+          newCollected = collectAttributes (customAttributes new)
+          oldCollectedProps = collectedProperties oldCollected
+          newCollectedProps = collectedProperties newCollected
+          canBeModified = oldCollectedProps `canBeModifiedTo` newCollectedProps
+        in
+          case
+            customPatch new
+                        (customParams old)
+                        (customParams new)
+                        (stateTreeCustomState (stateTreeNode stateTree))
+          of
+            CustomReplace -> Replace (create new)
+            p
+              | canBeModified -> Modify $ do
+                let widget' = stateTreeNodeWidget stateTree
+                updateProperties widget' oldCollectedProps newCollectedProps
+                updateClasses
+                  (stateTreeStyleContext (stateTreeNode stateTree))
+                  (collectedClasses oldCollected)
+                  (collectedClasses newCollected)
+                let node = stateTreeNode stateTree
+                internalState' <- case p of
+                  CustomModify f ->
+                    f =<< Gtk.unsafeCastTo (customWidget new) widget'
+                  CustomKeep    -> pure (stateTreeCustomState node)
+                  CustomReplace -> pure (stateTreeCustomState node) -- already handled above
+                return
+                  (SomeState
+                    (StateTreeWidget node
+                      { stateTreeCustomState         = internalState'
+                      , stateTreeCollectedAttributes = newCollected
+                      }
                     )
-                | otherwise -> Replace (create new)
+                  )
+              | otherwise -> Replace (create new)
       _ -> Replace (create new)
 
 instance
@@ -117,6 +126,11 @@ instance
   subscribe custom (SomeState (stateTree :: StateTree st w e c cs)) cb =
     case eqT @cs @internalState of
       Just Refl -> do
-        w' <- Gtk.unsafeCastTo (customWidget custom) (stateTreeNodeWidget stateTree)
-        customSubscribe custom (customParams custom) (stateTreeCustomState (stateTreeNode stateTree)) w' cb
+        w' <- Gtk.unsafeCastTo (customWidget custom)
+                               (stateTreeNodeWidget stateTree)
+        customSubscribe custom
+                        (customParams custom)
+                        (stateTreeCustomState (stateTreeNode stateTree))
+                        w'
+                        cb
       Nothing -> pure (fromCancellation (pure ()))

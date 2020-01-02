@@ -25,25 +25,25 @@ data Purity = Pure | Impure
 -- the underlying GTK+ callback needs to return a 'Bool', you return
 -- a @(Bool, event)@ tuple.
 data EventHandlerReturn m gtkReturn event where
-  OnlyEvent :: m e -> EventHandlerReturn m () e
-  ReturnAndEvent :: m (Bool, e) -> EventHandlerReturn m Bool e
+  OnlyEvent ::m e -> EventHandlerReturn m () e
+  ReturnAndEvent ::m (Bool, e) -> EventHandlerReturn m Bool e
 
 instance Functor m => Functor (EventHandlerReturn m gtkEventHandler) where
   fmap f = \case
-    OnlyEvent e -> OnlyEvent (fmap f e)
+    OnlyEvent      e  -> OnlyEvent (fmap f e)
     ReturnAndEvent mr -> ReturnAndEvent (fmap (fmap f) mr)
 
 -- | Encodes the user event handler in such a way that we can have
 -- a 'Functor' instance for arity-polymorphic event handlers.
 data EventHandler gtkEventHandler widget (purity :: Purity) event where
-  PureEventHandler :: EventHandlerReturn Identity ret e -> EventHandler (IO ret) w Pure e
-  ImpureEventHandler :: (w -> EventHandlerReturn IO ret e) -> EventHandler (IO ret) w Impure e
-  EventHandlerFunction :: (a -> EventHandler b w p e) -> EventHandler (a -> b) w p e
+  PureEventHandler ::EventHandlerReturn Identity ret e -> EventHandler (IO ret) w Pure e
+  ImpureEventHandler ::(w -> EventHandlerReturn IO ret e) -> EventHandler (IO ret) w Impure e
+  EventHandlerFunction ::(a -> EventHandler b w p e) -> EventHandler (a -> b) w p e
 
 instance Functor (EventHandler gtkEventHandler widget purity) where
   fmap f = \case
-    PureEventHandler r -> PureEventHandler (fmap f r)
-    ImpureEventHandler r -> ImpureEventHandler (fmap (fmap f) r)
+    PureEventHandler     r  -> PureEventHandler (fmap f r)
+    ImpureEventHandler   r  -> ImpureEventHandler (fmap (fmap f) r)
     EventHandlerFunction eh -> EventHandlerFunction (\a -> fmap f (eh a))
 
 -- | Convert from a GTK+ callback type to a user event handler type (the ones

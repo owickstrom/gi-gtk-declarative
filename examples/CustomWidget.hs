@@ -5,15 +5,15 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module CustomWidget where
 
-import           Control.Monad                  (void)
-import           Data.Vector                    (Vector)
+import           Control.Monad                  ( void )
+import           Data.Vector                    ( Vector )
 import           Data.Word
 
-import qualified GI.GObject                     as GI
-import qualified GI.Gtk                         as Gtk
+import qualified GI.GObject                    as GI
+import qualified GI.Gtk                        as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
-import           GI.Gtk.Declarative.EventSource (fromCancellation)
+import           GI.Gtk.Declarative.EventSource ( fromCancellation )
 
 
 -- * Custom widget for ranged 'Double' inputs
@@ -34,14 +34,13 @@ numberInput
   -> NumberInputProperties
   -> Widget NumberInputEvent
 numberInput customAttributes customParams = Widget
-  (CustomWidget
-    { customWidget
-    , customCreate
-    , customPatch
-    , customSubscribe
-    , customAttributes
-    , customParams
-    }
+  (CustomWidget { customWidget
+                , customCreate
+                , customPatch
+                , customSubscribe
+                , customAttributes
+                , customParams
+                }
   )
  where
   -- The constructor for the underlying GTK widget.
@@ -51,8 +50,8 @@ numberInput customAttributes customParams = Widget
   -- also returning our internal state, a reference to the spin button
   -- widget.
   customCreate props = do
-    box <- Gtk.new Gtk.Box [#orientation Gtk.:= Gtk.OrientationVertical]
-    lbl <- Gtk.new Gtk.Label [#label Gtk.:= "I'm a custom widget."]
+    box  <- Gtk.new Gtk.Box [#orientation Gtk.:= Gtk.OrientationVertical]
+    lbl  <- Gtk.new Gtk.Label [#label Gtk.:= "I'm a custom widget."]
     spin <- Gtk.new Gtk.SpinButton []
     adj  <- propsToAdjustment props
     Gtk.spinButtonSetAdjustment spin adj
@@ -84,13 +83,7 @@ numberInput customAttributes customParams = Widget
 
 propsToAdjustment :: NumberInputProperties -> IO Gtk.Adjustment
 propsToAdjustment NumberInputProperties { value, range = (begin, end), step } =
-  Gtk.adjustmentNew
-    value
-    begin
-    end
-    step
-    0.1
-    0
+  Gtk.adjustmentNew value begin end step 0.1 0
 
 -- * Example application using the custom widget
 ------------------------------------------------
@@ -143,9 +136,8 @@ update' _ (NumberSet d) = Transition (State d) (return Nothing)
 update' _ Closed        = Exit
 
 main :: IO ()
-main = void $ run App
-  { view         = view'
-  , update       = update'
-  , inputs       = []
-  , initialState = State 1.0
-  }
+main = void $ run App { view         = view'
+                      , update       = update'
+                      , inputs       = []
+                      , initialState = State 1.0
+                      }

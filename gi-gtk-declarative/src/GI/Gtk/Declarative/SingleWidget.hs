@@ -18,8 +18,8 @@ module GI.Gtk.Declarative.SingleWidget
 where
 
 import           Data.Typeable
-import           Data.Vector                             (Vector)
-import qualified GI.Gtk                                  as Gtk
+import           Data.Vector                    ( Vector )
+import qualified GI.Gtk                        as Gtk
 
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Attributes.Collected
@@ -32,7 +32,7 @@ import           GI.Gtk.Declarative.Widget
 -- | Declarative version of a /leaf/ widget, i.e. a widget without any children.
 data SingleWidget widget event where
   SingleWidget
-    :: (Typeable widget, Gtk.IsWidget widget, Functor (Attribute widget))
+    ::(Typeable widget, Gtk.IsWidget widget, Functor (Attribute widget))
     => (Gtk.ManagedPtr widget -> widget)
     -> Vector (Attribute widget event)
     -> SingleWidget widget event
@@ -43,34 +43,50 @@ instance Functor (SingleWidget widget) where
 instance Patchable (SingleWidget widget) where
   create = \case
     SingleWidget ctor attrs -> do
-        let collected = collectAttributes attrs
-        widget' <- Gtk.new ctor (constructProperties collected)
-        Gtk.widgetShow widget'
-        sc <- Gtk.widgetGetStyleContext widget'
-        updateClasses sc mempty (collectedClasses collected)
-        return (SomeState (StateTreeWidget (StateTreeNode widget' sc collected ())))
-  patch (SomeState (st :: StateTree stateType w child event cs))
-        (SingleWidget (_    :: Gtk.ManagedPtr w1 -> w1) _)
-        (SingleWidget (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes) =
-    case (st, eqT @w @w1, eqT @w1 @w2) of
+      let collected = collectAttributes attrs
+      widget' <- Gtk.new ctor (constructProperties collected)
+      Gtk.widgetShow widget'
+      sc <- Gtk.widgetGetStyleContext widget'
+      updateClasses sc mempty (collectedClasses collected)
+      return
+        (SomeState (StateTreeWidget (StateTreeNode widget' sc collected ())))
+  patch (SomeState (st :: StateTree stateType w child event cs)) (SingleWidget (_ :: Gtk.ManagedPtr
+      w1
+    -> w1) _) (SingleWidget (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes)
+    = case (st, eqT @w @w1, eqT @w1 @w2) of
       (StateTreeWidget top, Just Refl, Just Refl) ->
-        let oldCollected = stateTreeCollectedAttributes top
-            newCollected = collectAttributes newAttributes
-            oldCollectedProps = collectedProperties oldCollected
-            newCollectedProps = collectedProperties newCollected
-         in if oldCollectedProps `canBeModifiedTo` newCollectedProps
+        let
+          oldCollected      = stateTreeCollectedAttributes top
+          newCollected      = collectAttributes newAttributes
+          oldCollectedProps = collectedProperties oldCollected
+          newCollectedProps = collectedProperties newCollected
+        in
+          if oldCollectedProps `canBeModifiedTo` newCollectedProps
             then Modify $ do
               let w = stateTreeWidget top
               updateProperties w oldCollectedProps newCollectedProps
-              updateClasses (stateTreeStyleContext top) (collectedClasses oldCollected) (collectedClasses newCollected)
+              updateClasses (stateTreeStyleContext top)
+                            (collectedClasses oldCollected)
+                            (collectedClasses newCollected)
               let top' = top { stateTreeCollectedAttributes = newCollected }
-              return (SomeState (StateTreeWidget top' { stateTreeCollectedAttributes = newCollected }))
+              return
+                (SomeState
+                  (StateTreeWidget top'
+                    { stateTreeCollectedAttributes = newCollected
+                    }
+                  )
+                )
             else Replace (create (SingleWidget ctor newAttributes))
       _ -> Replace (create (SingleWidget ctor newAttributes))
 
 instance EventSource (SingleWidget widget) where
-  subscribe (SingleWidget (_ :: Gtk.ManagedPtr w1 -> w1) props) (SomeState (st :: StateTree stateType w2 child event cs)) cb =
-    case (st, eqT @w1 @w2) of
+  subscribe (SingleWidget (_ :: Gtk.ManagedPtr w1 -> w1) props) (SomeState (st :: StateTree
+      stateType
+      w2
+      child
+      event
+      cs)) cb
+    = case (st, eqT @w1 @w2) of
       (StateTreeWidget top, Just Refl) ->
         foldMap (addSignalHandler cb (stateTreeWidget top)) props
       _ -> pure (fromCancellation (pure ()))

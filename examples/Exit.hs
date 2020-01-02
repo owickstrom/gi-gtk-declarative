@@ -4,13 +4,15 @@
 
 module Exit where
 
-import           Control.Concurrent            (threadDelay)
-import           Control.Monad                 (void)
-import           Data.Functor                  (($>))
+import           Control.Concurrent             ( threadDelay )
+import           Control.Monad                  ( void )
+import           Data.Functor                   ( ($>) )
 import qualified Data.Text                     as Text
 
-import           GI.Gtk                        (Button (..), Label (..),
-                                                Window (..))
+import           GI.Gtk                         ( Button(..)
+                                                , Label(..)
+                                                , Window(..)
+                                                )
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -20,7 +22,13 @@ data Event = ExitApplication | CountDownExit
 
 view' :: State -> AppView Window Event
 view' s =
-  bin Window [#title := "Exit", on #deleteEvent (const (True, ExitApplication)), #widthRequest := 400, #heightRequest := 300]
+  bin
+      Window
+      [ #title := "Exit"
+      , on #deleteEvent (const (True, ExitApplication))
+      , #widthRequest := 400
+      , #heightRequest := 300
+      ]
     $ case s of
         Running ->
           widget Button [#label := "Exit", on #clicked ExitApplication]
@@ -40,12 +48,11 @@ update' Running       _               = Transition Running (pure Nothing)
 update' (ExitingIn 1) CountDownExit   = Exit
 update' (ExitingIn sec) CountDownExit =
   Transition (ExitingIn (pred sec)) countDown
-update' s@ExitingIn{} ExitApplication   = Transition s (pure Nothing)
+update' s@ExitingIn{} ExitApplication = Transition s (pure Nothing)
 
 main :: IO ()
-main = void $ run App
-  { view         = view'
-  , update       = update'
-  , inputs       = []
-  , initialState = Running
-  }
+main = void $ run App { view         = view'
+                      , update       = update'
+                      , inputs       = []
+                      , initialState = Running
+                      }

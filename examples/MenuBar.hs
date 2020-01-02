@@ -5,12 +5,15 @@
 
 module MenuBar where
 
-import           Control.Monad                 (void)
-import           Data.Text                     (Text)
-import           GI.Gtk                        (ApplicationWindow (..),
-                                                Box (..), Label (..),
-                                                MenuBar (..), MenuItem (..),
-                                                Orientation (..))
+import           Control.Monad                  ( void )
+import           Data.Text                      ( Text )
+import           GI.Gtk                         ( ApplicationWindow(..)
+                                                , Box(..)
+                                                , Label(..)
+                                                , MenuBar(..)
+                                                , MenuItem(..)
+                                                , Orientation(..)
+                                                )
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -55,9 +58,8 @@ update' _ = \case
   Closed -> Exit
 
 main :: IO ()
-main = void $ run App
-  { view         = view'
-  , update       = update'
-  , inputs       = []
-  , initialState = Message "Click a button in the menu."
-  }
+main = void $ run App { view         = view'
+                      , update       = update'
+                      , inputs       = []
+                      , initialState = Message "Click a button in the menu."
+                      }

@@ -4,9 +4,11 @@
 
 module Paned where
 
-import           Control.Monad                 (void)
+import           Control.Monad                  ( void )
 
-import           GI.Gtk                        (Label (..), Window (..))
+import           GI.Gtk                         ( Label(..)
+                                                , Window(..)
+                                                )
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -29,12 +31,11 @@ view' =
   where paneProps = defaultPaneProperties { resize = True }
 
 update' :: State -> Event -> Transition State Event
-update' _ Closed      = Exit
+update' _ Closed = Exit
 
 main :: IO ()
-main = void $ run App
-  { view         = const view'
-  , update       = update'
-  , inputs       = []
-  , initialState = ()
-  }
+main = void $ run App { view         = const view'
+                      , update       = update'
+                      , inputs       = []
+                      , initialState = ()
+                      }

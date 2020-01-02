@@ -4,15 +4,17 @@
 
 module ManyBoxes where
 
-import           Control.Monad                 (void)
-import           Data.Functor                  ((<&>))
-import           Data.Text                     (pack)
-import           Data.Vector                   (Vector)
+import           Control.Monad                  ( void )
+import           Data.Functor                   ( (<&>) )
+import           Data.Text                      ( pack )
+import           Data.Vector                    ( Vector )
 import qualified Data.Vector                   as Vector
 
-import           GI.Gtk                        (Box (..), Button (..),
-                                                ScrolledWindow (..),
-                                                Window (..))
+import           GI.Gtk                         ( Box(..)
+                                                , Button(..)
+                                                , ScrolledWindow(..)
+                                                , Window(..)
+                                                )
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -39,12 +41,11 @@ view' ns =
 
 update' :: State -> Event -> Transition State Event
 update' ns IncrAll = Transition (succ <$> ns) (return Nothing)
-update' _ Closed   = Exit
+update' _  Closed  = Exit
 
 main :: IO ()
-main = void $ run App
-  { view         = view'
-  , update       = update'
-  , inputs       = []
-  , initialState = Vector.enumFromN 0 500
-  }
+main = void $ run App { view         = view'
+                      , update       = update'
+                      , inputs       = []
+                      , initialState = Vector.enumFromN 0 500
+                      }

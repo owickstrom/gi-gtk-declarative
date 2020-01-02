@@ -4,16 +4,19 @@
 
 module CSS where
 
-import           Control.Concurrent.Async      (async)
-import           Control.Monad                 (void)
-import           Data.ByteString               (ByteString)
-import           Data.Functor                  ((<&>))
-import           Data.Text                     (Text)
-import           Data.Vector                   (Vector)
+import           Control.Concurrent.Async       ( async )
+import           Control.Monad                  ( void )
+import           Data.ByteString                ( ByteString )
+import           Data.Functor                   ( (<&>) )
+import           Data.Text                      ( Text )
+import           Data.Vector                    ( Vector )
 import qualified Data.Vector                   as Vector
 import qualified GI.Gdk                        as Gdk
-import           GI.Gtk                        (Box (..), Button (..),
-                                                Orientation (..), Window (..))
+import           GI.Gtk                         ( Box(..)
+                                                , Button(..)
+                                                , Orientation(..)
+                                                , Window(..)
+                                                )
 import qualified GI.Gtk                        as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
@@ -78,4 +81,4 @@ main = do
     Gtk.mainQuit
   Gtk.main
  where
-  app = App {view = view', update = update', inputs = [], initialState = 0}
+  app = App { view = view', update = update', inputs = [], initialState = 0 }
