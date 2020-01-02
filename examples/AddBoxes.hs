@@ -5,16 +5,19 @@
 
 module AddBoxes where
 
-import           Control.Monad                 (void)
+import           Control.Monad                  ( void )
 import qualified Data.Text                     as Text
-import           Data.Vector                   (Vector)
+import           Data.Vector                    ( Vector )
 import qualified Data.Vector                   as Vector
 
-import           GI.Gtk                        (Box (..), Button (..),
-                                                Label (..), Orientation (..),
-                                                PolicyType (..),
-                                                ScrolledWindow (..),
-                                                Window (..))
+import           GI.Gtk                         ( Box(..)
+                                                , Button(..)
+                                                , Label(..)
+                                                , Orientation(..)
+                                                , PolicyType(..)
+                                                , ScrolledWindow(..)
+                                                , Window(..)
+                                                )
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -45,10 +48,12 @@ addBoxesView State {..} =
     BoxChild defaultBoxChildProperties { padding = 10 } $ container
       Box
       []
-      ( BoxChild defaultBoxChildProperties { padding = 10 } btn
+      (             BoxChild defaultBoxChildProperties { padding = 10 } btn
       `Vector.cons` Vector.map
-          (BoxChild defaultBoxChildProperties { padding = 5 } . renderChild)
-          children
+                      ( BoxChild defaultBoxChildProperties { padding = 5 }
+                      . renderChild
+                      )
+                      children
       )
     where btn = widget Button [#label := "Add", on #clicked onClick]
   renderChild :: Int -> Widget Event
@@ -64,9 +69,8 @@ update' state@State {..} AddRight = Transition
 update' _ Closed = Exit
 
 main :: IO ()
-main = void $ run App
-  { view         = addBoxesView
-  , update       = update'
-  , inputs       = []
-  , initialState = State [1] [2] 3
-  }
+main = void $ run App { view         = addBoxesView
+                      , update       = update'
+                      , inputs       = []
+                      , initialState = State [1] [2] 3
+                      }

@@ -14,13 +14,15 @@ module GI.Gtk.Declarative.App.Simple
 where
 
 import           Control.Concurrent
-import qualified Control.Concurrent.Async       as Async
-import           Control.Exception              (Exception, throw)
+import qualified Control.Concurrent.Async      as Async
+import           Control.Exception              ( Exception
+                                                , throw
+                                                )
 import           Control.Monad
 import           Data.Typeable
-import qualified GI.Gdk                         as Gdk
-import qualified GI.GLib.Constants              as GLib
-import qualified GI.Gtk                         as Gtk
+import qualified GI.Gdk                        as Gdk
+import qualified GI.GLib.Constants             as GLib
+import qualified GI.Gtk                        as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.State
@@ -79,10 +81,10 @@ run app = do
   Async.withAsync (runLoop app <* Gtk.mainQuit) $ \lastState -> do
     Gtk.main
     Async.poll lastState >>= \case
-      Nothing -> throw $
-        GtkMainExitedException "gtk's main loop exited unexpectedly"
-      Just (Right state) -> return state
-      Just (Left exception) -> throw exception
+      Nothing ->
+        throw $ GtkMainExitedException "gtk's main loop exited unexpectedly"
+      Just (Right state    ) -> return state
+      Just (Left  exception) -> throw exception
 
 -- | Run an 'App'. This IO action will loop, so run it in a separate thread
 -- using 'async' if you're calling it before the GTK main loop.
@@ -95,13 +97,10 @@ run app = do
 --       Gtk.mainQuit
 --     Gtk.main
 -- @
-runLoop
-  :: Gtk.IsBin window
-  => App window state event
-  -> IO state
+runLoop :: Gtk.IsBin window => App window state event -> IO state
 runLoop App {..} = do
   let firstMarkup = view initialState
-  events                  <- newChan
+  events                     <- newChan
   (firstState, subscription) <- do
     firstState <- runUI (create firstMarkup)
     runUI (Gtk.widgetShowAll =<< someStateWidget firstState)
@@ -111,49 +110,49 @@ runLoop App {..} = do
     (mergeProducers inputs >-> publishInputEvents events)
   loop firstState firstMarkup events subscription initialState
 
-  where
-    loop oldState oldMarkup events oldSubscription oldModel = do
-      event <- readChan events
-      case update oldModel event of
-        Transition newModel action -> do
-          let newMarkup = view newModel
+ where
+  loop oldState oldMarkup events oldSubscription oldModel = do
+    event <- readChan events
+    case update oldModel event of
+      Transition newModel action -> do
+        let newMarkup = view newModel
 
-          (newState, sub) <-
-            case patch oldState oldMarkup newMarkup of
-              Modify ma -> runUI $ do
-                cancel oldSubscription
-                newState <- ma
-                sub <- subscribe newMarkup newState (publishEvent events)
-                return (newState, sub)
-              Replace createNew -> runUI $ do
-                Gtk.widgetDestroy =<< someStateWidget oldState
-                cancel oldSubscription
-                newState <- createNew
-                Gtk.widgetShowAll =<< someStateWidget newState
-                sub <- subscribe newMarkup newState (publishEvent events)
-                return (newState, sub)
-              Keep -> return (oldState, oldSubscription)
+        (newState, sub) <- case patch oldState oldMarkup newMarkup of
+          Modify ma -> runUI $ do
+            cancel oldSubscription
+            newState <- ma
+            sub      <- subscribe newMarkup newState (publishEvent events)
+            return (newState, sub)
+          Replace createNew -> runUI $ do
+            Gtk.widgetDestroy =<< someStateWidget oldState
+            cancel oldSubscription
+            newState <- createNew
+            Gtk.widgetShowAll =<< someStateWidget newState
+            sub <- subscribe newMarkup newState (publishEvent events)
+            return (newState, sub)
+          Keep -> return (oldState, oldSubscription)
 
-          -- If the action returned by the update function produced an event, then
-          -- we write that to the channel.
-          --
-          -- TODO: Use prioritized queue for events returned by 'update', to take
-          -- precendence over those from 'inputs'.
-          void . forkIO $ action >>= maybe (return ()) (writeChan events)
+        -- If the action returned by the update function produced an event, then
+        -- we write that to the channel.
+        --
+        -- TODO: Use prioritized queue for events returned by 'update', to take
+        -- precendence over those from 'inputs'.
+        void . forkIO $ action >>= maybe (return ()) (writeChan events)
 
-          -- Finally, we loop.
-          loop newState newMarkup events sub newModel
-        Exit -> return oldModel
+        -- Finally, we loop.
+        loop newState newMarkup events sub newModel
+      Exit -> return oldModel
 
 -- | Assert that the program was linked using the @-threaded@ flag, to
 -- enable the threaded runtime required by this module.
 assertRuntimeSupportsBoundThreads :: IO ()
-assertRuntimeSupportsBoundThreads =
-  unless rtsSupportsBoundThreads $ do
-    hPutStrLn stderr "GI.Gtk.Declarative.App.Simple requires the program to \
+assertRuntimeSupportsBoundThreads = unless rtsSupportsBoundThreads $ do
+  hPutStrLn
+    stderr
+    "GI.Gtk.Declarative.App.Simple requires the program to \
                      \be linked using the threaded runtime of GHC (-threaded \
                      \flag)."
-    exitFailure
+  exitFailure
 
 
 publishEvent :: Chan event -> event -> IO ()
@@ -180,7 +179,6 @@ runUI ma = do
   takeMVar r
 
 runUI_ :: IO () -> IO ()
-runUI_ ma =
-  void . Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT $ do
-    ma
-    return False
+runUI_ ma = void . Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT $ do
+  ma
+  return False

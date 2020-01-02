@@ -6,9 +6,9 @@
 -- | Shared interfaces for containers.
 module GI.Gtk.Declarative.Container.Class where
 
-import           Data.Int    (Int32)
-import           Data.Vector (Vector)
-import qualified GI.Gtk      as Gtk
+import           Data.Int                       ( Int32 )
+import           Data.Vector                    ( Vector )
+import qualified GI.Gtk                        as Gtk
 
 -- | Describes supported GTK+ containers and their specialized APIs for
 -- appending and replacing child widgets.

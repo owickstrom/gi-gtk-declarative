@@ -10,7 +10,7 @@ module GI.Gtk.Declarative.EventSource
   )
 where
 
-import           Data.Vector              (Vector)
+import           Data.Vector                    ( Vector )
 
 import           GI.Gtk.Declarative.State
 

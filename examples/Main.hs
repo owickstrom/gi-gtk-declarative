@@ -21,24 +21,29 @@ import qualified Paned
 
 main :: IO ()
 main =
-  let examples = [ ("AddBoxes", AddBoxes.main)
-                 , ("CustomWidget", CustomWidget.main)
-                 , ("FileChooserButton", FileChooserButton.main)
-                 , ("Hello", Hello.main)
-                 , ("ListBox", ListBox.main)
-                 , ("Functor", Functor.main)
-                 , ("Grid", Grid.main)
-                 , ("Exit", Exit.main)
-                 , ("ManyBoxes", ManyBoxes.main)
-                 , ("MenuBar", MenuBar.main)
-                 , ("Notebook", Notebook.main)
-                 , ("CSS", CSS.main)
-                 , ("Paned", Paned.main)
-                 , ("Dialog", Dialog.main)
-                 ]
-  in getArgs >>= \case
-    [example] ->
-      case lookup example examples of
-        Just main' -> main'
-        Nothing -> hPutStrLn stderr ("No example available with name: " <> example)
-    _ -> hPutStrLn stderr ("Usage: gi-gtk-declarative-example NAME\n\nWhere NAME is any of:\n" <> unlines (map (("  " <>) . fst) examples))
+  let examples =
+          [ ("AddBoxes"         , AddBoxes.main)
+          , ("CustomWidget"     , CustomWidget.main)
+          , ("FileChooserButton", FileChooserButton.main)
+          , ("Hello"            , Hello.main)
+          , ("ListBox"          , ListBox.main)
+          , ("Functor"          , Functor.main)
+          , ("Grid"             , Grid.main)
+          , ("Exit"             , Exit.main)
+          , ("ManyBoxes"        , ManyBoxes.main)
+          , ("MenuBar"          , MenuBar.main)
+          , ("Notebook"         , Notebook.main)
+          , ("CSS"              , CSS.main)
+          , ("Paned"            , Paned.main)
+          , ("Dialog"           , Dialog.main)
+          ]
+  in  getArgs >>= \case
+        [example] -> case lookup example examples of
+          Just main' -> main'
+          Nothing ->
+            hPutStrLn stderr ("No example available with name: " <> example)
+        _ -> hPutStrLn
+          stderr
+          (  "Usage: gi-gtk-declarative-example NAME\n\nWhere NAME is any of:\n"
+          <> unlines (map (("  " <>) . fst) examples)
+          )

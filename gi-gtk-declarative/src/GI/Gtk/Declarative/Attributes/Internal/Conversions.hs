@@ -9,8 +9,8 @@ module GI.Gtk.Declarative.Attributes.Internal.Conversions
   )
 where
 
-import           Control.Monad                            ( void )
-import           Data.Functor                             ( ($>) )
+import           Control.Monad                  ( void )
+import           Data.Functor                   ( ($>) )
 import           Data.Functor.Identity
 
 import           GI.Gtk.Declarative.Attributes.Internal.EventHandler
@@ -33,13 +33,11 @@ instance ToGtkCallback (IO ()) Pure where
 
 instance ToGtkCallback (IO Bool) Pure where
   toGtkCallback (PureEventHandler (ReturnAndEvent re)) _ f =
-    let (r, e) = runIdentity re
-    in f e $> r
+    let (r, e) = runIdentity re in f e $> r
 
 instance ToGtkCallback (IO ()) Impure where
   toGtkCallback (ImpureEventHandler r) w f =
-    let OnlyEvent me = r w
-    in me >>= f
+    let OnlyEvent me = r w in me >>= f
 
 instance ToGtkCallback (IO Bool) Impure where
   toGtkCallback (ImpureEventHandler r) w f = do

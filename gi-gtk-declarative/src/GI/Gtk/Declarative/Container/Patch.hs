@@ -19,10 +19,12 @@ module GI.Gtk.Declarative.Container.Patch
   )
 where
 
-import           Data.Foldable                      (foldMap)
-import           Data.Vector                        (Vector, (!?))
-import qualified Data.Vector                        as Vector
-import qualified GI.Gtk                             as Gtk
+import           Data.Foldable                  ( foldMap )
+import           Data.Vector                    ( Vector
+                                                , (!?)
+                                                )
+import qualified Data.Vector                   as Vector
+import qualified GI.Gtk                        as Gtk
 
 import           GI.Gtk.Declarative.Container.Class
 import           GI.Gtk.Declarative.Patch
@@ -55,58 +57,58 @@ patchInContainer (StateTreeContainer top children) container os' ns' = do
 
   Gtk.widgetQueueResize container
   return (StateTreeContainer top newChildren)
-  where
-    go = \case
-      -- In case we have a corresponding old and new declarative widget, we patch
-      -- the GTK widget.
-      (i, Just oldChildState, Just old, Just new) ->
-        case patch oldChildState old new of
-          Modify  modify       -> pure <$> modify
-          Replace createWidget -> do
-            newChildState  <- createWidget
-            oldChildWidget <- someStateWidget oldChildState
-            newChildWidget <- someStateWidget newChildState
-            replaceChild container new i oldChildWidget newChildWidget
-            return (pure newChildState)
-          Keep -> return (pure oldChildState)
+ where
+  go = \case
+    -- In case we have a corresponding old and new declarative widget, we patch
+    -- the GTK widget.
+    (i, Just oldChildState, Just old, Just new) ->
+      case patch oldChildState old new of
+        Modify  modify       -> pure <$> modify
+        Replace createWidget -> do
+          newChildState  <- createWidget
+          oldChildWidget <- someStateWidget oldChildState
+          newChildWidget <- someStateWidget newChildState
+          replaceChild container new i oldChildWidget newChildWidget
+          return (pure newChildState)
+        Keep -> return (pure oldChildState)
 
-      -- When there is a new declarative widget, but there already exists a GTK
-      -- widget in the corresponding place, we need to replace the GTK widget with
-      -- one created from the declarative widget.
-      (i, Just oldChildState, Nothing, Just new) -> do
-        newChildState  <- create new
-        oldChildWidget <- someStateWidget oldChildState
-        newChildWidget <- someStateWidget newChildState
-        replaceChild container new i oldChildWidget newChildWidget
-        return (Vector.singleton newChildState)
+    -- When there is a new declarative widget, but there already exists a GTK
+    -- widget in the corresponding place, we need to replace the GTK widget with
+    -- one created from the declarative widget.
+    (i, Just oldChildState, Nothing, Just new) -> do
+      newChildState  <- create new
+      oldChildWidget <- someStateWidget oldChildState
+      newChildWidget <- someStateWidget newChildState
+      replaceChild container new i oldChildWidget newChildWidget
+      return (Vector.singleton newChildState)
 
-      -- When there is a new declarative widget, or one that lacks a corresponding
-      -- GTK widget, create and add it.
-      (_i, Nothing, _, Just n) -> do
-        newChildState <- create n
-        w             <- someStateWidget newChildState
-        appendChild container n w
-        return (Vector.singleton newChildState)
+    -- When there is a new declarative widget, or one that lacks a corresponding
+    -- GTK widget, create and add it.
+    (_i, Nothing, _, Just n) -> do
+      newChildState <- create n
+      w             <- someStateWidget newChildState
+      appendChild container n w
+      return (Vector.singleton newChildState)
 
-      -- When a declarative widget has been removed, remove the GTK widget from
-      -- the container.
-      (_i, Just childState, Just _, Nothing) -> do
-        Gtk.widgetDestroy =<< someStateWidget childState
-        return Vector.empty
+    -- When a declarative widget has been removed, remove the GTK widget from
+    -- the container.
+    (_i, Just childState, Just _, Nothing) -> do
+      Gtk.widgetDestroy =<< someStateWidget childState
+      return Vector.empty
 
-      -- When there are more old declarative widgets than GTK widgets, we can
-      -- safely ignore the old declarative widgets.
-      (_i, Nothing        , Just _ , Nothing) -> return Vector.empty
+    -- When there are more old declarative widgets than GTK widgets, we can
+    -- safely ignore the old declarative widgets.
+    (_i, Nothing        , Just _ , Nothing) -> return Vector.empty
 
-      -- But, when there are stray GTK widgets without corresponding
-      -- declarative widgets, something has gone wrong, and we clean that up by
-      -- removing the GTK widgets.
-      (_i, Just childState, Nothing, Nothing) -> do
-        Gtk.widgetDestroy =<< someStateWidget childState
-        return Vector.empty
+    -- But, when there are stray GTK widgets without corresponding
+    -- declarative widgets, something has gone wrong, and we clean that up by
+    -- removing the GTK widgets.
+    (_i, Just childState, Nothing, Nothing) -> do
+      Gtk.widgetDestroy =<< someStateWidget childState
+      return Vector.empty
 
-      -- No more GTK widgets or declarative widgets, we are done.
-      (_i, Nothing, Nothing, Nothing) -> return Vector.empty
+    -- No more GTK widgets or declarative widgets, we are done.
+    (_i, Nothing, Nothing, Nothing) -> return Vector.empty
 
 padMaybes :: Int -> Vector a -> Vector (Maybe a)
 padMaybes len xs = Vector.generate len (xs !?)

@@ -10,12 +10,13 @@ module GI.Gtk.Declarative.Container.Grid
   ( GridChild(..)
   , GridChildProperties(..)
   , defaultGridChildProperties
-  ) where
+  )
+where
 
-import           Data.Default.Class                 (Default (def))
-import           Data.Int                           (Int32)
-import           Data.Vector                        (Vector)
-import qualified GI.Gtk                             as Gtk
+import           Data.Default.Class             ( Default(def) )
+import           Data.Int                       ( Int32 )
+import           Data.Vector                    ( Vector )
+import qualified GI.Gtk                        as Gtk
 
 import           GI.Gtk.Declarative.Container.Class
 import           GI.Gtk.Declarative.EventSource
@@ -43,7 +44,7 @@ data GridChildProperties =
 -- specific fields.
 defaultGridChildProperties :: GridChildProperties
 defaultGridChildProperties =
-  GridChildProperties {height = 1, width = 1, leftAttach = 0, topAttach = 0}
+  GridChildProperties { height = 1, width = 1, leftAttach = 0, topAttach = 0 }
 
 instance Default GridChildProperties where
   def = defaultGridChildProperties
@@ -58,8 +59,9 @@ instance EventSource GridChild where
 instance ToChildren Gtk.Grid Vector GridChild
 
 instance IsContainer Gtk.Grid GridChild where
-  appendChild grid GridChild {properties} widget' = do
-    let GridChildProperties {width, height, leftAttach, topAttach} = properties
+  appendChild grid GridChild { properties } widget' = do
+    let GridChildProperties { width, height, leftAttach, topAttach } =
+          properties
     Gtk.gridAttach grid widget' leftAttach topAttach width height
   replaceChild grid gridChild' _i old new = do
     Gtk.widgetDestroy old

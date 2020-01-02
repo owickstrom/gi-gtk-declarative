@@ -5,16 +5,19 @@
 
 module ListBox where
 
-import           Control.Monad                 (void)
-import           Data.Function                 ((&))
-import           Data.Functor                  ((<&>))
-import           Data.Text                     (Text)
-import           Data.Vector                   (Vector)
+import           Control.Monad                  ( void )
+import           Data.Function                  ( (&) )
+import           Data.Functor                   ( (<&>) )
+import           Data.Text                      ( Text )
+import           Data.Vector                    ( Vector )
 import           Pipes
 import qualified Pipes.Extras                  as Pipes
 
-import           GI.Gtk                        (Label (..), ListBox (..),
-                                                ListBoxRow (..), Window (..))
+import           GI.Gtk                         ( Label(..)
+                                                , ListBox(..)
+                                                , ListBoxRow(..)
+                                                , Window(..)
+                                                )
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -31,23 +34,23 @@ view' State {..} =
       , #widthRequest := 400
       , #heightRequest := 300
       ]
-    $ container ListBox []
-    $ greetings <&> \name ->
-        bin ListBoxRow [#activatable := False, #selectable := False]
-          $ widget Label [#label := name]
+    $   container ListBox []
+    $   greetings
+    <&> \name ->
+          bin ListBoxRow [#activatable := False, #selectable := False]
+            $ widget Label [#label := name]
 
 update' :: State -> Event -> Transition State Event
 update' State {..} (Greet who) =
-  Transition State {greetings = greetings <> [who]} (pure Nothing)
+  Transition State { greetings = greetings <> [who] } (pure Nothing)
 update' _ Closed = Exit
 
 main :: IO ()
-main = void $ run App
-  { view         = view'
-  , update       = update'
-  , inputs       = [greetings]
-  , initialState = State []
-  }
+main = void $ run App { view         = view'
+                      , update       = update'
+                      , inputs       = [greetings]
+                      , initialState = State []
+                      }
  where
   greetings =
     cycle ["Joe", "Mike"]

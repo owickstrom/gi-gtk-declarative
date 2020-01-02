@@ -5,14 +5,17 @@
 
 module Functor where
 
-import           Control.Monad                 (void)
-import           Data.Functor                  (($>))
-import           Data.Text                     (Text)
+import           Control.Monad                  ( void )
+import           Data.Functor                   ( ($>) )
+import           Data.Text                      ( Text )
 import qualified Data.Text                     as Text
 
-import           GI.Gtk                        (Box (..), Button (..),
-                                                Label (..), Orientation (..),
-                                                Window (..))
+import           GI.Gtk                         ( Box(..)
+                                                , Button(..)
+                                                , Label(..)
+                                                , Orientation(..)
+                                                , Window(..)
+                                                )
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -55,9 +58,8 @@ update' State {..} Decr   = Transition (State (count - 1)) (return Nothing)
 update' _          Closed = Exit
 
 main :: IO ()
-main = void $ run App
-  { view         = incrDecrView
-  , update       = update'
-  , inputs       = []
-  , initialState = State 0
-  }
+main = void $ run App { view         = incrDecrView
+                      , update       = update'
+                      , inputs       = []
+                      , initialState = State 0
+                      }

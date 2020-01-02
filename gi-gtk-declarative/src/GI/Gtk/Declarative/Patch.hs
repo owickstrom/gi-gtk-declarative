@@ -5,7 +5,8 @@
 module GI.Gtk.Declarative.Patch
   ( Patch(..)
   , Patchable(..)
-  ) where
+  )
+where
 
 import           GI.Gtk.Declarative.State
 

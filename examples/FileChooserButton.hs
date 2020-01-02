@@ -4,14 +4,17 @@
 
 module FileChooserButton where
 
-import           Control.Monad                 (void)
+import           Control.Monad                  ( void )
 import qualified Data.Text                     as Text
 
-import           GI.Gtk                        (Box (..), Button (..),
-                                                FileChooserButton (..),
-                                                Label (..), Orientation (..),
-                                                Window (..),
-                                                fileChooserGetFilename)
+import           GI.Gtk                         ( Box(..)
+                                                , Button(..)
+                                                , FileChooserButton(..)
+                                                , Label(..)
+                                                , Orientation(..)
+                                                , Window(..)
+                                                , fileChooserGetFilename
+                                                )
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
@@ -60,9 +63,8 @@ update' _ Closed = Exit
 update' s _      = Transition s (return Nothing)
 
 main :: IO ()
-main = void $ run App
-  { view         = view'
-  , update       = update'
-  , inputs       = []
-  , initialState = Started Nothing
-  }
+main = void $ run App { view         = view'
+                      , update       = update'
+                      , inputs       = []
+                      , initialState = Started Nothing
+                      }

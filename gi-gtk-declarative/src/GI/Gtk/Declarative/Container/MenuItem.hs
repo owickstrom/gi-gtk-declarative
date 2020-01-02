@@ -18,10 +18,10 @@ module GI.Gtk.Declarative.Container.MenuItem
   )
 where
 
-import           Data.Text                          (Text)
+import           Data.Text                      ( Text )
 import           Data.Typeable
-import           Data.Vector                        (Vector)
-import qualified GI.Gtk                             as Gtk
+import           Data.Vector                    ( Vector )
+import qualified GI.Gtk                        as Gtk
 
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Bin
@@ -36,16 +36,16 @@ import           GI.Gtk.Declarative.Widget
 data MenuItem event where
   -- | A single menu item in a 'Gtk.Menu'.
   MenuItem
-    :: (Gtk.IsMenuItem item, Gtk.IsBin item, Typeable item)
+    ::(Gtk.IsMenuItem item, Gtk.IsBin item, Typeable item)
     => Bin item event
     -> MenuItem event
   -- | A sub menu in a 'Gtk.Menu', with a text label and the list of
   -- child menu items.
   SubMenu
-    :: Text -> Container Gtk.Menu (Children MenuItem) event -> MenuItem event
+    ::Text -> Container Gtk.Menu (Children MenuItem) event -> MenuItem event
 
 instance Functor MenuItem where
-  fmap f (MenuItem item)          = MenuItem (fmap f item)
+  fmap f (MenuItem item         ) = MenuItem (fmap f item)
   fmap f (SubMenu label subMenu') = SubMenu label (fmap f subMenu')
 
 instance ToChildren Gtk.Menu Vector MenuItem
@@ -75,7 +75,8 @@ newSubMenuItem :: Text -> IO SomeState -> IO SomeState
 newSubMenuItem label createSubMenu = do
   menuItem' <- Gtk.menuItemNewWithLabel label
   sc        <- Gtk.widgetGetStyleContext menuItem'
-  SomeState (subMenuState :: StateTree st subMenu children e1 cs) <- createSubMenu
+  SomeState (subMenuState :: StateTree st subMenu children e1 cs) <-
+    createSubMenu
   case eqT @subMenu @Gtk.Menu of
     Just Refl -> do
       Gtk.menuItemSetSubmenu menuItem' (Just (stateTreeNodeWidget subMenuState))
@@ -88,33 +89,28 @@ newSubMenuItem label createSubMenu = do
     Nothing -> fail "Failed to create new sub menu item."
 
 instance Patchable MenuItem where
-  create =
-    \case
-      MenuItem item -> create item
-      SubMenu label subMenu' -> newSubMenuItem label (create subMenu')
+  create = \case
+    MenuItem item          -> create item
+    SubMenu label subMenu' -> newSubMenuItem label (create subMenu')
   patch state (MenuItem (c1 :: Bin i1 e1)) (MenuItem (c2 :: Bin i2 e2)) =
     case eqT @i1 @i2 of
       Just Refl -> patch state c1 c2
       Nothing   -> Replace (create c2)
-  patch (SomeState st) (SubMenu l1 c1) (SubMenu l2 c2) =
-    case st of
-      StateTreeBin top childState | l1 == l2 ->
-        case patch childState c1 c2 of
-          Modify modify ->
-            Modify (SomeState . StateTreeBin top <$> modify)
-          Replace newSubMenu ->
-            Replace (newSubMenuItem l2 newSubMenu)
-          Keep -> Keep
-      -- TODO: case for l1 /= l2
-      _ -> Replace (create (SubMenu l2 c2))
+  patch (SomeState st) (SubMenu l1 c1) (SubMenu l2 c2) = case st of
+    StateTreeBin top childState | l1 == l2 -> case patch childState c1 c2 of
+      Modify  modify     -> Modify (SomeState . StateTreeBin top <$> modify)
+      Replace newSubMenu -> Replace (newSubMenuItem l2 newSubMenu)
+      Keep               -> Keep
+    -- TODO: case for l1 /= l2
+    _ -> Replace (create (SubMenu l2 c2))
   patch _ _ b2 = Replace (create b2)
 
 instance EventSource MenuItem where
-  subscribe (MenuItem item) state cb = subscribe item state cb
-  subscribe (SubMenu _ children) (SomeState st) cb =
-    case st of
-      StateTreeBin _ childState -> subscribe children childState cb
-      _ -> error "Warning: Cannot subscribe to SubMenu events with a non-bin state tree."
+  subscribe (MenuItem item     ) state          cb = subscribe item state cb
+  subscribe (SubMenu _ children) (SomeState st) cb = case st of
+    StateTreeBin _ childState -> subscribe children childState cb
+    _                         -> error
+      "Warning: Cannot subscribe to SubMenu events with a non-bin state tree."
 
 instance IsContainer Gtk.MenuShell MenuItem where
   appendChild shell _ widget' =
