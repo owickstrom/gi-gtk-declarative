@@ -18,8 +18,6 @@ import           Data.Function                  ((&))
 import qualified Data.HashSet                   as HashSet
 import qualified Data.Text                      as Text
 import           Data.Vector                    (Vector)
-import qualified GI.Gdk                         as Gdk
-import qualified GI.GLib.Constants              as GLib
 import qualified GI.GObject                     as GI
 import qualified GI.Gtk                         as Gtk
 

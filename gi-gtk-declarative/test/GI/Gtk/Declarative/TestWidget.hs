@@ -10,11 +10,7 @@ module GI.Gtk.Declarative.TestWidget where
 
 import Control.Applicative
 import Control.Monad.Except
-import Control.Monad.IO.Class
-import Data.GI.Base.Attributes (clear)
-import Data.Maybe (catMaybes)
 import Data.Text (Text)
-import qualified Data.Text as Text
 import Data.Traversable (for)
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
@@ -22,7 +18,6 @@ import Data.Void
 import qualified GI.Gtk as Gtk
 import GI.Gtk.Declarative
 import GI.Gtk.Declarative.EventSource
-import GI.Gtk.Declarative.State
 import Hedgehog hiding (label)
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range

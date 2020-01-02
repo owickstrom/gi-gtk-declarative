@@ -15,7 +15,6 @@ module GI.Gtk.Declarative.Container.Grid
 import           Data.Default.Class                 (Default (def))
 import           Data.Int                           (Int32)
 import           Data.Vector                        (Vector)
-import           Data.Word                          (Word32)
 import qualified GI.Gtk                             as Gtk
 
 import           GI.Gtk.Declarative.Container.Class
