@@ -52,7 +52,8 @@ library
                       , GI.Gtk.Declarative.State
                       , GI.Gtk.Declarative.Widget
                       , GI.Gtk.Declarative.Widget.Conversions
-  build-depends:        base >=4.10 && <5
+  build-depends:        base                   >=4.10 && <5
+                      , containers             >= 0.6 && < 0.7
                       , data-default-class     >= 0.1  && <0.2
                       , gi-gobject             >= 2    && <3
                       , gi-glib                >= 2    && <3
@@ -80,6 +81,7 @@ test-suite gi-gtk-declarative-tests
                    , gi-gobject
                    , gi-gtk
                    , gi-gtk-declarative
+                   , haskell-gi-base
                    , hedgehog >= 1 && < 2
                    , mtl
                    , safe-exceptions
