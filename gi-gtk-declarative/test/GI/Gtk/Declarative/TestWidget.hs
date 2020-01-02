@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -10,6 +11,7 @@ module GI.Gtk.Declarative.TestWidget where
 import Control.Applicative
 import Control.Monad.Except
 import Control.Monad.IO.Class
+import Data.GI.Base.Attributes (clear)
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -32,7 +34,7 @@ import Prelude
 -- instantiated GTK widgets.
 data TestWidget
   = TestButton Text (Maybe Bool)
-  | TestLabel (Maybe Text)
+  | TestCustomWidget (Maybe Text)
   | TestScrolledWindow (Maybe Gtk.PolicyType) TestWidget
   | TestBox (Maybe Gtk.Orientation) [TestBoxChild]
   deriving (Eq, Show)
@@ -43,7 +45,7 @@ data TestBoxChild = TestBoxChild BoxChildProperties TestWidget
 isNested :: TestWidget -> Bool
 isNested = \case
   TestButton {} -> False
-  TestLabel {} -> False
+  TestCustomWidget {} -> False
   TestScrolledWindow _ _ -> True
   TestBox _ children -> not (null children)
 
@@ -53,7 +55,7 @@ class HasGtkDefaults a where
 instance HasGtkDefaults TestWidget where
   setDefaults = \case
     TestButton label useUnderline -> TestButton label (useUnderline <|> Just False)
-    TestLabel label -> TestLabel (label <|> Just mempty)
+    TestCustomWidget fontName -> TestCustomWidget (fontName <|> Just "Sans 12")
     TestScrolledWindow policy child -> TestScrolledWindow (policy <|> Just Gtk.PolicyTypeAutomatic) (setDefaults child)
     TestBox orientation children -> TestBox (orientation <|> Just Gtk.OrientationHorizontal) (map setDefaults children)
 
@@ -66,7 +68,22 @@ onlyJusts = Vector.concatMap (maybe Vector.empty Vector.singleton)
 
 toTestWidget :: TestWidget -> Widget Void
 toTestWidget = \case
-  TestLabel label -> widget Gtk.Label (onlyJusts [(#label :=) <$> label])
+  TestCustomWidget fontName -> Widget (CustomWidget {..})
+    where
+      customParams = ()
+      customAttributes = case fontName of
+        Just t -> [#fontName := t]
+        Nothing -> []
+      customWidget = Gtk.FontButton
+      customCreate () = do
+        btn <- Gtk.new Gtk.FontButton []
+        return (btn, ())
+      customPatch :: () -> () -> () -> CustomPatch Gtk.FontButton ()
+      customPatch _ () () = CustomKeep
+      customSubscribe ::
+        () -> () -> Gtk.FontButton -> (Void -> IO ()) -> IO Subscription
+      customSubscribe () () _lbl _cb = do
+        return (fromCancellation (pure ()))
   TestButton label useUnderline -> widget Gtk.Button (onlyJusts [Just (#label := label), (#useUnderline :=) <$> useUnderline])
   TestScrolledWindow policy child -> bin Gtk.ScrolledWindow (onlyJusts [(#vscrollbarPolicy :=) <$> policy]) (toTestWidget child)
   TestBox orientation children ->
@@ -86,7 +103,7 @@ fromGtkWidget = runExceptT . go
       name <- #getName w
       case name of
         "GtkButton" -> withCast w Gtk.Button (\btn -> TestButton <$> Gtk.get btn #label <*> (Just <$> Gtk.get btn #useUnderline))
-        "GtkLabel" -> withCast w Gtk.Label (\lbl -> TestLabel . Just <$> Gtk.get lbl #label)
+        "GtkFontButton" -> withCast w Gtk.FontButton (\btn -> TestCustomWidget . Just <$> Gtk.get btn #fontName)
         "GtkScrolledWindow" -> withCast w Gtk.ScrolledWindow $ \win -> do
           w' <- #getChild win >>= maybe (throwError "No viewport in scrolled window") pure
           vscrollbarPolicy <- Just <$> Gtk.get win #vscrollbarPolicy
@@ -117,18 +134,19 @@ fromGtkWidget = runExceptT . go
 genTestWidget :: Gen TestWidget
 genTestWidget =
   Gen.frequency
-    (map (2,) leaves <>
-      pure ( 1,
-        Gen.recursive
-          Gen.choice
-          leaves
-          ( subwidgets genTestBoxFrom
-              <> [Gen.subtermM genTestWidget (\c -> TestScrolledWindow <$> Gen.maybe genPolicyType <*> pure c)]
+    ( map (3,) leaves
+        <> pure
+          ( 2,
+            Gen.recursive
+              Gen.choice
+              leaves
+              ( subwidgets genTestBoxFrom
+                  <> [Gen.subtermM genTestWidget (\c -> TestScrolledWindow <$> Gen.maybe genPolicyType <*> pure c)]
+              )
           )
-      )
     )
   where
-    leaves = [genLabel, genButton]
+    leaves = [genCustomWidget, genButton]
     -- In lack of `subtermN` (https://github.com/hedgehogqa/haskell-hedgehog/issues/119), we use this terrible hack:
     subwidgets :: ([TestWidget] -> Gen TestWidget) -> [Gen TestWidget]
     subwidgets f =
@@ -166,9 +184,9 @@ genBoxChildProperties =
     <*> Gen.bool
     <*> Gen.word32 (Range.linear 0 10)
 
-genLabel :: Gen TestWidget
-genLabel = do
-  TestLabel <$> Gen.maybe (Gen.text (Range.linear 0 10) Gen.unicode)
+genCustomWidget :: Gen TestWidget
+genCustomWidget = do
+  TestCustomWidget <$> Gen.maybe (Gen.choice [pure "Sans 10"])
 
 genButton :: Gen TestWidget
 genButton =

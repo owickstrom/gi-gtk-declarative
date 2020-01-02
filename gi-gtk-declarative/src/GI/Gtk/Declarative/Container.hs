@@ -20,7 +20,6 @@ module GI.Gtk.Declarative.Container
 where
 
 import Control.Monad (forM)
-import qualified Data.HashMap.Strict as HashMap
 import Data.Typeable
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
