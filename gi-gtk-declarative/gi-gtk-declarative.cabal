@@ -1,5 +1,5 @@
 name:                 gi-gtk-declarative
-version:              0.6.2
+version:              0.6.3
 synopsis:             Declarative GTK+ programming in Haskell
 description:          A declarative programming model for GTK+ user
                       interfaces, implementing support for various widgets

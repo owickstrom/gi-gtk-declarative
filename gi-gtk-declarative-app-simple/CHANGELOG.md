@@ -1,3 +1,6 @@
+* 0.6.3
+    - Add `Grid` container widget
+    - Fix bugs in patching properties for all types of widgets
 * 0.6.2
     - Add `Notebook` container widget
 * 0.6.1
