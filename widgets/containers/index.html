@@ -332,6 +332,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#grid" class="md-nav__link">
+    Grid
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#listbox" class="md-nav__link">
     ListBox
   </a>
@@ -511,6 +518,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#grid" class="md-nav__link">
+    Grid
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#listbox" class="md-nav__link">
     ListBox
   </a>
@@ -593,6 +607,21 @@ automatically using the default box packing properties.</p>
 <div class="codehilite"><pre><span></span><span class="nf">container</span> <span class="kt">Box</span> <span class="kt">[]</span>
   <span class="p">[</span> <span class="n">widget</span> <span class="kt">Button</span> <span class="kt">[]</span>
   <span class="p">,</span> <span class="n">widget</span> <span class="kt">CheckButton</span> <span class="kt">[]</span>
+  <span class="p">]</span>
+</pre></div>
+
+
+<h2 id="grid">Grid</h2>
+<p><code>Grid</code> is similar to <code>Box</code>, except that the child widgets occupy
+a grid (possibly taking up multiple cells) instead of being arranged
+in a simple line.</p>
+<p>The collection of child widgets has type <code>[GridChild event]</code> and a
+<code>GridChildProperties</code> value specifies size and location in the grid.</p>
+<div class="codehilite"><pre><span></span><span class="nf">container</span> <span class="kt">Grid</span> <span class="kt">[]</span>
+  <span class="p">[</span> <span class="kt">GridChild</span> <span class="n">defaultGridChildProperties</span>
+      <span class="p">(</span><span class="n">widget</span> <span class="kt">Label</span> <span class="p">[</span><span class="o">#</span><span class="n">label</span> <span class="kt">:=</span> <span class="s">&quot;Input&quot;</span><span class="p">])</span>
+  <span class="p">,</span> <span class="kt">GridChild</span> <span class="n">defaultGridChildProperties</span> <span class="p">{</span> <span class="n">leftAttach</span> <span class="ow">=</span> <span class="mi">1</span> <span class="p">}</span>
+      <span class="p">(</span><span class="n">widget</span> <span class="kt">Entry</span> <span class="p">[</span><span class="o">#</span><span class="n">hexpand</span> <span class="kt">:=</span> <span class="kt">True</span><span class="p">])</span>
   <span class="p">]</span>
 </pre></div>
 
