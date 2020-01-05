@@ -10,17 +10,21 @@ module GI.Gtk.Declarative.TestWidget where
 
 import           Control.Applicative
 import           Control.Monad.Except
-import           Data.Text                      ( Text )
-import           Data.Traversable               ( for )
-import           Data.Vector                    ( Vector )
-import qualified Data.Vector                   as Vector
+import           Data.Int                           ( Int32 )
+import           Data.Text                          ( Text )
+import           Data.Traversable                   ( for )
+import           Data.List                          ( sortOn )
+import           Data.Vector                        ( Vector )
+import qualified Data.Vector                       as Vector
 import           Data.Void
-import qualified GI.Gtk                        as Gtk
+import qualified GI.Gtk                            as Gtk
 import           GI.Gtk.Declarative
+import           GI.Gtk.Declarative.Container.Grid  ( GridChild (..), GridChildProperties (..) )
+import           GI.Gtk.Declarative.Container.Grid as Grid
 import           GI.Gtk.Declarative.EventSource
-import           Hedgehog                hiding ( label )
-import qualified Hedgehog.Gen                  as Gen
-import qualified Hedgehog.Range                as Range
+import           Hedgehog                    hiding ( label )
+import qualified Hedgehog.Gen                      as Gen
+import qualified Hedgehog.Range                    as Range
 import           Prelude
 
 -- | GTK widgets cannot (in any practical, generic sense) be compared and shown
@@ -32,9 +36,13 @@ data TestWidget
   | TestCustomWidget (Maybe Text)
   | TestScrolledWindow (Maybe Gtk.PolicyType) TestWidget
   | TestBox (Maybe Gtk.Orientation) [TestBoxChild]
+  | TestGrid [TestGridChild]
   deriving (Eq, Show)
 
 data TestBoxChild = TestBoxChild BoxChildProperties TestWidget
+  deriving (Eq, Show)
+
+data TestGridChild = TestGridChild GridChildProperties TestWidget
   deriving (Eq, Show)
 
 isNested :: TestWidget -> Bool
@@ -43,6 +51,7 @@ isNested = \case
   TestCustomWidget{}            -> False
   TestScrolledWindow _ _        -> True
   TestBox            _ children -> not (null children)
+  TestGrid children             -> not (null children)
 
 class HasGtkDefaults a where
   setDefaults :: a -> a
@@ -58,10 +67,16 @@ instance HasGtkDefaults TestWidget where
     TestBox orientation children -> TestBox
       (orientation <|> Just Gtk.OrientationHorizontal)
       (map setDefaults children)
+    TestGrid children ->
+      TestGrid (map setDefaults children)
 
 instance HasGtkDefaults TestBoxChild where
   setDefaults = \case
     TestBoxChild props child -> TestBoxChild props (setDefaults child)
+
+instance HasGtkDefaults TestGridChild where
+  setDefaults = \case
+    TestGridChild props child -> TestGridChild props (setDefaults child)
 
 onlyJusts :: Vector (Maybe a) -> Vector a
 onlyJusts = Vector.concatMap (maybe Vector.empty Vector.singleton)
@@ -96,6 +111,13 @@ toTestWidget = \case
     (onlyJusts [(#orientation :=) <$> orientation])
     (Vector.map
       (\(TestBoxChild props child) -> BoxChild props (toTestWidget child))
+      (Vector.fromList children)
+    )
+  TestGrid children -> container
+    Gtk.Grid
+    []
+    (Vector.map
+      (\(TestGridChild props child) -> GridChild props (toTestWidget child))
       (Vector.fromList children)
     )
 
@@ -138,6 +160,21 @@ fromGtkWidget = runExceptT . go
         pure
           (TestBox orientation (zipWith TestBoxChild boxChildProps childWidgets)
           )
+      "GtkGrid" -> withCast w Gtk.Grid $ \grid -> do
+        childGtkWidgets <- #getChildren grid
+        gridChildren    <- for childGtkWidgets $ \childGtkWidget -> do
+          let prop = getGridChildProp grid childGtkWidget
+          height     <- prop "height"
+          width      <- prop "width"
+          leftAttach <- prop "left-attach"
+          topAttach  <- prop "top-attach"
+          child      <- go childGtkWidget
+          pure (TestGridChild GridChildProperties {..} child)
+        -- the order of the children is not maintained by the Grid, so we
+        -- need to sort here to allow accurate comparisons of the children
+        let sortedChildren =
+              sortOn (\(TestGridChild p _) -> topAttach p) gridChildren
+        pure (TestGrid sortedChildren)
       _ -> throwError ("Unsupported TestWidget: " <> name)
   withCast
     :: (MonadIO m, Gtk.GObject w, Gtk.GObject w')
@@ -149,6 +186,13 @@ fromGtkWidget = runExceptT . go
     Just w' -> f w'
     Nothing -> throwError "Failed to cast widget"
 
+getGridChildProp
+  :: (MonadIO m) => Gtk.Grid -> Gtk.Widget -> Text -> ExceptT Text m Int32
+getGridChildProp grid child prop = do
+  gValue <- liftIO (Gtk.toGValue (0 :: Int32))
+  Gtk.containerChildGetProperty grid child prop gValue
+  liftIO (Gtk.fromGValue gValue)
+
 -- * Generators
 
 genTestWidget :: Gen TestWidget
@@ -159,6 +203,7 @@ genTestWidget = Gen.frequency
       Gen.choice
       leaves
       (  subwidgets genTestBoxFrom
+      <> subwidgets getTestGridFrom
       <> [ Gen.subtermM
              genTestWidget
              (\c -> TestScrolledWindow <$> Gen.maybe genPolicyType <*> pure c)
@@ -185,6 +230,11 @@ genTestWidget = Gen.frequency
       pure (TestBoxChild props w)
     o <- Gen.maybe genOrientation
     pure (TestBox o children)
+  getTestGridFrom ws = do
+    children <- for (zip [0 ..] ws) $ \(i, w) -> do
+      props <- genGridChildProperties i
+      pure (TestGridChild props w)
+    pure (TestGrid children)
 
 genOrientation :: Gen Gtk.Orientation
 genOrientation =
@@ -205,6 +255,14 @@ genBoxChildProperties :: Gen BoxChildProperties
 genBoxChildProperties =
   BoxChildProperties <$> Gen.bool <*> Gen.bool <*> Gen.word32
     (Range.linear 0 10)
+
+genGridChildProperties :: Int32 -> Gen GridChildProperties
+genGridChildProperties rowN = do
+  width      <- Gen.int32 (Range.linear 1 10)
+  height     <- Gen.int32 (Range.linear 1 5)
+  leftAttach <- Gen.int32 (Range.linear 0 10)
+  topAttach  <- Gen.int32 (Range.constant (rowN * 5) (rowN * 5 + 5 - height))
+  pure GridChildProperties {..}
 
 genCustomWidget :: Gen TestWidget
 genCustomWidget = do
