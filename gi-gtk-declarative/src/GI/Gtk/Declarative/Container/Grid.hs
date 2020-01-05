@@ -39,6 +39,7 @@ data GridChildProperties =
     , leftAttach :: Int32
     , topAttach  :: Int32
     }
+  deriving (Eq, Show)
 
 -- | Defaults for 'GridChildProperties'. Use these and override
 -- specific fields.
@@ -51,7 +52,8 @@ instance Default GridChildProperties where
 
 instance Patchable GridChild where
   create = create . child
-  patch s b1 b2 = patch s (child b1) (child b2)
+  patch s b1 b2 | properties b1 == properties b2 = patch s (child b1) (child b2)
+                | otherwise                      = Replace (create b2)
 
 instance EventSource GridChild where
   subscribe GridChild {..} = subscribe child
