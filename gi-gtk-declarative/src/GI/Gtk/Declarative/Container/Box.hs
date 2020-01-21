@@ -57,6 +57,7 @@ instance Patchable BoxChild where
   create = create . child
   patch s b1 b2 | properties b1 == properties b2 = patch s (child b1) (child b2)
                 | otherwise                      = Replace (create b2)
+  destroy s b = destroy s (child b)
 
 instance EventSource BoxChild where
   subscribe BoxChild {..} = subscribe child

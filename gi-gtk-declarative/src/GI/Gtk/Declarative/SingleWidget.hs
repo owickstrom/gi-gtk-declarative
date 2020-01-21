@@ -78,6 +78,8 @@ instance Patchable (SingleWidget widget) where
                 )
             else Replace (create (SingleWidget ctor newAttributes))
       _ -> Replace (create (SingleWidget ctor newAttributes))
+  destroy state _ =
+    someStateWidget state >>= Gtk.widgetDestroy
 
 instance EventSource (SingleWidget widget) where
   subscribe (SingleWidget (_ :: Gtk.ManagedPtr w1 -> w1) props) (SomeState (st :: StateTree

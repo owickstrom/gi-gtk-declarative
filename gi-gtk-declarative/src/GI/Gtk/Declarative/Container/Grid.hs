@@ -54,6 +54,7 @@ instance Patchable GridChild where
   create = create . child
   patch s b1 b2 | properties b1 == properties b2 = patch s (child b1) (child b2)
                 | otherwise                      = Replace (create b2)
+  destroy s b = destroy s (child b)
 
 instance EventSource GridChild where
   subscribe GridChild {..} = subscribe child
@@ -68,4 +69,3 @@ instance IsContainer Gtk.Grid GridChild where
   replaceChild grid gridChild' _i old new = do
     Gtk.widgetDestroy old
     appendChild grid gridChild' new
-

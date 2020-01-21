@@ -66,7 +66,7 @@ menuItem
   -> MenuItem event
 menuItem item attrs = MenuItem . Bin item attrs
 
--- | Construct a sub menu for a 'Gtk.Menu', wit a text label and the
+-- | Construct a sub menu for a 'Gtk.Menu', with a text label and the
 -- child menu items.
 subMenu :: Text -> Vector (MenuItem event) -> MenuItem event
 subMenu label = SubMenu label . container Gtk.Menu mempty
@@ -104,6 +104,14 @@ instance Patchable MenuItem where
     -- TODO: case for l1 /= l2
     _ -> Replace (create (SubMenu l2 c2))
   patch _ _ b2 = Replace (create b2)
+  destroy state (MenuItem (c :: Bin i e)) =
+    destroy state c
+  destroy (SomeState st) (SubMenu l c) = case st of
+    StateTreeBin top childState -> do
+      destroy childState c
+      Gtk.toWidget (stateTreeWidget top) >>= Gtk.widgetDestroy
+    _ ->
+      error "Cannot destroy SubMenu with non-StateTreeBin state"
 
 instance EventSource MenuItem where
   subscribe (MenuItem item     ) state          cb = subscribe item state cb

@@ -44,6 +44,7 @@ instance Patchable Widget where
   patch s (Widget (w1 :: t1 e1)) (Widget (w2 :: t2 e2)) = case eqT @t1 @t2 of
     Just Refl -> patch s w1 w2
     _         -> Replace (create w2)
+  destroy s (Widget w) = destroy s w
 
 instance EventSource Widget where
   subscribe (Widget w) = subscribe w

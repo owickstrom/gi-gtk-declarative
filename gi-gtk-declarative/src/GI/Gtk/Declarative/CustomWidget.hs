@@ -118,6 +118,9 @@ instance
                   )
               | otherwise -> Replace (create new)
       _ -> Replace (create new)
+  
+  destroy state _custom = 
+    someStateWidget state >>= Gtk.widgetDestroy
 
 instance
   (Typeable internalState, Gtk.GObject widget) =>

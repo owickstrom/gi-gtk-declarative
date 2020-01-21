@@ -69,6 +69,7 @@ pane paneProperties paneChild = Pane { .. }
 instance Patchable Pane where
   create = create . paneChild
   patch s b1 b2 = patch s (paneChild b1) (paneChild b2)
+  destroy s b = destroy s (paneChild b)
 
 instance EventSource Pane where
   subscribe Pane {..} = subscribe paneChild

@@ -106,7 +106,7 @@ instance (Gtk.IsBin parent) => Patchable (Bin parent) where
               case patch oldChildState oldChild newChild of
                 Modify  modify    -> SomeState . StateTreeBin top' <$> modify
                 Replace createNew -> do
-                  Gtk.widgetDestroy =<< someStateWidget oldChildState
+                  destroy oldChildState oldChild
                   newChildState <- createNew
                   childWidget   <- someStateWidget newChildState
                   Gtk.widgetShow childWidget
@@ -117,6 +117,14 @@ instance (Gtk.IsBin parent) => Patchable (Bin parent) where
                 Keep -> return (SomeState st)
             else Replace (create (Bin ctor newAttributes newChild))
       _ -> Replace (create (Bin ctor newAttributes newChild))
+
+  destroy (SomeState st) (Bin ctor attrs child) = do
+    case st of
+      StateTreeBin node childState -> do
+        destroy childState child
+        Gtk.toWidget (stateTreeWidget node) >>= Gtk.widgetDestroy
+      _ ->
+        error "Bin destroy method called with non-StateTreeBin state"
 
 --
 -- EventSource

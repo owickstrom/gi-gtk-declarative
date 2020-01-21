@@ -127,6 +127,14 @@ instance
                   (unChildren newChildren)
               else Replace (create new)
       _ -> Replace (create new)
+  
+  destroy (SomeState (st :: StateTree stateType w c e cs)) (Container _ _ (children :: Children child e2)) = do
+    case st of
+      StateTreeContainer top childStates -> do
+        sequence_ (Vector.zipWith destroy childStates (unChildren children))
+        Gtk.toWidget (stateTreeWidget top) >>= Gtk.widgetDestroy
+      _ ->
+        error "Container destroy method called with non-StateTreeContainer state"
 
 --
 -- EventSource
