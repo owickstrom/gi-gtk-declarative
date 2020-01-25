@@ -76,6 +76,7 @@ patchInContainer (StateTreeContainer top children) container os' ns' = do
     -- widget in the corresponding place, we need to replace the GTK widget with
     -- one created from the declarative widget.
     (i, Just oldChildState, Nothing, Just new) -> do
+      error "this shouldn't happen!"
       newChildState  <- create new
       oldChildWidget <- someStateWidget oldChildState
       newChildWidget <- someStateWidget newChildState

@@ -18,6 +18,7 @@ import qualified ManyBoxes
 import qualified MenuBar
 import qualified Notebook
 import qualified Paned
+import qualified Windows
 
 main :: IO ()
 main =
@@ -36,6 +37,7 @@ main =
           , ("CSS"              , CSS.main)
           , ("Paned"            , Paned.main)
           , ("Dialog"           , Dialog.main)
+          , ("Windows"          , Windows.main)
           ]
   in  getArgs >>= \case
         [example] -> case lookup example examples of

@@ -31,6 +31,7 @@ executable example
                       , MenuBar
                       , Notebook
                       , Paned
+                      , Windows
   build-depends:        base >=4.10 && <5
                       , async
                       , bytestring

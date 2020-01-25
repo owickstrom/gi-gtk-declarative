@@ -52,6 +52,7 @@ library
                       , GI.Gtk.Declarative.State
                       , GI.Gtk.Declarative.Widget
                       , GI.Gtk.Declarative.Widget.Conversions
+                      , GI.Gtk.Declarative.WindowHost
   build-depends:        base                   >=4.10 && <5
                       , containers             >= 0.6 && < 0.7
                       , data-default-class     >= 0.1  && <0.2
