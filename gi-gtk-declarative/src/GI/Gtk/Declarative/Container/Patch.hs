@@ -93,8 +93,8 @@ patchInContainer (StateTreeContainer top children) container os' ns' = do
 
     -- When a declarative widget has been removed, remove the GTK widget from
     -- the container.
-    (_i, Just childState, Just new, Nothing) -> do
-      destroy childState new
+    (_i, Just oldChildState, Just old, Nothing) -> do
+      destroy oldChildState old
       return Vector.empty
 
     -- When there are more old declarative widgets than GTK widgets, we can
