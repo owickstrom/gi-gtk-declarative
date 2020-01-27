@@ -12,7 +12,6 @@ module GI.Gtk.Declarative.WindowHost (windowHost) where
 -- a new top-level window: The window host just provides a place for the new window
 -- to live, whilst fitting into the general tree-of-components pattern that is used
 -- by gi-gtk-declarative.
-import           Control.Monad                  ((>=>))
 import           Data.Maybe                     (fromMaybe)
 import           Data.Typeable                  ((:~:) (..), Typeable, eqT)
 import qualified GI.Gtk                         as Gtk
@@ -65,7 +64,7 @@ patch'
   -> Patch
 patch' windowState childState (w1, c1) (w2, c2) = case (w1, w2, windowState) of
   (Just _  , _       , Nothing          ) -> error "Previous window but no previous state"
-  (Nothing , _       , Just ws          ) -> error "Previous state but no previous window"
+  (Nothing , _       , Just _           ) -> error "Previous state but no previous window"
   (Just w1', Just w2', Just windowState') -> patch'' windowState' w1' w2'
   (Just w  , Nothing , Just ws          ) -> destroyWindow ws w
   (Nothing , Just w2', Nothing          ) -> modifyWindow $ create w2'
