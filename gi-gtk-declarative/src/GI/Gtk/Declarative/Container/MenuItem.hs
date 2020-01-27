@@ -106,7 +106,7 @@ instance Patchable MenuItem where
   patch _ _ b2 = Replace (create b2)
   destroy state (MenuItem (c :: Bin i e)) =
     destroy state c
-  destroy (SomeState st) (SubMenu l c) = case st of
+  destroy (SomeState st) (SubMenu _ c) = case st of
     StateTreeBin top childState -> do
       destroy childState c
       Gtk.toWidget (stateTreeWidget top) >>= Gtk.widgetDestroy

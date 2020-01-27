@@ -77,11 +77,13 @@ patchInContainer (StateTreeContainer top children) container os' ns' = do
     -- one created from the declarative widget.
     (i, Just oldChildState, Nothing, Just new) -> do
       error "this shouldn't happen!"
+      {-
       newChildState  <- create new
       oldChildWidget <- someStateWidget oldChildState
       newChildWidget <- someStateWidget newChildState
       replaceChild container new i oldChildWidget newChildWidget
       return (Vector.singleton newChildState)
+      -}
 
     -- When there is a new declarative widget, or one that lacks a corresponding
     -- GTK widget, create and add it.

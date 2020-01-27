@@ -118,7 +118,7 @@ instance (Gtk.IsBin parent) => Patchable (Bin parent) where
             else Replace (create (Bin ctor newAttributes newChild))
       _ -> Replace (create (Bin ctor newAttributes newChild))
 
-  destroy (SomeState st) (Bin ctor attrs child) = do
+  destroy (SomeState st) (Bin _ _ child) = do
     case st of
       StateTreeBin node childState -> do
         destroy childState child

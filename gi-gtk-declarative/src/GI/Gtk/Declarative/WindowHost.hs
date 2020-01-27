@@ -12,7 +12,7 @@ module GI.Gtk.Declarative.WindowHost (windowHost) where
 -- a new top-level window: The window host just provides a place for the new window
 -- to live, whilst fitting into the general tree-of-components pattern that is used
 -- by gi-gtk-declarative.
-import           Control.Monad                  ((>=>), void)
+import           Control.Monad                  ((>=>))
 import           Data.Maybe                     (fromMaybe)
 import           Data.Typeable                  ((:~:) (..), Typeable, eqT)
 import qualified GI.Gtk                         as Gtk
