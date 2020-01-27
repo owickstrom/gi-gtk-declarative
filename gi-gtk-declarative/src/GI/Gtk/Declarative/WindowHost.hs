@@ -5,13 +5,13 @@
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE TypeApplications          #-}
 
-module GI.Gtk.Declarative.WindowHost (windowHost) where
-
 -- | A wrapper around a child widget that also allows you to create a new window.
 -- The window itself is not a child of this widget, nor of the parent widget, but is
 -- a new top-level window: The window host just provides a place for the new window
 -- to live, whilst fitting into the general tree-of-components pattern that is used
 -- by gi-gtk-declarative.
+module GI.Gtk.Declarative.WindowHost (windowHost) where
+
 import           Data.Maybe                     (fromMaybe)
 import           Data.Typeable                  ((:~:) (..), Typeable, eqT)
 import qualified GI.Gtk                         as Gtk
