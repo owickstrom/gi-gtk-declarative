@@ -64,20 +64,18 @@ patch'
   -> (Maybe (Bin Gtk.Window e2), Widget e2)
   -> Patch
 patch' windowState childState (w1, c1) (w2, c2) = case (w1, w2, windowState) of
+  (Just _  , _       , Nothing          ) -> error "Previous window but no previous state"
+  (Nothing , _       , Just ws          ) -> error "Previous state but no previous window"
   (Just w1', Just w2', Just windowState') -> patch'' windowState' w1' w2'
-  (Just _  , Just w2', Nothing          ) -> modifyWindow $ create w2'
-  (Just _  , Nothing , Just ws          ) -> destroyWindow ws
-  (Just _  , Nothing , Nothing          ) -> keepWindow Nothing
-  (Nothing , Just w2', Just ws          ) -> replaceWindow ws $ create w2'
+  (Just w  , Nothing , Just ws          ) -> destroyWindow ws w
   (Nothing , Just w2', Nothing          ) -> modifyWindow $ create w2'
-  (Nothing , Nothing , Just ws          ) -> destroyWindow ws
   (Nothing , Nothing , Nothing          ) -> keepWindow Nothing
  where
   patch'' :: SomeState -> Bin Gtk.Window e1 -> Bin Gtk.Window e2 -> Patch
   patch'' windowState' w1' w2' = case patch windowState' w1' w2' of
     Keep       -> keepWindow $ Just windowState'
     Modify  wp -> modifyWindow wp
-    Replace wp -> replaceWindow windowState' wp
+    Replace wp -> modifyWindow $ destroy windowState' w1' *> wp
 
   keepWindow :: Maybe SomeState -> Patch
   keepWindow windowState' = case patch childState c1 c2 of
@@ -91,18 +89,11 @@ patch' windowState childState (w1, c1) (w2, c2) = case (w1, w2, windowState) of
     Modify  cs -> Modify $ wrapState <$> fmap Just windowPatch <*> cs
     Replace cs -> Replace $ wrapState <$> fmap Just windowPatch <*> cs
 
-  replaceWindow :: SomeState -> IO SomeState -> Patch
-  replaceWindow windowState' windowPatch =
-    modifyWindow $ destroy windowState' *> windowPatch
-
-  destroyWindow :: SomeState -> Patch
-  destroyWindow windowState' = case patch childState c1 c2 of
-    Keep       -> Modify $ wrapState Nothing childState <$ destroy windowState'
-    Modify  cs -> Modify $ destroy windowState' *> (wrapState Nothing <$> cs)
-    Replace cs -> Replace $ destroy windowState' *> (wrapState Nothing <$> cs)
-
-  destroy :: SomeState -> IO ()
-  destroy = someStateWidget >=> Gtk.widgetDestroy
+  destroyWindow :: SomeState -> Bin Gtk.Window e -> Patch
+  destroyWindow windowState' window = case patch childState c1 c2 of
+    Keep       -> Modify $ wrapState Nothing childState <$ destroy windowState' window
+    Modify  cs -> Modify $ destroy windowState' window *> (wrapState Nothing <$> cs)
+    Replace cs -> Replace $ destroy windowState' window *> (wrapState Nothing <$> cs)
 
 -- | Wrap the child state in the window state
 wrapState :: Maybe SomeState -> SomeState -> SomeState
