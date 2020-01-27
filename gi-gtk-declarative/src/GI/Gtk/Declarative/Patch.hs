@@ -34,5 +34,5 @@ class Patchable widget where
   -- | Given two declarative widgets of the same widget type (but not
   -- necessarily of the same event types,) calculate a 'Patch'.
   patch :: SomeState -> widget e1 -> widget e2 -> Patch
-  -- | Todo: ...
+  -- | Given a previously created declarative widget, destroy it.
   destroy :: SomeState -> widget e -> IO ()
