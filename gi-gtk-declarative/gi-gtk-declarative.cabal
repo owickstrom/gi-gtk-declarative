@@ -32,6 +32,8 @@ library
   exposed-modules:      GI.Gtk.Declarative
                       , GI.Gtk.Declarative.Attributes
                       , GI.Gtk.Declarative.Attributes.Collected
+                      , GI.Gtk.Declarative.Attributes.Custom
+                      , GI.Gtk.Declarative.Attributes.Custom.Window
                       , GI.Gtk.Declarative.Attributes.Internal
                       , GI.Gtk.Declarative.Attributes.Internal.EventHandler
                       , GI.Gtk.Declarative.Attributes.Internal.Conversions

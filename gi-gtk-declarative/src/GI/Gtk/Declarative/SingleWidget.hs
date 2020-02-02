@@ -48,8 +48,9 @@ instance Patchable (SingleWidget widget) where
       Gtk.widgetShow widget'
       sc <- Gtk.widgetGetStyleContext widget'
       updateClasses sc mempty (collectedClasses collected)
+      ca <- createCustomAttributes widget' attrs
       return
-        (SomeState (StateTreeWidget (StateTreeNode widget' sc collected ())))
+        (SomeState (StateTreeWidget (StateTreeNode widget' sc collected ca ())))
   patch (SomeState (st :: StateTree stateType w child event cs)) (SingleWidget (_ :: Gtk.ManagedPtr
       w1
     -> w1) _) (SingleWidget (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes)
@@ -60,6 +61,7 @@ instance Patchable (SingleWidget widget) where
           newCollected      = collectAttributes newAttributes
           oldCollectedProps = collectedProperties oldCollected
           newCollectedProps = collectedProperties newCollected
+          oldCustomAttributeStates = stateTreeCustomAttributeStates top
         in
           if oldCollectedProps `canBeModifiedTo` newCollectedProps
             then Modify $ do
@@ -68,18 +70,25 @@ instance Patchable (SingleWidget widget) where
               updateClasses (stateTreeStyleContext top)
                             (collectedClasses oldCollected)
                             (collectedClasses newCollected)
+              newCustomAttributeStates <- patchCustomAttributes w oldCustomAttributeStates newAttributes
               let top' = top { stateTreeCollectedAttributes = newCollected }
               return
                 (SomeState
                   (StateTreeWidget top'
                     { stateTreeCollectedAttributes = newCollected
+                    , stateTreeCustomAttributeStates = newCustomAttributeStates
                     }
                   )
                 )
             else Replace (create (SingleWidget ctor newAttributes))
       _ -> Replace (create (SingleWidget ctor newAttributes))
-  destroy state _ =
-    someStateWidget state >>= Gtk.widgetDestroy
+  destroy (SomeState (st :: StateTree stateType w child event cs)) (SingleWidget _ attrs) = do
+    case (st, eqT @w @widget) of
+      (StateTreeWidget top, Just Refl) -> do
+        let widget' = stateTreeWidget top
+        destroyCustomAttributes widget' (stateTreeCustomAttributeStates top) attrs
+        Gtk.widgetDestroy widget'
+      _ -> error "SingleWidget destroy called with incorrectly typed arguments"
 
 instance EventSource (SingleWidget widget) where
   subscribe (SingleWidget (_ :: Gtk.ManagedPtr w1 -> w1) props) (SomeState (st :: StateTree

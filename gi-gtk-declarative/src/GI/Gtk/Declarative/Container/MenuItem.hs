@@ -82,7 +82,7 @@ newSubMenuItem label createSubMenu = do
       Gtk.menuItemSetSubmenu menuItem' (Just (stateTreeNodeWidget subMenuState))
       return
         (SomeState
-          (StateTreeBin (StateTreeNode menuItem' sc mempty ())
+          (StateTreeBin (StateTreeNode menuItem' sc mempty mempty ())
                         (SomeState subMenuState)
           )
         )

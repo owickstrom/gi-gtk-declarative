@@ -92,13 +92,14 @@ instance
     Gtk.widgetShow widget'
     sc <- Gtk.widgetGetStyleContext widget'
     updateClasses sc mempty (collectedClasses collected)
+    ca <- createCustomAttributes widget' attrs
     childStates <- forM (unChildren children) $ \child -> do
       childState <- create child
       appendChild widget' child =<< someStateWidget childState
       return childState
     return
       (SomeState
-        (StateTreeContainer (StateTreeNode widget' sc collected ()) childStates)
+        (StateTreeContainer (StateTreeNode widget' sc collected ca ()) childStates)
       )
 
   patch (SomeState (st :: StateTree stateType w1 c1 e1 cs)) (Container _ _ oldChildren) new@(Container (ctor :: Gtk.ManagedPtr
@@ -110,6 +111,7 @@ instance
             newCollected      = collectAttributes newAttributes
             oldCollectedProps = collectedProperties oldCollected
             newCollectedProps = collectedProperties newCollected
+            oldCustomAttributeStates = stateTreeCustomAttributeStates top
         in  if oldCollectedProps `canBeModifiedTo` newCollectedProps
               then Modify $ do
                 containerWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
@@ -119,7 +121,11 @@ instance
                 updateClasses (stateTreeStyleContext top)
                               (collectedClasses oldCollected)
                               (collectedClasses newCollected)
-                let top' = top { stateTreeCollectedAttributes = newCollected }
+                newCustomAttributeStates <- patchCustomAttributes containerWidget oldCustomAttributeStates newAttributes
+                let top' = top
+                      { stateTreeCollectedAttributes = newCollected
+                      , stateTreeCustomAttributeStates = newCustomAttributeStates
+                      }
                 SomeState <$> patchInContainer
                   (StateTreeContainer top' childStates)
                   containerWidget
@@ -128,11 +134,13 @@ instance
               else Replace (create new)
       _ -> Replace (create new)
   
-  destroy (SomeState (st :: StateTree stateType w c e cs)) (Container _ _ (children :: Children child e2)) = do
-    case st of
-      StateTreeContainer top childStates -> do
+  destroy (SomeState (st :: StateTree stateType w c e cs)) (Container _ attrs (children :: Children child e2)) = do
+    case (st, eqT @w @container) of
+      (StateTreeContainer top childStates, Just Refl) -> do
         sequence_ (Vector.zipWith destroy childStates (unChildren children))
-        Gtk.toWidget (stateTreeWidget top) >>= Gtk.widgetDestroy
+        let widget = stateTreeWidget top
+        destroyCustomAttributes widget (stateTreeCustomAttributeStates top) attrs
+        Gtk.widgetDestroy widget
       _ ->
         error "Container destroy method called with non-StateTreeContainer state"
 

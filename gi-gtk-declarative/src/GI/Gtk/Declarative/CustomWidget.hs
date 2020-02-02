@@ -72,19 +72,22 @@ instance
     updateProperties widget mempty (collectedProperties collected)
     sc <- Gtk.widgetGetStyleContext widget
     updateClasses sc mempty (collectedClasses collected)
+    ca <- createCustomAttributes widget (customAttributes custom)
     pure
       (SomeState
-        (StateTreeWidget (StateTreeNode widget sc collected internalState))
+        (StateTreeWidget (StateTreeNode widget sc collected ca internalState))
       )
 
   patch (SomeState (stateTree :: StateTree st w e c cs)) old new =
     case (eqT @cs @internalState, eqT @widget @w) of
       (Just Refl, Just Refl) ->
         let
-          oldCollected = stateTreeCollectedAttributes (stateTreeNode stateTree)
+          node = stateTreeNode stateTree
+          oldCollected = stateTreeCollectedAttributes node
           newCollected = collectAttributes (customAttributes new)
           oldCollectedProps = collectedProperties oldCollected
           newCollectedProps = collectedProperties newCollected
+          oldCustomAttributeStates = stateTreeCustomAttributeStates node
           canBeModified = oldCollectedProps `canBeModifiedTo` newCollectedProps
         in
           case
@@ -102,7 +105,7 @@ instance
                   (stateTreeStyleContext (stateTreeNode stateTree))
                   (collectedClasses oldCollected)
                   (collectedClasses newCollected)
-                let node = stateTreeNode stateTree
+                newCustomAttributeStates <- patchCustomAttributes widget' oldCustomAttributeStates (customAttributes new)
                 internalState' <- case p of
                   CustomModify f ->
                     f =<< Gtk.unsafeCastTo (customWidget new) widget'
@@ -111,16 +114,22 @@ instance
                 return
                   (SomeState
                     (StateTreeWidget node
-                      { stateTreeCustomState         = internalState'
-                      , stateTreeCollectedAttributes = newCollected
+                      { stateTreeCustomState           = internalState'
+                      , stateTreeCollectedAttributes   = newCollected
+                      , stateTreeCustomAttributeStates = newCustomAttributeStates
                       }
                     )
                   )
               | otherwise -> Replace (create new)
       _ -> Replace (create new)
   
-  destroy state _custom = 
-    someStateWidget state >>= Gtk.widgetDestroy
+  destroy (SomeState (st :: StateTree st w e c cs)) custom = do
+    case (st, eqT @w @widget) of
+      (StateTreeWidget top, Just Refl) -> do
+        let widget = stateTreeWidget top
+        destroyCustomAttributes widget (stateTreeCustomAttributeStates top) (customAttributes custom)
+        Gtk.widgetDestroy widget
+      _ -> error "CustomWidget destroy called with invalid types"
 
 instance
   (Typeable internalState, Gtk.GObject widget) =>

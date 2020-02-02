@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Windows where
 
@@ -16,19 +17,26 @@ import           GI.Gtk                        (Box (..), Button (..),
                                                 Label (..), Orientation (..),
                                                 Window (..))
 import           GI.Gtk.Declarative
+import           GI.Gtk.Declarative.Attributes.Custom.Window (presentWindow) -- todo: add convenience module to make importing stuff easier...
 import           GI.Gtk.Declarative.App.Simple
 
-type State = Vector (Maybe Int)
+data WindowState = WindowState
+  { windowStateCount :: Int
+  , windowStatePresented :: Int
+  }
+
+type State = Vector (Maybe WindowState)
 
 data Event
   = IncrAll
   | AddWindow
+  | PresentWindow Int
   | CloseWindow Int
   | RemoveWindow
   | Closed
 
 view' :: State -> AppView Window Event
-view' ns =
+view' ws =
   bin
       Window
       [ #title := "Windows"
@@ -36,9 +44,11 @@ view' ns =
       , #widthRequest := 200
       , #heightRequest := 300
       ]
-    $  container Box [#orientation := OrientationVertical, #spacing := 4, #margin := 4]
-    $  [addButton, removeButton ns]
-    <> Vector.imap windowLabel ns
+    $  container
+         Box
+         [#orientation := OrientationVertical, #spacing := 4, #margin := 4]
+    $  [addButton, removeButton ws]
+    <> Vector.imap windowLabel ws
 
 addButton :: BoxChild Event
 addButton = BoxChild defaultBoxChildProperties
@@ -48,38 +58,58 @@ removeButton :: State -> BoxChild Event
 removeButton ns = BoxChild defaultBoxChildProperties $ widget
   Button
   [ #label := "Remove Window"
-  , #sensitive := (ns /= mempty)
+  , #sensitive := not (Vector.null ns)
   , on #clicked RemoveWindow
   ]
 
-windowLabel :: Int -> Maybe Int -> BoxChild Event
-windowLabel i n =
-  BoxChild defaultBoxChildProperties { padding = 4 }
-    $ windowHost (window i <$> n)
-    $ windowChild i n
+windowLabel :: Int -> Maybe WindowState -> BoxChild Event
+windowLabel i ws =
+  BoxChild defaultBoxChildProperties
+    $ windowHost (window i <$> ws)
+    $ windowChild i ws
 
-window :: Int -> Int -> Bin Window Event
-window i x = bin
+window :: Int -> WindowState -> Bin Window Event
+window i WindowState {..} = bin
   Window
   [ #title := pack ("Window " <> show i)
   , on #deleteEvent (const (True, CloseWindow i))
+  , presentWindow windowStatePresented
   ]
-  (widget Label [#label := pack ("Open for " <> show x <> " seconds")])
+  (widget
+    Label
+    [#label := pack ("Open for " <> show windowStateCount <> " seconds")]
+  )
 
-windowChild :: Int -> Maybe Int -> Widget Event
+windowChild :: Int -> Maybe WindowState -> Widget Event
 windowChild i = \case
   Nothing -> widget Label [#label := pack ("Window " <> show i <> " Closed")]
-  Just _  -> widget Label [#label := pack ("Window " <> show i <> " Open")]
+  Just _  -> widget
+    Button
+    [ #label := pack ("Present window " <> show i)
+    , on #clicked $ PresentWindow i
+    ]
 
 update' :: State -> Event -> Transition State Event
-update' ns = \case
-  IncrAll       -> Transition (fmap succ <$> ns) (return Nothing)
-  AddWindow     -> Transition (ns `Vector.snoc` Just 1) (return Nothing)
+update' ws = \case
+  IncrAll ->
+    mapWindows ws (\_i w -> w { windowStateCount = windowStateCount w + 1 })
+  AddWindow ->
+    Transition (ws `Vector.snoc` Just (WindowState 1 1)) (pure Nothing)
+  PresentWindow i -> mapWindows
+    ws
+    (\i' w -> if i' == i
+      then w { windowStatePresented = windowStatePresented w + 1 }
+      else w
+    )
   CloseWindow i -> Transition
-    (Vector.imap (\i' n -> if i' == i then Nothing else n) ns)
-    (return Nothing)
-  RemoveWindow -> Transition (Vector.init ns) (return Nothing)
+    (Vector.imap (\i' w -> if i' == i then Nothing else w) ws)
+    (pure Nothing)
+  RemoveWindow -> Transition (Vector.init ws) (pure Nothing)
   Closed       -> Exit
+
+mapWindows :: State -> (Int -> WindowState -> WindowState) -> Transition State e
+mapWindows windows f =
+  Transition (Vector.imap (\i w -> fmap (f i) w) windows) (pure Nothing)
 
 main :: IO ()
 main = void $ run App

@@ -74,13 +74,15 @@ instance (Gtk.IsBin parent) => Patchable (Bin parent) where
     sc <- Gtk.widgetGetStyleContext widget'
     updateClasses sc mempty (collectedClasses collected)
 
+    ca <- createCustomAttributes widget' attrs
+
     childState  <- create child
     childWidget <- someStateWidget childState
     maybe (pure ()) Gtk.widgetDestroy =<< Gtk.binGetChild widget'
     Gtk.containerAdd widget' childWidget
     return
       (SomeState
-        (StateTreeBin (StateTreeNode widget' sc collected ()) childState)
+        (StateTreeBin (StateTreeNode widget' sc collected ca ()) childState)
       )
 
   patch (SomeState (st :: StateTree stateType w1 c1 e1 cs)) (Bin _ _ oldChild) (Bin (ctor :: Gtk.ManagedPtr
@@ -93,6 +95,7 @@ instance (Gtk.IsBin parent) => Patchable (Bin parent) where
           newCollected      = collectAttributes newAttributes
           oldCollectedProps = collectedProperties oldCollected
           newCollectedProps = collectedProperties newCollected
+          oldCustomAttributeStates = stateTreeCustomAttributeStates top
         in
           if oldCollectedProps `canBeModifiedTo` newCollectedProps
             then Modify $ do
@@ -101,8 +104,12 @@ instance (Gtk.IsBin parent) => Patchable (Bin parent) where
               updateClasses (stateTreeStyleContext top)
                             (collectedClasses oldCollected)
                             (collectedClasses newCollected)
+              newCustomAttributeStates <- patchCustomAttributes binWidget oldCustomAttributeStates newAttributes
 
-              let top' = top { stateTreeCollectedAttributes = newCollected }
+              let top' = top
+                    { stateTreeCollectedAttributes = newCollected
+                    , stateTreeCustomAttributeStates = newCustomAttributeStates
+                    }
               case patch oldChildState oldChild newChild of
                 Modify  modify    -> SomeState . StateTreeBin top' <$> modify
                 Replace createNew -> do
@@ -118,11 +125,13 @@ instance (Gtk.IsBin parent) => Patchable (Bin parent) where
             else Replace (create (Bin ctor newAttributes newChild))
       _ -> Replace (create (Bin ctor newAttributes newChild))
 
-  destroy (SomeState st) (Bin _ _ child) = do
-    case st of
-      StateTreeBin node childState -> do
+  destroy (SomeState (st :: StateTree stateType w c e cs)) (Bin _ attrs child) = do
+    case (st, eqT @w @parent) of
+      (StateTreeBin node childState, Just Refl) -> do
         destroy childState child
-        Gtk.toWidget (stateTreeWidget node) >>= Gtk.widgetDestroy
+        let widget = stateTreeWidget node
+        destroyCustomAttributes widget (stateTreeCustomAttributeStates node) attrs
+        Gtk.widgetDestroy widget
       _ ->
         error "Bin destroy method called with non-StateTreeBin state"
 
