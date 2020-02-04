@@ -68,7 +68,8 @@ patchInContainer (StateTreeContainer top children) container os' ns' = do
           newChildState  <- createWidget
           oldChildWidget <- someStateWidget oldChildState
           newChildWidget <- someStateWidget newChildState
-          replaceChild container new i oldChildWidget newChildWidget
+          let destroyOld = destroy oldChildState old
+          replaceChild container i destroyOld new newChildWidget
           return (pure newChildState)
         Keep -> return (pure oldChildState)
 

@@ -66,6 +66,6 @@ instance IsContainer Gtk.Grid GridChild where
     let GridChildProperties { width, height, leftAttach, topAttach } =
           properties
     Gtk.gridAttach grid widget' leftAttach topAttach width height
-  replaceChild grid gridChild' _i old new = do
-    Gtk.widgetDestroy old
+  replaceChild grid _ destroyOld gridChild' new = do
+    destroyOld
     appendChild grid gridChild' new

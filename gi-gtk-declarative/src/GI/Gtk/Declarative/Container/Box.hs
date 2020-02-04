@@ -67,7 +67,7 @@ instance ToChildren Gtk.Box Vector BoxChild
 instance IsContainer Gtk.Box BoxChild where
   appendChild box BoxChild { properties = BoxChildProperties { expand, fill, padding } } widget'
     = Gtk.boxPackStart box widget' expand fill padding
-  replaceChild box boxChild' i old new = do
-    Gtk.widgetDestroy old
+  replaceChild box i destroyOld boxChild' new = do
+    destroyOld
     appendChild box boxChild' new
     Gtk.boxReorderChild box new i

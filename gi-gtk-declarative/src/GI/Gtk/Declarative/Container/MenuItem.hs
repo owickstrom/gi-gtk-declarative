@@ -123,8 +123,8 @@ instance EventSource MenuItem where
 instance IsContainer Gtk.MenuShell MenuItem where
   appendChild shell _ widget' =
     Gtk.menuShellAppend shell =<< Gtk.unsafeCastTo Gtk.MenuItem widget'
-  replaceChild shell _ i old new = do
-    Gtk.containerRemove shell old
+  replaceChild shell i destroyOld menuItem' new = do
+    destroyOld
     menuItem' <- Gtk.unsafeCastTo Gtk.MenuItem new
     Gtk.menuShellInsert shell menuItem' i
     Gtk.widgetShowAll shell
@@ -133,14 +133,14 @@ instance IsContainer Gtk.MenuBar MenuItem where
   appendChild menuBar d w = do
     s <- Gtk.toMenuShell menuBar
     appendChild s d w
-  replaceChild menuBar d i old new = do
+  replaceChild menuBar i destroyOld d new = do
     s <- Gtk.toMenuShell menuBar
-    replaceChild s d i old new
+    replaceChild s i destroyOld d new
 
 instance IsContainer Gtk.Menu MenuItem where
   appendChild menuBar d w = do
     s <- Gtk.toMenuShell menuBar
     appendChild s d w
-  replaceChild menuBar d i old new = do
+  replaceChild menuBar i destroyOld d new = do
     s <- Gtk.toMenuShell menuBar
-    replaceChild s d i old new
+    replaceChild s i destroyOld d new
