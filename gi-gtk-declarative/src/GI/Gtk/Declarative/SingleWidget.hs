@@ -5,6 +5,7 @@
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -53,7 +54,7 @@ instance Patchable (SingleWidget widget) where
         (SomeState (StateTreeWidget (StateTreeNode widget' sc collected ca ())))
   patch (SomeState (st :: StateTree stateType w child event cs)) (SingleWidget (_ :: Gtk.ManagedPtr
       w1
-    -> w1) _) (SingleWidget (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes)
+    -> w1) oldAttributes) (SingleWidget (ctor :: Gtk.ManagedPtr w2 -> w2) newAttributes)
     = case (st, eqT @w @w1, eqT @w1 @w2) of
       (StateTreeWidget top, Just Refl, Just Refl) ->
         let
@@ -70,24 +71,19 @@ instance Patchable (SingleWidget widget) where
               updateClasses (stateTreeStyleContext top)
                             (collectedClasses oldCollected)
                             (collectedClasses newCollected)
-              newCustomAttributeStates <- patchCustomAttributes w oldCustomAttributeStates newAttributes
-              let top' = top { stateTreeCollectedAttributes = newCollected }
-              return
-                (SomeState
-                  (StateTreeWidget top'
-                    { stateTreeCollectedAttributes = newCollected
-                    , stateTreeCustomAttributeStates = newCustomAttributeStates
-                    }
-                  )
-                )
+              newCustomAttributeStates <- patchCustomAttributes w oldCustomAttributeStates oldAttributes newAttributes
+              let top' = top
+                   { stateTreeCollectedAttributes = newCollected 
+                   , stateTreeCustomAttributeStates = newCustomAttributeStates
+                   }
+              return (SomeState (StateTreeWidget top'))
             else Replace (create (SingleWidget ctor newAttributes))
       _ -> Replace (create (SingleWidget ctor newAttributes))
-  destroy (SomeState (st :: StateTree stateType w child event cs)) (SingleWidget _ attrs) = do
+  destroy (SomeState (st :: StateTree stateType w child e cs)) (SingleWidget _ attrs) = do
     case (st, eqT @w @widget) of
-      (StateTreeWidget top, Just Refl) -> do
-        let widget' = stateTreeWidget top
-        destroyCustomAttributes widget' (stateTreeCustomAttributeStates top) attrs
-        Gtk.widgetDestroy widget'
+      (StateTreeWidget StateTreeNode {..}, Just Refl) -> do
+        destroyCustomAttributes stateTreeWidget stateTreeCustomAttributeStates attrs
+        Gtk.widgetDestroy stateTreeWidget
       _ -> error "SingleWidget destroy called with incorrectly typed arguments"
 
 instance EventSource (SingleWidget widget) where
@@ -98,8 +94,9 @@ instance EventSource (SingleWidget widget) where
       event
       cs)) cb
     = case (st, eqT @w1 @w2) of
-      (StateTreeWidget top, Just Refl) ->
-        foldMap (addSignalHandler cb (stateTreeWidget top)) props
+      (StateTreeWidget StateTreeNode {..}, Just Refl) -> do
+        foldMap (addSignalHandler cb stateTreeWidget) props
+          <> subscribeCustomAttributes stateTreeWidget stateTreeCustomAttributeStates props cb
       _ -> pure (fromCancellation (pure ()))
 
 -- instance (Typeable widget, Functor (SingleWidget widget))

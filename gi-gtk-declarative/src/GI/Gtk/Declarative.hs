@@ -42,4 +42,3 @@ import           GI.Gtk.Declarative.Widget     as Export
 import           GI.Gtk.Declarative.Widget.Conversions
                                                as Export
                                                 ( )
-import           GI.Gtk.Declarative.WindowHost as Export

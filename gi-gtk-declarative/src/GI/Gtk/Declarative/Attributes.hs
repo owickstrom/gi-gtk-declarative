@@ -7,7 +7,10 @@
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedLabels       #-}
+{-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE RecordWildCards        #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeFamilies           #-}
 
 -- | Attribute lists on declarative objects, supporting the underlying
@@ -18,9 +21,12 @@ module GI.Gtk.Declarative.Attributes
   ( Attribute(..)
   , classes
   , ClassSet
+  -- * Custom Attributes
+  , customAttribute
   , createCustomAttributes
   , patchCustomAttributes
   , destroyCustomAttributes
+  , subscribeCustomAttributes
   -- * Event Handling
   , on
   , onM
@@ -29,9 +35,8 @@ module GI.Gtk.Declarative.Attributes
   )
 where
 
-import Control.Monad (forM)
-import qualified Data.Dynamic as Dynamic
-import           Data.Dynamic (Dynamic)
+import           Control.Monad                  ( forM, forM_ )
+import           Data.Foldable                  ( fold )
 import qualified Data.GI.Base.Attributes       as GI
 import qualified Data.GI.Base.Signals          as GI
 import           Data.HashSet                   ( HashSet )
@@ -46,10 +51,10 @@ import           GHC.TypeLits                   ( KnownSymbol
                                                 )
 import qualified GI.Gtk                        as Gtk
 
-import           GI.Gtk.Declarative.Attributes.Internal.EventHandler
+import           GI.Gtk.Declarative.Attributes.Custom
 import           GI.Gtk.Declarative.Attributes.Internal.Conversions
-
-import GI.Gtk.Declarative.Attributes.Custom
+import           GI.Gtk.Declarative.Attributes.Internal.EventHandler
+import           GI.Gtk.Declarative.EventSource.Subscription
 
 -- * Attributes
 
@@ -101,11 +106,7 @@ data Attribute widget event where
     -> EventHandler gtkCallback widget Impure event
     -> Attribute widget event
   Custom
-    ::( Gtk.IsWidget widget
-      , Typeable widget
-      , Typeable internalState
-      )
-    => CustomAttribute widget internalState event
+    :: CustomAttributeDecl widget event
     -> Attribute widget event
 
 -- | A set of CSS classes.
@@ -158,59 +159,109 @@ onM
   -> Attribute widget event
 onM signal = OnSignalImpure signal . toEventHandler
 
--- move the state data into "Collected" ?
+-- move the state data into "Collected" ? move these functions to a different module?
 
-createCustomAttributes :: widget -> Vector (Attribute widget event) -> IO (Vector Dynamic)
-createCustomAttributes widget attrs = do
-  forM (filterToCustom attrs) $ \(DynCustomAttribute a) -> do
-    Dynamic.toDyn <$> attrCreate a widget
+-- | Create a custom attribute from its declarative form
+customAttribute
+  :: CustomAttribute widget decl state
+  => decl event
+  -> Attribute widget event
+customAttribute decl =
+  Custom $ CustomAttributeDecl $ DeclWrap decl
 
-patchCustomAttributes :: widget -> Vector Dynamic -> Vector (Attribute widget event) -> IO (Vector Dynamic)
-patchCustomAttributes widget oldStates newAttrs = do
+createCustomAttributes
+  :: widget
+  -> Vector (Attribute widget event)
+  -> IO (Vector (CustomAttributeState widget))
+createCustomAttributes widget attrs =
+  forM (filterToCustom attrs) $ \(CustomAttributeDecl (DeclWrap attr)) -> do
+    CustomAttributeState . StateWrap <$> attrCreate widget attr
+
+patchCustomAttributes
+  :: forall widget e1 e2
+   . widget
+  -> Vector (CustomAttributeState widget)
+  -> Vector (Attribute widget e1)
+  -> Vector (Attribute widget e2)
+  -> IO (Vector (CustomAttributeState widget))
+patchCustomAttributes widget oldStates oldDecls newDecls =
   Vector.mapMaybe id <$> Vector.generateM maxLength patchIndex
   where
-    maxLength = max (Vector.length oldStates) (Vector.length newAttrs')
-    newAttrs' = filterToCustom newAttrs
-    patchIndex :: Int -> IO (Maybe Dynamic)
+    maxLength = maximum [Vector.length oldStates, Vector.length oldDecls', Vector.length newDecls']
+    oldDecls' = filterToCustom oldDecls
+    newDecls' = filterToCustom newDecls
+    
     patchIndex i =
-      case (oldStates !? i, newAttrs' !? i) of
-        -- old and new attributes have the same type, so we can just patch
-        (Just oldState, Just (DynCustomAttribute a)) | Just s <- Dynamic.fromDynamic oldState ->
-         Just . Dynamic.toDyn <$> attrPatch a widget s
+      case (oldStates !? i, oldDecls' !? i, newDecls' !? i) of
+        (Just oldState, Just oldDecl, Just newDecl) ->
+          Just <$> patchAttribute oldState oldDecl newDecl
+        (Just oldState, Just oldDecl, Nothing) -> do
+          putStrLn "attr removed"
+          Nothing <$ withCustomAttribute attrDestroy widget oldState oldDecl
+        (Nothing, Nothing, Just (CustomAttributeDecl (DeclWrap attr))) ->
+          Just . CustomAttributeState . StateWrap <$> attrCreate widget attr
+        _ ->
+          error "state/decl mismatch: this means there is a bug in gi-gtk-declarative"
+    
+    patchAttribute :: CustomAttributeState widget -> CustomAttributeDecl widget e1 -> CustomAttributeDecl widget e2 -> IO (CustomAttributeState widget)
+    patchAttribute (CustomAttributeState (StateWrap oldState :: StateWrap d1 s1))
+                   (CustomAttributeDecl (DeclWrap oldDecl :: DeclWrap d2 s2 e1))
+                   (CustomAttributeDecl (DeclWrap newDecl :: DeclWrap d3 s3 e2)) =
+      case (eqT @s1 @s2, eqT @s1 @s3, eqT @d1 @d2, eqT @d1 @d3) of
+        (Just Refl, Just Refl, Just Refl, Just Refl) -> do
+          -- the new attribute has the same type as the old one, so we can patch
+          CustomAttributeState . StateWrap <$> attrPatch widget oldState oldDecl newDecl
+        (Just Refl, Nothing, Just Refl, Nothing) -> do
+          -- the new attribute has a different type to the old one, so we need to destroy and recreate
+          attrDestroy widget oldState oldDecl
+          CustomAttributeState . StateWrap <$> attrCreate widget newDecl
+        _ ->
+          error "state/decl mismatch: this means there is a bug in gi-gtk-declarative"
 
-        -- old and new attributes have different types: must destroy and recreate
-        (Just oldState, Just (DynCustomAttribute a)) | otherwise -> do
-          error "delete old, create new"
-        
-        -- old attribute doesn't exist in new world, so destroy it
-        (Just oldState, Nothing) ->
-          error "delete old"
-        
-        -- a new attribute needs creating
-        (Nothing, Just (DynCustomAttribute a)) ->
-          Just . Dynamic.toDyn <$> attrCreate a widget
-        
-        (Nothing, Nothing) ->
-          error "this should not happen"
+destroyCustomAttributes
+  :: widget
+  -> Vector (CustomAttributeState widget)
+  -> Vector (Attribute widget event)
+  -> IO ()
+destroyCustomAttributes widget states attrs = do
+  sequence_ $ Vector.zipWith
+    (withCustomAttribute attrDestroy widget)
+    states
+    (filterToCustom attrs)
 
-destroyCustomAttributes :: widget -> Vector Dynamic -> Vector (Attribute widget event) -> IO ()
-destroyCustomAttributes widget states attrs =
-  sequence_ (Vector.zipWith f states (filterToCustom attrs))
-  where
-    f state (DynCustomAttribute a) =
-      case (Dynamic.fromDynamic state) of
-        Just s -> attrDestroy a widget s
-        Nothing -> error "Custom attribute state mismatch"
+subscribeCustomAttributes
+  :: widget
+  -> Vector (CustomAttributeState widget)
+  -> Vector (Attribute widget event)
+  -> (event -> IO ())
+  -> IO Subscription
+subscribeCustomAttributes widget states attrs cb =
+  fold $ Vector.zipWith
+    (withCustomAttribute (\w s d -> attrSubscribe w s d cb) widget)
+    states
+    (filterToCustom attrs)
 
-filterToCustom :: Vector (Attribute widget event) -> Vector (DynCustomAttribute widget event)
+filterToCustom
+  :: Vector (Attribute widget event)
+  -> Vector (CustomAttributeDecl widget event)
 filterToCustom = Vector.mapMaybe
   (\case
-      Custom a -> Just (DynCustomAttribute a)
+      Custom a -> Just a
       _        -> Nothing
   )
 
-data DynCustomAttribute widget event where
-  DynCustomAttribute
-    :: Typeable internalState
-    => CustomAttribute widget internalState event
-    -> DynCustomAttribute widget event
+withCustomAttribute
+  :: (forall state decl. CustomAttribute widget decl state => widget -> state -> decl event -> b)
+  -> widget
+  -> CustomAttributeState widget
+  -> CustomAttributeDecl widget event
+  -> b
+withCustomAttribute cb
+                    widget
+                    (CustomAttributeState (StateWrap state :: StateWrap d1 s1))
+                    (CustomAttributeDecl (DeclWrap decl :: DeclWrap d2 s2 event)) =
+  case (eqT @s1 @s2, eqT @d1 @d2) of
+    (Just Refl, Just Refl) ->
+      cb widget state decl
+    _ ->
+      error "state/decl mismatch: this means there is a bug in gi-gtk-declarative"

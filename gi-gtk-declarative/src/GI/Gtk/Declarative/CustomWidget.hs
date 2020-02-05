@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
@@ -78,7 +79,7 @@ instance
         (StateTreeWidget (StateTreeNode widget sc collected ca internalState))
       )
 
-  patch (SomeState (stateTree :: StateTree st w e c cs)) old new =
+  patch (SomeState (stateTree :: StateTree st w c e cs)) old new =
     case (eqT @cs @internalState, eqT @widget @w) of
       (Just Refl, Just Refl) ->
         let
@@ -105,7 +106,7 @@ instance
                   (stateTreeStyleContext (stateTreeNode stateTree))
                   (collectedClasses oldCollected)
                   (collectedClasses newCollected)
-                newCustomAttributeStates <- patchCustomAttributes widget' oldCustomAttributeStates (customAttributes new)
+                newCustomAttributeStates <- patchCustomAttributes widget' oldCustomAttributeStates (customAttributes old) (customAttributes new)
                 internalState' <- case p of
                   CustomModify f ->
                     f =<< Gtk.unsafeCastTo (customWidget new) widget'
@@ -123,26 +124,21 @@ instance
               | otherwise -> Replace (create new)
       _ -> Replace (create new)
   
-  destroy (SomeState (st :: StateTree st w e c cs)) custom = do
+  destroy (SomeState (st :: StateTree st w c e cs)) custom = do
     case (st, eqT @w @widget) of
-      (StateTreeWidget top, Just Refl) -> do
-        let widget = stateTreeWidget top
-        destroyCustomAttributes widget (stateTreeCustomAttributeStates top) (customAttributes custom)
-        Gtk.widgetDestroy widget
+      (StateTreeWidget StateTreeNode {..}, Just Refl) -> do
+        destroyCustomAttributes stateTreeWidget stateTreeCustomAttributeStates (customAttributes custom)
+        Gtk.widgetDestroy stateTreeWidget
       _ -> error "CustomWidget destroy called with invalid types"
 
 instance
-  (Typeable internalState, Gtk.GObject widget) =>
+  (Typeable internalState, Typeable widget, Gtk.GObject widget) =>
   EventSource (CustomWidget widget params internalState)
   where
-  subscribe custom (SomeState (stateTree :: StateTree st w e c cs)) cb =
-    case eqT @cs @internalState of
-      Just Refl -> do
-        w' <- Gtk.unsafeCastTo (customWidget custom)
-                               (stateTreeNodeWidget stateTree)
-        customSubscribe custom
-                        (customParams custom)
-                        (stateTreeCustomState (stateTreeNode stateTree))
-                        w'
-                        cb
-      Nothing -> pure (fromCancellation (pure ()))
+  subscribe custom (SomeState (st :: StateTree st w c e cs)) cb =
+    case (st, eqT @w @widget, eqT @cs @internalState) of
+      (StateTreeWidget StateTreeNode {..}, Just Refl, Just Refl) -> do
+        w' <- Gtk.unsafeCastTo (customWidget custom) stateTreeWidget
+        customSubscribe custom (customParams custom) stateTreeCustomState w' cb
+          <> subscribeCustomAttributes stateTreeWidget stateTreeCustomAttributeStates (customAttributes custom) cb
+      _ -> pure (fromCancellation (pure ()))

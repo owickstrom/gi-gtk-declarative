@@ -12,11 +12,11 @@
 module GI.Gtk.Declarative.State where
 
 import           Data.Dynamic
-import           Data.Typeable
 
 import           Data.Vector                             (Vector)
 import qualified GI.Gtk                                  as Gtk
 
+import           GI.Gtk.Declarative.Attributes.Custom
 import           GI.Gtk.Declarative.Attributes.Collected
 import           GI.Gtk.Declarative.Container.Class
 
@@ -57,7 +57,7 @@ data StateTreeNode widget event customState = StateTreeNode
   { stateTreeWidget                :: !widget
   , stateTreeStyleContext          :: !Gtk.StyleContext
   , stateTreeCollectedAttributes   :: !(Collected widget event)
-  , stateTreeCustomAttributeStates :: !(Vector Dynamic)
+  , stateTreeCustomAttributeStates :: !(Vector (CustomAttributeState widget))
   , stateTreeCustomState           :: customState
   }
 

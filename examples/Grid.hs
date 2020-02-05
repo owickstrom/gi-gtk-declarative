@@ -6,10 +6,8 @@
 module Grid where
 
 import           Control.Monad                  ( void )
-import           Data.Text                      ( pack )
 import           GI.Gtk                         ( Button(..)
                                                 , Grid(..)
-                                                , Label(..)
                                                 , Window(..)
                                                 )
 import           GI.Gtk.Declarative

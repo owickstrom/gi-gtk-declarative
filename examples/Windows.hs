@@ -17,7 +17,7 @@ import           GI.Gtk                        (Box (..), Button (..),
                                                 Label (..), Orientation (..),
                                                 Window (..))
 import           GI.Gtk.Declarative
-import           GI.Gtk.Declarative.Attributes.Custom.Window (presentWindow) -- todo: add convenience module to make importing stuff easier...
+import           GI.Gtk.Declarative.Attributes.Custom.Window (presentWindow, window) -- todo: add convenience module to make importing stuff easier...
 import           GI.Gtk.Declarative.App.Simple
 
 data WindowState = WindowState
@@ -65,28 +65,32 @@ removeButton ns = BoxChild defaultBoxChildProperties $ widget
 windowLabel :: Int -> Maybe WindowState -> BoxChild Event
 windowLabel i ws =
   BoxChild defaultBoxChildProperties
-    $ windowHost (window i <$> ws)
     $ windowChild i ws
 
-window :: Int -> WindowState -> Bin Window Event
-window i WindowState {..} = bin
+mkWindow :: Int -> WindowState -> Bin Window Event
+mkWindow i WindowState {..} = bin
   Window
   [ #title := pack ("Window " <> show i)
-  , on #deleteEvent (const (True, CloseWindow i))
+  , on #deleteEvent (const (True, CloseWindow i)) -- todo: why doesnt this work?
   , presentWindow windowStatePresented
-  ]
-  (widget
-    Label
-    [#label := pack ("Open for " <> show windowStateCount <> " seconds")]
-  )
+  ] $
+  container Box [#orientation := OrientationVertical, #spacing := 4, #margin := 4]
+   [ widget
+       Label
+       [#label := pack ("Open for " <> show windowStateCount <> " seconds")]
+   , widget
+       Button
+       [#label := "Close Window", on #clicked (CloseWindow i)]
+   ]
 
 windowChild :: Int -> Maybe WindowState -> Widget Event
 windowChild i = \case
   Nothing -> widget Label [#label := pack ("Window " <> show i <> " Closed")]
-  Just _  -> widget
+  Just ws  -> widget
     Button
     [ #label := pack ("Present window " <> show i)
     , on #clicked $ PresentWindow i
+    , window $ mkWindow i ws
     ]
 
 update' :: State -> Event -> Transition State Event

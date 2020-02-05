@@ -4,6 +4,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -102,7 +103,7 @@ instance
         (StateTreeContainer (StateTreeNode widget' sc collected ca ()) childStates)
       )
 
-  patch (SomeState (st :: StateTree stateType w1 c1 e1 cs)) (Container _ _ oldChildren) new@(Container (ctor :: Gtk.ManagedPtr
+  patch (SomeState (st :: StateTree stateType w1 c1 e1 cs)) (Container _ oldAttributes oldChildren) new@(Container (ctor :: Gtk.ManagedPtr
       w2
     -> w2) newAttributes (newChildren :: Children c2 e2))
     = case (st, eqT @w1 @w2) of
@@ -121,7 +122,7 @@ instance
                 updateClasses (stateTreeStyleContext top)
                               (collectedClasses oldCollected)
                               (collectedClasses newCollected)
-                newCustomAttributeStates <- patchCustomAttributes containerWidget oldCustomAttributeStates newAttributes
+                newCustomAttributeStates <- patchCustomAttributes containerWidget oldCustomAttributeStates oldAttributes newAttributes
                 let top' = top
                       { stateTreeCollectedAttributes = newCollected
                       , stateTreeCustomAttributeStates = newCustomAttributeStates
@@ -136,11 +137,10 @@ instance
   
   destroy (SomeState (st :: StateTree stateType w c e cs)) (Container _ attrs (children :: Children child e2)) = do
     case (st, eqT @w @container) of
-      (StateTreeContainer top childStates, Just Refl) -> do
+      (StateTreeContainer StateTreeNode {..} childStates, Just Refl) -> do
         sequence_ (Vector.zipWith destroy childStates (unChildren children))
-        let widget = stateTreeWidget top
-        destroyCustomAttributes widget (stateTreeCustomAttributeStates top) attrs
-        Gtk.widgetDestroy widget
+        destroyCustomAttributes stateTreeWidget stateTreeCustomAttributeStates attrs
+        Gtk.widgetDestroy stateTreeWidget
       _ ->
         error "Container destroy method called with non-StateTreeContainer state"
 
@@ -152,16 +152,18 @@ instance
   EventSource child =>
   EventSource (Container widget (Children child))
   where
-  subscribe (Container ctor props children) (SomeState st) cb = case st of
-    StateTreeContainer top childStates -> do
-      parentWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
-      handlers' <- foldMap (addSignalHandler cb parentWidget) props
-      subs <- flip foldMap (Vector.zip (unChildren children) childStates)
-        $ \(c, childState) -> subscribe c childState cb
-      return (handlers' <> subs)
-    _ ->
-      error
-        "Warning: Cannot subscribe to Container events with a non-container state tree."
+  subscribe (Container ctor props children) (SomeState (st :: StateTree stateType w c e cs)) cb =
+    case (st, eqT @w @widget) of
+      (StateTreeContainer StateTreeNode {..} childStates, Just Refl) -> do
+        parentWidget <- Gtk.unsafeCastTo ctor stateTreeWidget
+        handlers' <- foldMap (addSignalHandler cb parentWidget) props
+          <> subscribeCustomAttributes stateTreeWidget stateTreeCustomAttributeStates props cb
+        subs <- flip foldMap (Vector.zip (unChildren children) childStates)
+          $ \(c, childState) -> subscribe c childState cb
+        return (handlers' <> subs)
+      _ ->
+        error
+         "Warning: Cannot subscribe to Container events with a non-container state tree."
 
 --
 -- FromWidget
