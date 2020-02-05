@@ -163,19 +163,19 @@ onM signal = OnSignalImpure signal . toEventHandler
 
 -- | Create a custom attribute from its declarative form
 customAttribute
-  :: CustomAttribute widget decl state
+  :: CustomAttribute widget decl
   => decl event
   -> Attribute widget event
 customAttribute decl =
-  Custom $ CustomAttributeDecl $ DeclWrap decl
+  Custom $ CustomAttributeDecl decl
 
 createCustomAttributes
   :: widget
   -> Vector (Attribute widget event)
   -> IO (Vector (CustomAttributeState widget))
 createCustomAttributes widget attrs =
-  forM (filterToCustom attrs) $ \(CustomAttributeDecl (DeclWrap attr)) -> do
-    CustomAttributeState . StateWrap <$> attrCreate widget attr
+  forM (filterToCustom attrs) $ \(CustomAttributeDecl attr) -> do
+    CustomAttributeState <$> attrCreate widget attr
 
 patchCustomAttributes
   :: forall widget e1 e2
@@ -198,23 +198,27 @@ patchCustomAttributes widget oldStates oldDecls newDecls =
         (Just oldState, Just oldDecl, Nothing) -> do
           putStrLn "attr removed"
           Nothing <$ withCustomAttribute attrDestroy widget oldState oldDecl
-        (Nothing, Nothing, Just (CustomAttributeDecl (DeclWrap attr))) ->
-          Just . CustomAttributeState . StateWrap <$> attrCreate widget attr
+        (Nothing, Nothing, Just (CustomAttributeDecl attr)) ->
+          Just . CustomAttributeState <$> attrCreate widget attr
         _ ->
           error "state/decl mismatch: this means there is a bug in gi-gtk-declarative"
     
-    patchAttribute :: CustomAttributeState widget -> CustomAttributeDecl widget e1 -> CustomAttributeDecl widget e2 -> IO (CustomAttributeState widget)
-    patchAttribute (CustomAttributeState (StateWrap oldState :: StateWrap d1 s1))
-                   (CustomAttributeDecl (DeclWrap oldDecl :: DeclWrap d2 s2 e1))
-                   (CustomAttributeDecl (DeclWrap newDecl :: DeclWrap d3 s3 e2)) =
-      case (eqT @s1 @s2, eqT @s1 @s3, eqT @d1 @d2, eqT @d1 @d3) of
-        (Just Refl, Just Refl, Just Refl, Just Refl) -> do
+    patchAttribute
+      :: CustomAttributeState widget
+      -> CustomAttributeDecl widget e1
+      -> CustomAttributeDecl widget e2
+      -> IO (CustomAttributeState widget)
+    patchAttribute (CustomAttributeState (oldState :: State d1))
+                   (CustomAttributeDecl (oldDecl :: d2 e1))
+                   (CustomAttributeDecl (newDecl :: d3 e2)) =
+      case (eqT @d1 @d2, eqT @d1 @d3) of
+        (Just Refl, Just Refl) -> do
           -- the new attribute has the same type as the old one, so we can patch
-          CustomAttributeState . StateWrap <$> attrPatch widget oldState oldDecl newDecl
-        (Just Refl, Nothing, Just Refl, Nothing) -> do
+          CustomAttributeState <$> attrPatch widget oldState oldDecl newDecl
+        (Just Refl, Nothing) -> do
           -- the new attribute has a different type to the old one, so we need to destroy and recreate
           attrDestroy widget oldState oldDecl
-          CustomAttributeState . StateWrap <$> attrCreate widget newDecl
+          CustomAttributeState <$> attrCreate widget newDecl
         _ ->
           error "state/decl mismatch: this means there is a bug in gi-gtk-declarative"
 
@@ -251,17 +255,17 @@ filterToCustom = Vector.mapMaybe
   )
 
 withCustomAttribute
-  :: (forall state decl. CustomAttribute widget decl state => widget -> state -> decl event -> b)
+  :: (forall decl. CustomAttribute widget decl => widget -> State decl -> decl event -> b)
   -> widget
   -> CustomAttributeState widget
   -> CustomAttributeDecl widget event
   -> b
 withCustomAttribute cb
                     widget
-                    (CustomAttributeState (StateWrap state :: StateWrap d1 s1))
-                    (CustomAttributeDecl (DeclWrap decl :: DeclWrap d2 s2 event)) =
-  case (eqT @s1 @s2, eqT @d1 @d2) of
-    (Just Refl, Just Refl) ->
+                    (CustomAttributeState (state :: State d1))
+                    (CustomAttributeDecl (decl :: d2 event)) =
+  case eqT @d1 @d2 of
+    Just Refl ->
       cb widget state decl
     _ ->
       error "state/decl mismatch: this means there is a bug in gi-gtk-declarative"
