@@ -19,11 +19,12 @@ module GI.Gtk.Declarative.SingleWidget
 where
 
 import           Data.Typeable
-import           Data.Vector                    ( Vector )
-import qualified GI.Gtk                        as Gtk
+import           Data.Vector                             (Vector)
+import qualified GI.Gtk                                  as Gtk
 
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Attributes.Collected
+import           GI.Gtk.Declarative.Attributes.Custom
 import           GI.Gtk.Declarative.Attributes.Internal
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Patch
@@ -49,7 +50,7 @@ instance Patchable (SingleWidget widget) where
       Gtk.widgetShow widget'
       sc <- Gtk.widgetGetStyleContext widget'
       updateClasses sc mempty (collectedClasses collected)
-      ca <- createCustomAttributes widget' attrs
+      ca <- createCustomAttributes widget' (filterToCustom attrs)
       return
         (SomeState (StateTreeWidget (StateTreeNode widget' sc collected ca ())))
   patch (SomeState (st :: StateTree stateType w child event cs)) (SingleWidget (_ :: Gtk.ManagedPtr
@@ -71,9 +72,13 @@ instance Patchable (SingleWidget widget) where
               updateClasses (stateTreeStyleContext top)
                             (collectedClasses oldCollected)
                             (collectedClasses newCollected)
-              newCustomAttributeStates <- patchCustomAttributes w oldCustomAttributeStates oldAttributes newAttributes
+              newCustomAttributeStates <- patchCustomAttributes
+                w
+                oldCustomAttributeStates
+                (filterToCustom oldAttributes)
+                (filterToCustom newAttributes)
               let top' = top
-                   { stateTreeCollectedAttributes = newCollected 
+                   { stateTreeCollectedAttributes = newCollected
                    , stateTreeCustomAttributeStates = newCustomAttributeStates
                    }
               return (SomeState (StateTreeWidget top'))
@@ -82,9 +87,12 @@ instance Patchable (SingleWidget widget) where
   destroy (SomeState (st :: StateTree stateType w child e cs)) (SingleWidget _ attrs) = do
     case (st, eqT @w @widget) of
       (StateTreeWidget StateTreeNode {..}, Just Refl) -> do
-        destroyCustomAttributes stateTreeWidget stateTreeCustomAttributeStates attrs
+        destroyCustomAttributes
+          stateTreeWidget
+          stateTreeCustomAttributeStates
+          (filterToCustom $ attrs)
         Gtk.widgetDestroy stateTreeWidget
-      _ -> error "SingleWidget destroy called with incorrectly typed arguments"
+      _ -> error "SingleWidget destroy called with incompatiable state"
 
 instance EventSource (SingleWidget widget) where
   subscribe (SingleWidget (_ :: Gtk.ManagedPtr w1 -> w1) props) (SomeState (st :: StateTree
@@ -96,7 +104,11 @@ instance EventSource (SingleWidget widget) where
     = case (st, eqT @w1 @w2) of
       (StateTreeWidget StateTreeNode {..}, Just Refl) -> do
         foldMap (addSignalHandler cb stateTreeWidget) props
-          <> subscribeCustomAttributes stateTreeWidget stateTreeCustomAttributeStates props cb
+          <> subscribeCustomAttributes
+               stateTreeWidget
+               stateTreeCustomAttributeStates
+               (filterToCustom props)
+               cb
       _ -> pure (fromCancellation (pure ()))
 
 -- instance (Typeable widget, Functor (SingleWidget widget))

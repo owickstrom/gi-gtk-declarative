@@ -43,7 +43,6 @@ instance CustomAttribute widget Window where
         WindowState <$> p
 
   attrDestroy _widget (WindowState state) (Window bin) = do
-    putStrLn "window destroy!"
     destroy state bin
 
   attrSubscribe _widget (WindowState state) (Window bin) cb =

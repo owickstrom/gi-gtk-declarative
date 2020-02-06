@@ -9,24 +9,19 @@
 {-# LANGUAGE OverloadedLabels       #-}
 {-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE RecordWildCards        #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeFamilies           #-}
 
 -- | Attribute lists on declarative objects, supporting the underlying
--- attributes from "Data.GI.Base.Attributes", along with CSS class lists, and
--- pure and impure event EventHandlers.
+-- attributes from "Data.GI.Base.Attributes", along with CSS class lists,
+-- pure and impure event EventHandlers, and custom attributes with
+-- arbitrary state and patching behaviour.
 
 module GI.Gtk.Declarative.Attributes
   ( Attribute(..)
   , classes
   , ClassSet
-  -- * Custom Attributes
   , customAttribute
-  , createCustomAttributes
-  , patchCustomAttributes
-  , destroyCustomAttributes
-  , subscribeCustomAttributes
+  , filterToCustom
   -- * Event Handling
   , on
   , onM
@@ -35,8 +30,6 @@ module GI.Gtk.Declarative.Attributes
   )
 where
 
-import           Control.Monad                  ( forM, forM_ )
-import           Data.Foldable                  ( fold )
 import qualified Data.GI.Base.Attributes       as GI
 import qualified Data.GI.Base.Signals          as GI
 import           Data.HashSet                   ( HashSet )
@@ -45,7 +38,7 @@ import qualified Data.Text                     as T
 import           Data.Text                      ( Text )
 import           Data.Typeable
 import qualified Data.Vector                   as Vector
-import           Data.Vector                    ( Vector, (!?) )
+import           Data.Vector                    ( Vector )
 import           GHC.TypeLits                   ( KnownSymbol
                                                 , Symbol
                                                 )
@@ -54,7 +47,6 @@ import qualified GI.Gtk                        as Gtk
 import           GI.Gtk.Declarative.Attributes.Custom
 import           GI.Gtk.Declarative.Attributes.Internal.Conversions
 import           GI.Gtk.Declarative.Attributes.Internal.EventHandler
-import           GI.Gtk.Declarative.EventSource.Subscription
 
 -- * Attributes
 
@@ -159,113 +151,17 @@ onM
   -> Attribute widget event
 onM signal = OnSignalImpure signal . toEventHandler
 
--- move the state data into "Collected" ? move these functions to a different module?
-
 -- | Create a custom attribute from its declarative form
 customAttribute
-  :: CustomAttribute widget decl
-  => decl event
-  -> Attribute widget event
-customAttribute decl =
-  Custom $ CustomAttributeDecl decl
+  :: CustomAttribute widget decl => decl event -> Attribute widget event
+customAttribute decl = Custom $ CustomAttributeDecl decl
 
-createCustomAttributes
-  :: widget
-  -> Vector (Attribute widget event)
-  -> IO (Vector (CustomAttributeState widget))
-createCustomAttributes widget attrs =
-  forM (filterToCustom attrs) $ \(CustomAttributeDecl attr) -> do
-    CustomAttributeState <$> attrCreate widget attr
-
-patchCustomAttributes
-  :: forall widget e1 e2
-   . widget
-  -> Vector (CustomAttributeState widget)
-  -> Vector (Attribute widget e1)
-  -> Vector (Attribute widget e2)
-  -> IO (Vector (CustomAttributeState widget))
-patchCustomAttributes widget oldStates oldDecls newDecls =
-  Vector.mapMaybe id <$> Vector.generateM maxLength patchIndex
-  where
-    maxLength = maximum [Vector.length oldStates, Vector.length oldDecls', Vector.length newDecls']
-    oldDecls' = filterToCustom oldDecls
-    newDecls' = filterToCustom newDecls
-    
-    patchIndex i =
-      case (oldStates !? i, oldDecls' !? i, newDecls' !? i) of
-        (Just oldState, Just oldDecl, Just newDecl) ->
-          Just <$> patchAttribute oldState oldDecl newDecl
-        (Just oldState, Just oldDecl, Nothing) -> do
-          putStrLn "attr removed"
-          Nothing <$ withCustomAttribute attrDestroy widget oldState oldDecl
-        (Nothing, Nothing, Just (CustomAttributeDecl attr)) ->
-          Just . CustomAttributeState <$> attrCreate widget attr
-        _ ->
-          error "state/decl mismatch: this means there is a bug in gi-gtk-declarative"
-    
-    patchAttribute
-      :: CustomAttributeState widget
-      -> CustomAttributeDecl widget e1
-      -> CustomAttributeDecl widget e2
-      -> IO (CustomAttributeState widget)
-    patchAttribute (CustomAttributeState (oldState :: State d1))
-                   (CustomAttributeDecl (oldDecl :: d2 e1))
-                   (CustomAttributeDecl (newDecl :: d3 e2)) =
-      case (eqT @d1 @d2, eqT @d1 @d3) of
-        (Just Refl, Just Refl) -> do
-          -- the new attribute has the same type as the old one, so we can patch
-          CustomAttributeState <$> attrPatch widget oldState oldDecl newDecl
-        (Just Refl, Nothing) -> do
-          -- the new attribute has a different type to the old one, so we need to destroy and recreate
-          attrDestroy widget oldState oldDecl
-          CustomAttributeState <$> attrCreate widget newDecl
-        _ ->
-          error "state/decl mismatch: this means there is a bug in gi-gtk-declarative"
-
-destroyCustomAttributes
-  :: widget
-  -> Vector (CustomAttributeState widget)
-  -> Vector (Attribute widget event)
-  -> IO ()
-destroyCustomAttributes widget states attrs = do
-  sequence_ $ Vector.zipWith
-    (withCustomAttribute attrDestroy widget)
-    states
-    (filterToCustom attrs)
-
-subscribeCustomAttributes
-  :: widget
-  -> Vector (CustomAttributeState widget)
-  -> Vector (Attribute widget event)
-  -> (event -> IO ())
-  -> IO Subscription
-subscribeCustomAttributes widget states attrs cb =
-  fold $ Vector.zipWith
-    (withCustomAttribute (\w s d -> attrSubscribe w s d cb) widget)
-    states
-    (filterToCustom attrs)
-
+-- | Extract the custom attributes from a list of attributes.
 filterToCustom
   :: Vector (Attribute widget event)
   -> Vector (CustomAttributeDecl widget event)
 filterToCustom = Vector.mapMaybe
   (\case
-      Custom a -> Just a
-      _        -> Nothing
+    Custom a -> Just a
+    _        -> Nothing
   )
-
-withCustomAttribute
-  :: (forall decl. CustomAttribute widget decl => widget -> State decl -> decl event -> b)
-  -> widget
-  -> CustomAttributeState widget
-  -> CustomAttributeDecl widget event
-  -> b
-withCustomAttribute cb
-                    widget
-                    (CustomAttributeState (state :: State d1))
-                    (CustomAttributeDecl (decl :: d2 event)) =
-  case eqT @d1 @d2 of
-    Just Refl ->
-      cb widget state decl
-    _ ->
-      error "state/decl mismatch: this means there is a bug in gi-gtk-declarative"

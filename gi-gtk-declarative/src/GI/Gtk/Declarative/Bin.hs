@@ -19,11 +19,12 @@ module GI.Gtk.Declarative.Bin
 where
 
 import           Data.Typeable
-import           Data.Vector                    ( Vector )
-import qualified GI.Gtk                        as Gtk
+import           Data.Vector                             (Vector)
+import qualified GI.Gtk                                  as Gtk
 
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Attributes.Collected
+import           GI.Gtk.Declarative.Attributes.Custom
 import           GI.Gtk.Declarative.Attributes.Internal
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Patch
@@ -75,7 +76,7 @@ instance (Gtk.IsBin parent) => Patchable (Bin parent) where
     sc <- Gtk.widgetGetStyleContext widget'
     updateClasses sc mempty (collectedClasses collected)
 
-    ca <- createCustomAttributes widget' attrs
+    ca <- createCustomAttributes widget' (filterToCustom attrs)
 
     childState  <- create child
     childWidget <- someStateWidget childState
@@ -105,7 +106,11 @@ instance (Gtk.IsBin parent) => Patchable (Bin parent) where
               updateClasses (stateTreeStyleContext top)
                             (collectedClasses oldCollected)
                             (collectedClasses newCollected)
-              newCustomAttributeStates <- patchCustomAttributes binWidget oldCustomAttributeStates oldAttributes newAttributes
+              newCustomAttributeStates <- patchCustomAttributes
+                binWidget
+                oldCustomAttributeStates
+                (filterToCustom oldAttributes)
+                (filterToCustom newAttributes)
 
               let top' = top
                     { stateTreeCollectedAttributes = newCollected
@@ -114,7 +119,6 @@ instance (Gtk.IsBin parent) => Patchable (Bin parent) where
               case patch oldChildState oldChild newChild of
                 Modify  modify    -> SomeState . StateTreeBin top' <$> modify
                 Replace createNew -> do
-                  putStrLn "destroying oldChild..."
                   destroy oldChildState oldChild
                   newChildState <- createNew
                   childWidget   <- someStateWidget newChildState
@@ -131,10 +135,13 @@ instance (Gtk.IsBin parent) => Patchable (Bin parent) where
     case (st, eqT @w @parent) of
       (StateTreeBin StateTreeNode {..} childState, Just Refl) -> do
         destroy childState child
-        destroyCustomAttributes stateTreeWidget stateTreeCustomAttributeStates attrs
+        destroyCustomAttributes
+          stateTreeWidget
+          stateTreeCustomAttributeStates
+          (filterToCustom attrs)
         Gtk.widgetDestroy stateTreeWidget
       _ ->
-        error "Bin destroy method called with non-StateTreeBin state"
+        error "Bin destroy called with incompatiable state"
 
 --
 -- EventSource
@@ -146,7 +153,11 @@ instance Gtk.IsBin parent => EventSource (Bin parent) where
       (StateTreeBin StateTreeNode {..} childState, Just Refl) -> do
         binWidget <- Gtk.unsafeCastTo ctor stateTreeWidget
         foldMap (addSignalHandler cb binWidget) props
-          <> subscribeCustomAttributes stateTreeWidget stateTreeCustomAttributeStates props cb
+          <> subscribeCustomAttributes
+               stateTreeWidget
+               stateTreeCustomAttributeStates
+               (filterToCustom props)
+               cb
           <> subscribe child childState cb
       _ -> error "Cannot subscribe to Bin events with a non-bin state tree."
 

@@ -1,14 +1,14 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedLabels #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE OverloadedLabels      #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
 
 -- | Implementations for common "Gtk.Container".
@@ -20,13 +20,14 @@ module GI.Gtk.Declarative.Container
   )
 where
 
-import           Control.Monad                  ( forM )
+import           Control.Monad                           (forM)
 import           Data.Typeable
-import           Data.Vector                    ( Vector )
-import qualified Data.Vector                   as Vector
-import qualified GI.Gtk                        as Gtk
+import           Data.Vector                             (Vector)
+import qualified Data.Vector                             as Vector
+import qualified GI.Gtk                                  as Gtk
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Attributes.Collected
+import           GI.Gtk.Declarative.Attributes.Custom
 import           GI.Gtk.Declarative.Attributes.Internal
 import           GI.Gtk.Declarative.Container.Class
 import           GI.Gtk.Declarative.Container.Patch
@@ -64,7 +65,7 @@ container
      , FromWidget (Container widget (Children child)) target
      , ToChildren widget parent child
      )
-  => 
+  =>
   -- | A container widget constructor from the underlying gi-gtk library.
      (Gtk.ManagedPtr widget -> widget)
   ->
@@ -93,7 +94,7 @@ instance
     Gtk.widgetShow widget'
     sc <- Gtk.widgetGetStyleContext widget'
     updateClasses sc mempty (collectedClasses collected)
-    ca <- createCustomAttributes widget' attrs
+    ca <- createCustomAttributes widget' (filterToCustom attrs)
     childStates <- forM (unChildren children) $ \child -> do
       childState <- create child
       appendChild widget' child =<< someStateWidget childState
@@ -122,7 +123,11 @@ instance
                 updateClasses (stateTreeStyleContext top)
                               (collectedClasses oldCollected)
                               (collectedClasses newCollected)
-                newCustomAttributeStates <- patchCustomAttributes containerWidget oldCustomAttributeStates oldAttributes newAttributes
+                newCustomAttributeStates <- patchCustomAttributes
+                  containerWidget
+                  oldCustomAttributeStates
+                  (filterToCustom oldAttributes)
+                  (filterToCustom newAttributes)
                 let top' = top
                       { stateTreeCollectedAttributes = newCollected
                       , stateTreeCustomAttributeStates = newCustomAttributeStates
@@ -134,15 +139,18 @@ instance
                   (unChildren newChildren)
               else Replace (create new)
       _ -> Replace (create new)
-  
+
   destroy (SomeState (st :: StateTree stateType w c e cs)) (Container _ attrs (children :: Children child e2)) = do
     case (st, eqT @w @container) of
       (StateTreeContainer StateTreeNode {..} childStates, Just Refl) -> do
         sequence_ (Vector.zipWith destroy childStates (unChildren children))
-        destroyCustomAttributes stateTreeWidget stateTreeCustomAttributeStates attrs
+        destroyCustomAttributes
+          stateTreeWidget
+          stateTreeCustomAttributeStates
+          (filterToCustom attrs)
         Gtk.widgetDestroy stateTreeWidget
       _ ->
-        error "Container destroy method called with non-StateTreeContainer state"
+        error "Container destroy called with incompatiable state"
 
 --
 -- EventSource
@@ -157,7 +165,11 @@ instance
       (StateTreeContainer StateTreeNode {..} childStates, Just Refl) -> do
         parentWidget <- Gtk.unsafeCastTo ctor stateTreeWidget
         handlers' <- foldMap (addSignalHandler cb parentWidget) props
-          <> subscribeCustomAttributes stateTreeWidget stateTreeCustomAttributeStates props cb
+          <> subscribeCustomAttributes
+               stateTreeWidget
+               stateTreeCustomAttributeStates
+               (filterToCustom props)
+               cb
         subs <- flip foldMap (Vector.zip (unChildren children) childStates)
           $ \(c, childState) -> subscribe c childState cb
         return (handlers' <> subs)

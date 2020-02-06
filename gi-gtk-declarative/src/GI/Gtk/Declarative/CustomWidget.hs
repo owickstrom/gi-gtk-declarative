@@ -1,8 +1,8 @@
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DeriveFunctor       #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeApplications    #-}
 
 -- | While you can instantiate 'Patchable' and 'EventSource' for your
 -- own data types, it's a bit complicated. The 'CustomWidget' data
@@ -16,10 +16,11 @@ module GI.Gtk.Declarative.CustomWidget
 where
 
 import           Data.Typeable
-import           Data.Vector                    ( Vector )
-import qualified GI.Gtk                        as Gtk
+import           Data.Vector                             (Vector)
+import qualified GI.Gtk                                  as Gtk
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Attributes.Collected
+import           GI.Gtk.Declarative.Attributes.Custom
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.Patch
 import           GI.Gtk.Declarative.State
@@ -73,7 +74,7 @@ instance
     updateProperties widget mempty (collectedProperties collected)
     sc <- Gtk.widgetGetStyleContext widget
     updateClasses sc mempty (collectedClasses collected)
-    ca <- createCustomAttributes widget (customAttributes custom)
+    ca <- createCustomAttributes widget (filterToCustom $ customAttributes custom)
     pure
       (SomeState
         (StateTreeWidget (StateTreeNode widget sc collected ca internalState))
@@ -106,7 +107,11 @@ instance
                   (stateTreeStyleContext (stateTreeNode stateTree))
                   (collectedClasses oldCollected)
                   (collectedClasses newCollected)
-                newCustomAttributeStates <- patchCustomAttributes widget' oldCustomAttributeStates (customAttributes old) (customAttributes new)
+                newCustomAttributeStates <- patchCustomAttributes
+                  widget'
+                  oldCustomAttributeStates
+                  (filterToCustom $ customAttributes old)
+                  (filterToCustom $ customAttributes new)
                 internalState' <- case p of
                   CustomModify f ->
                     f =<< Gtk.unsafeCastTo (customWidget new) widget'
@@ -123,13 +128,16 @@ instance
                   )
               | otherwise -> Replace (create new)
       _ -> Replace (create new)
-  
+
   destroy (SomeState (st :: StateTree st w c e cs)) custom = do
     case (st, eqT @w @widget) of
       (StateTreeWidget StateTreeNode {..}, Just Refl) -> do
-        destroyCustomAttributes stateTreeWidget stateTreeCustomAttributeStates (customAttributes custom)
+        destroyCustomAttributes
+          stateTreeWidget
+          stateTreeCustomAttributeStates
+          (filterToCustom $ customAttributes custom)
         Gtk.widgetDestroy stateTreeWidget
-      _ -> error "CustomWidget destroy called with invalid types"
+      _ -> error "CustomWidget destroy called with incompatiable state"
 
 instance
   (Typeable internalState, Typeable widget, Gtk.GObject widget) =>
@@ -140,5 +148,9 @@ instance
       (StateTreeWidget StateTreeNode {..}, Just Refl, Just Refl) -> do
         w' <- Gtk.unsafeCastTo (customWidget custom) stateTreeWidget
         customSubscribe custom (customParams custom) stateTreeCustomState w' cb
-          <> subscribeCustomAttributes stateTreeWidget stateTreeCustomAttributeStates (customAttributes custom) cb
+          <> subscribeCustomAttributes
+               stateTreeWidget
+               stateTreeCustomAttributeStates
+               (filterToCustom $ customAttributes custom)
+               cb
       _ -> pure (fromCancellation (pure ()))
