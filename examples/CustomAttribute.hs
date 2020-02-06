@@ -59,15 +59,18 @@ instance CustomAttribute Gtk.Box NumberInput where
     #packStart box spin False False 0
     return (NumberInputState spin)
 
-  attrPatch box state@(NumberInputState spin) (NumberInput oldProps _) (NumberInput newProps _)
+  attrPatch _box state@(NumberInputState spin) (NumberInput oldProps _) (NumberInput newProps _)
     | oldProps == newProps = pure state
     | otherwise = do
         adj <- propsToAdjustment newProps
         Gtk.spinButtonSetAdjustment spin adj
         Gtk.spinButtonSetDigits spin (digits newProps)
         return state
+  
+  attrDestroy _box _state _decl =
+    pure ()
 
-  attrSubscribe box (NumberInputState spin) (NumberInput props onInputChanged) cb = do
+  attrSubscribe _box (NumberInputState spin) (NumberInput _props onInputChanged) cb = do
     case onInputChanged of
       Nothing -> mempty
       Just handler -> do
