@@ -17,7 +17,7 @@ import           GI.Gtk                        (Box (..), Button (..),
                                                 Label (..), Orientation (..),
                                                 Window (..))
 import           GI.Gtk.Declarative
-import           GI.Gtk.Declarative.Attributes.Custom.Window (presentWindow, window) -- todo: add convenience module to make importing stuff easier...
+import           GI.Gtk.Declarative.Attributes.Custom.Window (presentWindow, window)
 import           GI.Gtk.Declarative.App.Simple
 
 data WindowState = WindowState
@@ -71,7 +71,7 @@ mkWindow :: Int -> WindowState -> Bin Window Event
 mkWindow i WindowState {..} = bin
   Window
   [ #title := pack ("Window " <> show i)
-  , on #deleteEvent (const (True, CloseWindow i)) -- todo: why doesnt this work?
+  , on #deleteEvent (const (True, CloseWindow i))
   , presentWindow windowStatePresented
   ] $
   container Box [#orientation := OrientationVertical, #spacing := 4, #margin := 4]
