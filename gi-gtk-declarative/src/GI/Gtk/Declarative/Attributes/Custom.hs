@@ -45,27 +45,27 @@ deriving instance Functor (CustomAttributeDecl widget)
 data CustomAttributeState widget where
   CustomAttributeState
     :: CustomAttribute widget decl
-    => State decl
+    => AttrState decl
     -> CustomAttributeState widget
 
 -- | Defines types that can be used as declarative custom attributes on the given widget type.
-class (Typeable decl, Typeable (State decl), Functor decl) => CustomAttribute widget decl where
+class (Typeable decl, Typeable (AttrState decl), Functor decl) => CustomAttribute widget decl where
 
   -- | The runtime state of this attribute. This is preserved
   -- between calls to attrCreate/attrPatch/attrDestroy.
-  data State decl
+  data AttrState decl
 
   -- | Called when this attribute is first attached to a widget in the tree
-  attrCreate :: widget -> decl event -> IO (State decl)
+  attrCreate :: widget -> decl event -> IO (AttrState decl)
 
   -- | Called when the widget tree is being patched.
-  attrPatch :: widget -> State decl -> decl event1 -> decl event2 -> IO (State decl)
+  attrPatch :: widget -> AttrState decl -> decl event1 -> decl event2 -> IO (AttrState decl)
 
   -- | Called when the associated widget is removed from the widget tree.
-  attrDestroy :: widget -> State decl -> decl event -> IO ()
+  attrDestroy :: widget -> AttrState decl -> decl event -> IO ()
 
   -- | Attach event handlers to this attribute.
-  attrSubscribe :: widget -> State decl -> decl event -> (event -> IO ()) -> IO Subscription
+  attrSubscribe :: widget -> AttrState decl -> decl event -> (event -> IO ()) -> IO Subscription
 
 -- | Runs the create action for each custom attribute.
 createCustomAttributes
@@ -108,7 +108,7 @@ patchCustomAttributes widget oldStates oldDecls newDecls =
     -> CustomAttributeDecl widget e1
     -> CustomAttributeDecl widget e2
     -> IO (CustomAttributeState widget)
-  patchAttribute (CustomAttributeState (oldState :: State d1))
+  patchAttribute (CustomAttributeState (oldState :: AttrState d1))
                  (CustomAttributeDecl (oldDecl :: d2 e1))
                  (CustomAttributeDecl (newDecl :: d3 e2))
     = case (eqT @d1 @d2, eqT @d1 @d3) of
@@ -148,7 +148,7 @@ withCustomAttribute
   :: (  forall decl
       . CustomAttribute widget decl
      => widget
-     -> State decl
+     -> AttrState decl
      -> decl event
      -> b
      )
@@ -158,7 +158,7 @@ withCustomAttribute
   -> b
 withCustomAttribute cb
                     widget
-                    (CustomAttributeState (state :: State d1))
+                    (CustomAttributeState (state :: AttrState d1))
                     (CustomAttributeDecl (decl :: d2 event))
   = case eqT @d1 @d2 of
     Just Refl -> cb widget state decl

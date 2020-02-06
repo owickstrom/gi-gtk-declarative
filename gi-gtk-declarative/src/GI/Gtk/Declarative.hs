@@ -10,35 +10,18 @@ module GI.Gtk.Declarative
   )
 where
 
-import           GI.Gtk.Declarative.Attributes as Export
-import           GI.Gtk.Declarative.Bin        as Export
-                                                ( Bin
-                                                , bin
-                                                )
-import           GI.Gtk.Declarative.Container  as Export
-                                                ( Container
-                                                , container
-                                                )
-import           GI.Gtk.Declarative.Container.Box
-                                               as Export
-import           GI.Gtk.Declarative.Container.Grid
-                                               as Export
-                                                ( )
-import           GI.Gtk.Declarative.Container.ListBox
-                                               as Export
-                                                ( )
-import           GI.Gtk.Declarative.Container.MenuItem
-                                               as Export
-import           GI.Gtk.Declarative.Container.Paned
-                                               as Export
-import           GI.Gtk.Declarative.Container.Notebook
-                                               as Export
-import           GI.Gtk.Declarative.CustomWidget
-                                               as Export
-import           GI.Gtk.Declarative.Patch      as Export
-import           GI.Gtk.Declarative.SingleWidget
-                                               as Export
-import           GI.Gtk.Declarative.Widget     as Export
-import           GI.Gtk.Declarative.Widget.Conversions
-                                               as Export
-                                                ( )
+import           GI.Gtk.Declarative.Attributes         as Export
+import           GI.Gtk.Declarative.Attributes.Custom  as Export
+import           GI.Gtk.Declarative.Bin                as Export (Bin, bin)
+import           GI.Gtk.Declarative.Container          as Export (Container,
+                                                                  container)
+import           GI.Gtk.Declarative.Container.Box      as Export
+import           GI.Gtk.Declarative.Container.Grid     as Export ()
+import           GI.Gtk.Declarative.Container.ListBox  as Export ()
+import           GI.Gtk.Declarative.Container.MenuItem as Export
+import           GI.Gtk.Declarative.Container.Notebook as Export
+import           GI.Gtk.Declarative.Container.Paned    as Export
+import           GI.Gtk.Declarative.Patch              as Export
+import           GI.Gtk.Declarative.SingleWidget       as Export
+import           GI.Gtk.Declarative.Widget             as Export
+import           GI.Gtk.Declarative.Widget.Conversions as Export ()

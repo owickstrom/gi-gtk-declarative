@@ -66,25 +66,14 @@ patchInContainer (StateTreeContainer top children) container os' ns' = do
         Modify  modify       -> pure <$> modify
         Replace createWidget -> do
           newChildState  <- createWidget
-          oldChildWidget <- someStateWidget oldChildState
           newChildWidget <- someStateWidget newChildState
           let destroyOld = destroy oldChildState old
           replaceChild container i destroyOld new newChildWidget
           return (pure newChildState)
         Keep -> return (pure oldChildState)
 
-    -- When there is a new declarative widget, but there already exists a GTK
-    -- widget in the corresponding place, we need to replace the GTK widget with
-    -- one created from the declarative widget.
-    (i, Just oldChildState, Nothing, Just new) -> do
-      error "this shouldn't happen!"
-      {-
-      newChildState  <- create new
-      oldChildWidget <- someStateWidget oldChildState
-      newChildWidget <- someStateWidget newChildState
-      replaceChild container new i oldChildWidget newChildWidget
-      return (Vector.singleton newChildState)
-      -}
+    (_i, Just _oldChildState, Nothing, Just _new) -> do
+      error "state/declarative-widget mismatch: this shouldn't happen!"
 
     -- When there is a new declarative widget, or one that lacks a corresponding
     -- GTK widget, create and add it.

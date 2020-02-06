@@ -6,7 +6,7 @@ import           System.IO
 
 import qualified AddBoxes
 import qualified CSS
-import qualified CustomWidget
+import qualified CustomAttribute
 import qualified Dialog
 import qualified Exit
 import qualified FileChooserButton
@@ -24,7 +24,7 @@ main :: IO ()
 main =
   let examples =
           [ ("AddBoxes"         , AddBoxes.main)
-          , ("CustomWidget"     , CustomWidget.main)
+          , ("CustomAttribute"  , CustomAttribute.main)
           , ("FileChooserButton", FileChooserButton.main)
           , ("Hello"            , Hello.main)
           , ("ListBox"          , ListBox.main)

@@ -38,7 +38,6 @@ library
                       , GI.Gtk.Declarative.Attributes.Internal.EventHandler
                       , GI.Gtk.Declarative.Attributes.Internal.Conversions
                       , GI.Gtk.Declarative.Bin
-                      , GI.Gtk.Declarative.CustomWidget
                       , GI.Gtk.Declarative.Container
                       , GI.Gtk.Declarative.Container.Box
                       , GI.Gtk.Declarative.Container.Class
@@ -94,7 +93,6 @@ test-suite gi-gtk-declarative-tests
                    , unordered-containers
   ghc-options:       -Wall -O2 -rtsopts -with-rtsopts=-N -threaded
   default-language:  Haskell2010
-  other-modules:     GI.Gtk.Declarative.CustomWidgetTest
-                   , GI.Gtk.Declarative.PatchTest
+  other-modules:     GI.Gtk.Declarative.PatchTest
                    , GI.Gtk.Declarative.TestUtils
                    , GI.Gtk.Declarative.TestWidget

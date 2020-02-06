@@ -1,23 +1,42 @@
-{-# LANGUAGE NamedFieldPuns      #-}
-{-# LANGUAGE OverloadedLabels    #-}
-{-# LANGUAGE OverloadedLists     #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-module CustomWidget where
+{-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE OverloadedLabels      #-}
+{-# LANGUAGE OverloadedLists       #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+module CustomAttribute where
 
-import           Control.Monad                  ( void )
-import           Data.Vector                    ( Vector )
+import           Control.Monad                  (void)
+import           Data.Vector                    (Vector)
 import           Data.Word
 
-import qualified GI.GObject                    as GI
-import qualified GI.Gtk                        as Gtk
+import qualified GI.GObject                     as GI
+import qualified GI.Gtk                         as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
-import           GI.Gtk.Declarative.EventSource ( fromCancellation )
+import           GI.Gtk.Declarative.EventSource (fromCancellation)
 
 
 -- * Custom widget for ranged 'Double' inputs
 -------------------------------------------
+
+numberInput
+  :: Vector (Attribute Gtk.Box event)
+  -> NumberInputProperties
+  -> Maybe (Double -> event)
+  -> Widget event
+numberInput attrs props onInputChanged =
+  let customAttr = customAttribute (NumberInput props onInputChanged)
+      vertical = #orientation := Gtk.OrientationVertical
+   in widget Gtk.Box ([vertical, customAttr] <> attrs)
+
+data NumberInput event = NumberInput
+  { props          :: NumberInputProperties
+  , onInputChanged :: Maybe (Double -> event)
+  }
+  deriving (Functor)
 
 data NumberInputProperties = NumberInputProperties
   { value  :: Double
@@ -26,31 +45,11 @@ data NumberInputProperties = NumberInputProperties
   , digits :: Word32
   } deriving (Eq, Show)
 
+instance CustomAttribute Gtk.Box NumberInput where
 
-newtype NumberInputEvent = NumberInputChanged Double
+  data AttrState NumberInput = NumberInputState Gtk.SpinButton
 
-numberInput
-  :: Vector (Attribute Gtk.Box NumberInputEvent)
-  -> NumberInputProperties
-  -> Widget NumberInputEvent
-numberInput customAttributes customParams = Widget
-  (CustomWidget { customWidget
-                , customCreate
-                , customPatch
-                , customSubscribe
-                , customAttributes
-                , customParams
-                }
-  )
- where
-  -- The constructor for the underlying GTK widget.
-  customWidget = Gtk.Box
-  -- A function that creates a widget (of the same type as
-  -- customWidget), used on first render and on 'CustomReplace'. It's
-  -- also returning our internal state, a reference to the spin button
-  -- widget.
-  customCreate props = do
-    box  <- Gtk.new Gtk.Box [#orientation Gtk.:= Gtk.OrientationVertical]
+  attrCreate box (NumberInput props _) = do
     lbl  <- Gtk.new Gtk.Label [#label Gtk.:= "I'm a custom widget."]
     spin <- Gtk.new Gtk.SpinButton []
     adj  <- propsToAdjustment props
@@ -58,28 +57,24 @@ numberInput customAttributes customParams = Widget
     Gtk.spinButtonSetDigits spin (digits props)
     #packStart box lbl True True 0
     #packStart box spin False False 0
-    return (box, spin)
+    return (NumberInputState spin)
 
-  -- A function that computes a patch for our custom widget. Here we
-  -- compare the params value of type 'NumberInputProperties' to
-  -- decide whether to modify the spin button widget or not. Note that
-  -- the spin button widget is passed through the internal state.
-  customPatch old new spin
-    | old == new = CustomKeep
-    | otherwise = CustomModify $ \_box -> do
-      adj <- propsToAdjustment new
-      Gtk.spinButtonSetAdjustment spin adj
-      Gtk.spinButtonSetDigits spin (digits new)
-      return spin
+  attrPatch box state@(NumberInputState spin) (NumberInput oldProps _) (NumberInput newProps _)
+    | oldProps == newProps = pure state
+    | otherwise = do
+        adj <- propsToAdjustment newProps
+        Gtk.spinButtonSetAdjustment spin adj
+        Gtk.spinButtonSetDigits spin (digits newProps)
+        return state
 
-  -- Finally, we subscribe to widget signals to emit
-  -- 'NumberInputChanged' events from the spin button reference
-  -- carried by the internal state.
-  customSubscribe _params (spin :: Gtk.SpinButton) _box cb = do
-    h <- Gtk.on spin #valueChanged $ cb . NumberInputChanged =<< #getValue spin
-    -- This creates a 'Subscription' from an IO action that
-    -- disconnects the signal handler.
-    return (fromCancellation (GI.signalHandlerDisconnect spin h))
+  attrSubscribe box (NumberInputState spin) (NumberInput props onInputChanged) cb = do
+    case onInputChanged of
+      Nothing -> mempty
+      Just handler -> do
+        h <- Gtk.on spin #valueChanged $ cb . handler =<< #getValue spin
+        -- This creates a 'Subscription' from an IO action that
+        -- disconnects the signal handler.
+        return (fromCancellation (GI.signalHandlerDisconnect spin h))
 
 propsToAdjustment :: NumberInputProperties -> IO Gtk.Adjustment
 propsToAdjustment NumberInputProperties { value, range = (begin, end), step } =
@@ -101,7 +96,7 @@ view' (State currentValue) =
       , #widthRequest := 400
       , #heightRequest := 300
       ]
-    $ centered (toNumberEvent <$> numberSetter)
+    $ centered numberSetter
  where
   -- Construct our custom widget with some properties for the
   -- underlying SpinButton
@@ -116,8 +111,8 @@ view' (State currentValue) =
                           , step   = 0.1
                           , digits = 1
                           }
-  -- Map the custom widget's event to our app 'Event' type
-  toNumberEvent (NumberInputChanged d) = NumberSet d
+    -- And our event handler
+    (Just NumberSet)
 
 -- Helper that vertically and horizontally centers a widget
 centered :: Widget e -> Widget e

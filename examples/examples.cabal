@@ -19,7 +19,7 @@ executable example
   main-is:              Main.hs
   other-modules:        AddBoxes
                       , CSS
-                      , CustomWidget
+                      , CustomAttribute
                       , Dialog
                       , Exit
                       , FileChooserButton
