@@ -15,7 +15,7 @@ import           Pipes.Prelude                 (repeatM)
 
 import           GI.Gtk                        (Box (..), Button (..),
                                                 Label (..), Orientation (..),
-                                                Window (..))
+                                                Window (..), WindowPosition (..))
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.Attributes.Custom.Window (presentWindow, window)
 import           GI.Gtk.Declarative.App.Simple
@@ -43,6 +43,7 @@ view' ws =
       , on #deleteEvent (const (True, Closed))
       , #widthRequest := 200
       , #heightRequest := 300
+      , #windowPosition := WindowPositionCenter
       ]
     $  container
          Box
@@ -72,6 +73,7 @@ mkWindow i WindowState {..} = bin
   Window
   [ #title := pack ("Window " <> show i)
   , on #deleteEvent (const (True, CloseWindow i))
+  , #windowPosition := WindowPositionCenter
   , presentWindow windowStatePresented
   ] $
   container Box [#orientation := OrientationVertical, #spacing := 4, #margin := 4]
