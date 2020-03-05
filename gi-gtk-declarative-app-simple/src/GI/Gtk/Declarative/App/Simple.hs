@@ -78,24 +78,25 @@ run
 run app = do
   assertRuntimeSupportsBoundThreads
   void $ Gtk.init Nothing
-  Async.withAsync (runLoop app <* Gtk.mainQuit) $ \lastState -> do
-    Gtk.main
-    Async.poll lastState >>= \case
-      Nothing ->
-        throw $ GtkMainExitedException "gtk's main loop exited unexpectedly"
-      Just (Right state    ) -> return state
-      Just (Left  exception) -> throw exception
+
+  -- If any exception happen in `runLoop`, it will be re-throw here
+  -- and the application will be killed.
+  -- NOTE: the use of Aync.async for `Gtk.main` is *MANDATORY*. The documentation for `
+  -- 'Async.concurrently' says that the first exception 'Async.cancel'
+  -- the second thread only at the condition that it is not a foreign
+  -- call, which is the case for 'Gtk.main'.
+  -- By using a second `Async.async` call, the wrapping thread can be killed.
+  fst <$> Async.concurrently (runLoop app <* Gtk.mainQuit) (Async.async Gtk.main)
 
 -- | Run an 'App'. This IO action will loop, so run it in a separate thread
 -- using 'async' if you're calling it before the GTK main loop.
+-- Note: the following example take care of exception raised in
+-- 'runLoop'. The wrapping of 'Gtk.main' with 'Async.async' is
+-- mandatory.
 --
 -- @
 --     void $ Gtk.init Nothing
---     void . async $ do
---       runLoop app
---       -- In case the run loop exits, quit the main GTK loop.
---       Gtk.mainQuit
---     Gtk.main
+--     concurrently (runLoop app <* Gtk.mainQuit) (Async.async Gtk.main)
 -- @
 runLoop :: Gtk.IsBin window => App window state event -> IO state
 runLoop App {..} = do
