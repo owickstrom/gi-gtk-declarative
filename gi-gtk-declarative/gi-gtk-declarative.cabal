@@ -63,6 +63,7 @@ library
                       , haskell-gi             >= 0.21 && <0.24
                       , haskell-gi-base        >= 0.21 && <0.24
                       , haskell-gi-overloading == 1.0
+                      , hashable
                       , mtl
                       , text
                       , unordered-containers >= 0.2 && < 0.3

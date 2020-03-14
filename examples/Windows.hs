@@ -6,116 +6,104 @@
 
 module Windows where
 
-import           Control.Concurrent            (threadDelay)
-import           Control.Monad                 (void)
-import           Data.Text                     (pack)
-import           Data.Vector                   (Vector)
-import qualified Data.Vector                   as Vector
-import           Pipes.Prelude                 (repeatM)
+import           Control.Concurrent                          (threadDelay)
+import           Control.Monad                               (void)
+import           Data.Functor                                ((<&>))
+import           Data.Text                                   (pack)
+import           Data.UUID                                   (UUID)
+import           Data.Vector                                 (Vector)
+import qualified Data.Vector                                 as Vector
+import           Pipes.Prelude                               (repeatM)
+import           System.Random                               (randomIO)
 
-import           GI.Gtk                        (Box (..), Button (..),
-                                                Label (..), Orientation (..),
-                                                Window (..), WindowPosition (..))
+import           GI.Gtk                                      (Box (..),
+                                                              Button (..),
+                                                              Label (..),
+                                                              Orientation (..),
+                                                              Window (..),
+                                                              WindowPosition (..))
 import           GI.Gtk.Declarative
-import           GI.Gtk.Declarative.Attributes.Custom.Window (presentWindow, window)
 import           GI.Gtk.Declarative.App.Simple
+import           GI.Gtk.Declarative.Attributes.Custom.Window (presentWindow,
+                                                              window)
 
 data WindowState = WindowState
-  { windowStateCount :: Int
+  { windowStateKey       :: UUID
+  , windowStateCount     :: Int
   , windowStatePresented :: Int
   }
 
-type State = Vector (Maybe WindowState)
+type State = Vector WindowState
 
 data Event
   = IncrAll
-  | AddWindow
-  | PresentWindow Int
-  | CloseWindow Int
-  | RemoveWindow
+  | AddWindow UUID
+  | PresentWindow UUID
+  | RemoveWindow UUID
   | Closed
 
 view' :: State -> AppView Window Event
 view' ws =
-  bin
-      Window
-      [ #title := "Windows"
-      , on #deleteEvent (const (True, Closed))
-      , #widthRequest := 200
-      , #heightRequest := 300
-      , #windowPosition := WindowPositionCenter
-      ]
-    $  container
-         Box
-         [#orientation := OrientationVertical, #spacing := 4, #margin := 4]
-    $  [addButton, removeButton ws]
-    <> Vector.imap windowLabel ws
+  bin Window
+    ([ #title := "Windows"
+    , on #deleteEvent (const (True, Closed))
+    , #widthRequest := 400
+    , #heightRequest := 300
+    , #windowPosition := WindowPositionCenter
+    ] <> (windowAttr <$> ws)) $
+    container
+      Box
+      [#orientation := OrientationVertical, #spacing := 4, #margin := 4] $
+      addButton `Vector.cons` (windowButton <$> ws)
 
 addButton :: BoxChild Event
 addButton = BoxChild defaultBoxChildProperties
-  $ widget Button [#label := "Add Window", on #clicked AddWindow]
+  $ widget Button
+      [ #label := "Add Window"
+      , onM #clicked (const (AddWindow <$> randomIO))
+      ]
 
-removeButton :: State -> BoxChild Event
-removeButton ns = BoxChild defaultBoxChildProperties $ widget
-  Button
-  [ #label := "Remove Window"
-  , #sensitive := not (Vector.null ns)
-  , on #clicked RemoveWindow
-  ]
+windowButton :: WindowState -> BoxChild Event
+windowButton WindowState {..} =
+  BoxChild defaultBoxChildProperties $
+    widget
+    Button
+    [ #label := pack ("Present window " <> show windowStateKey)
+    , on #clicked $ PresentWindow windowStateKey
+    ]
 
-windowLabel :: Int -> Maybe WindowState -> BoxChild Event
-windowLabel i ws =
-  BoxChild defaultBoxChildProperties
-    $ windowChild i ws
-
-mkWindow :: Int -> WindowState -> Bin Window Event
-mkWindow i WindowState {..} = bin
+windowAttr :: WindowState -> Attribute widget Event
+windowAttr WindowState {..} = window windowStateKey $ bin
   Window
-  [ #title := pack ("Window " <> show i)
-  , on #deleteEvent (const (True, CloseWindow i))
+  [ #title := pack (show windowStateKey)
+  , on #deleteEvent (const (True, RemoveWindow windowStateKey))
+  , #widthRequest := 400
+  , #heightRequest := 250
   , #windowPosition := WindowPositionCenter
   , presentWindow windowStatePresented
   ] $
-  container Box [#orientation := OrientationVertical, #spacing := 4, #margin := 4]
-   [ widget
-       Label
-       [#label := pack ("Open for " <> show windowStateCount <> " seconds")]
-   , widget
-       Button
-       [#label := "Close Window", on #clicked (CloseWindow i)]
-   ]
-
-windowChild :: Int -> Maybe WindowState -> Widget Event
-windowChild i = \case
-  Nothing -> widget Label [#label := pack ("Window " <> show i <> " Closed")]
-  Just ws  -> widget
-    Button
-    [ #label := pack ("Present window " <> show i)
-    , on #clicked $ PresentWindow i
-    , window $ mkWindow i ws
-    ]
+  widget Label
+    [#label := pack ("Open for " <> show windowStateCount <> " seconds")]
 
 update' :: State -> Event -> Transition State Event
 update' ws = \case
-  IncrAll ->
-    mapWindows ws (\_i w -> w { windowStateCount = windowStateCount w + 1 })
-  AddWindow ->
-    Transition (ws `Vector.snoc` Just (WindowState 1 1)) (pure Nothing)
-  PresentWindow i -> mapWindows
-    ws
-    (\i' w -> if i' == i
-      then w { windowStatePresented = windowStatePresented w + 1 }
-      else w
-    )
-  CloseWindow i -> Transition
-    (Vector.imap (\i' w -> if i' == i then Nothing else w) ws)
+  IncrAll -> Transition
+    (ws <&> \w -> w { windowStateCount = windowStateCount w + 1})
     (pure Nothing)
-  RemoveWindow -> Transition (Vector.init ws) (pure Nothing)
-  Closed       -> Exit
-
-mapWindows :: State -> (Int -> WindowState -> WindowState) -> Transition State e
-mapWindows windows f =
-  Transition (Vector.imap (\i w -> fmap (f i) w) windows) (pure Nothing)
+  AddWindow key -> Transition
+    (ws `Vector.snoc` WindowState key 1 1)
+    (pure Nothing)
+  PresentWindow key -> Transition
+    (ws <&> \w ->
+      if windowStateKey w == key
+      then w { windowStatePresented = windowStatePresented w + 1 }
+      else w)
+    (pure Nothing)
+  RemoveWindow key -> Transition
+    (Vector.filter (\w -> windowStateKey w /= key) ws)
+    (pure Nothing)
+  Closed->
+    Exit
 
 main :: IO ()
 main = void $ run App

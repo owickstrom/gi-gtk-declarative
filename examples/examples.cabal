@@ -32,7 +32,7 @@ executable example
                       , Notebook
                       , Paned
                       , Windows
-  build-depends:        base >=4.10 && <5
+  build-depends:        base >=4.11 && <5
                       , async
                       , bytestring
                       , gi-gobject
@@ -45,7 +45,9 @@ executable example
                       , haskell-gi-base
                       , pipes
                       , pipes-extras
+                      , random
                       , text
+                      , uuid
                       , vector
   default-language:     Haskell2010
   ghc-options:          -O2 -Wall -threaded

@@ -1,15 +1,14 @@
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
 
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE LambdaCase             #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedLabels       #-}
-{-# LANGUAGE RankNTypes             #-}
-{-# LANGUAGE RecordWildCards        #-}
-{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedLabels      #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 -- | Attribute lists on declarative objects, supporting the underlying
 -- attributes from "Data.GI.Base.Attributes", along with CSS class lists,
@@ -30,19 +29,19 @@ module GI.Gtk.Declarative.Attributes
   )
 where
 
-import qualified Data.GI.Base.Attributes       as GI
-import qualified Data.GI.Base.Signals          as GI
-import           Data.HashSet                   ( HashSet )
-import qualified Data.HashSet                  as HashSet
-import qualified Data.Text                     as T
-import           Data.Text                      ( Text )
+import qualified Data.GI.Base.Attributes                             as GI
+import qualified Data.GI.Base.Signals                                as GI
+import           Data.Hashable                                       (Hashable)
+import           Data.HashSet                                        (HashSet)
+import qualified Data.HashSet                                        as HashSet
+import           Data.Text                                           (Text)
+import qualified Data.Text                                           as T
 import           Data.Typeable
-import qualified Data.Vector                   as Vector
-import           Data.Vector                    ( Vector )
-import           GHC.TypeLits                   ( KnownSymbol
-                                                , Symbol
-                                                )
-import qualified GI.Gtk                        as Gtk
+import           Data.Vector                                         (Vector)
+import qualified Data.Vector                                         as Vector
+import           GHC.TypeLits                                        (KnownSymbol,
+                                                                      Symbol)
+import qualified GI.Gtk                                              as Gtk
 
 import           GI.Gtk.Declarative.Attributes.Custom
 import           GI.Gtk.Declarative.Attributes.Internal.Conversions
@@ -153,8 +152,12 @@ onM signal = OnSignalImpure signal . toEventHandler
 
 -- | Create a custom attribute from its declarative form
 customAttribute
-  :: CustomAttribute widget decl => decl event -> Attribute widget event
-customAttribute decl = Custom $ CustomAttributeDecl decl
+  :: (Typeable key, Eq key, Hashable key, CustomAttribute widget decl)
+  => key
+  -> decl event
+  -> Attribute widget event
+customAttribute key decl =
+  Custom (CustomAttributeDecl (CustomAttributeKey key) decl)
 
 -- | Extract the custom attributes from a list of attributes.
 filterToCustom

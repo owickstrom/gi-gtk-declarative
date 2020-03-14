@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TypeFamilies          #-}
 
 module GI.Gtk.Declarative.Attributes.Custom.Window
@@ -9,21 +8,29 @@ module GI.Gtk.Declarative.Attributes.Custom.Window
   , presentWindow
   ) where
 
-import           Control.Monad                        (when)
-import           Data.Typeable                        (Typeable)
+import           Control.Monad                  (when)
+import           Data.Hashable                  (Hashable)
+import           Data.Typeable                  (Typeable)
 
-import qualified GI.Gtk                               as Gtk
+import qualified GI.Gtk                         as Gtk
 
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.State
 
 -- | Construct a new declarative top-level window, with a lifecycle
--- tied to the widget the attribute is attached to
-window :: Bin Gtk.Window event -> Attribute widget event
-window bin' = customAttribute $ Window bin'
+-- tied to the widget the attribute is attached to.
+--
+-- The key should uniquely identify this window amongst all windows
+-- attached to the same widget.
+window
+  :: (Typeable key, Eq key, Hashable key)
+  => key
+  -> Bin Gtk.Window event
+  -> Attribute widget event
+window key bin' = customAttribute key (Window bin')
 
-data Window event = Window (Bin Gtk.Window event)
+newtype Window event = Window (Bin Gtk.Window event)
   deriving (Functor)
 
 instance CustomAttribute widget Window where
@@ -41,7 +48,7 @@ instance CustomAttribute widget Window where
         destroy state1 bin1
         WindowState <$> p
 
-  attrDestroy _widget (WindowState state) (Window bin') = do
+  attrDestroy _widget (WindowState state) (Window bin') =
     destroy state bin'
 
   attrSubscribe _widget (WindowState state) (Window bin') cb =
@@ -50,9 +57,9 @@ instance CustomAttribute widget Window where
 -- | Create an attribute for "presenting" (i.e. focusing) a window: when
 -- the value changes then the window will be presented.
 presentWindow :: (Eq a, Typeable a) => a -> Attribute Gtk.Window event
-presentWindow state = customAttribute $ PresentWindow state
+presentWindow state = customAttribute () (PresentWindow state)
 
-data PresentWindow a event = PresentWindow a
+newtype PresentWindow a event = PresentWindow a
   deriving (Functor)
 
 instance (Typeable a, Eq a) => CustomAttribute Gtk.Window (PresentWindow a) where
@@ -63,7 +70,7 @@ instance (Typeable a, Eq a) => CustomAttribute Gtk.Window (PresentWindow a) wher
     pure PresentWindowState
 
   attrPatch window' PresentWindowState (PresentWindow a) (PresentWindow b) = do
-    when (a /= b) $ do
+    when (a /= b) $
       Gtk.windowPresent window'
     pure PresentWindowState
 

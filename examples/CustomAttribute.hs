@@ -28,7 +28,7 @@ numberInput
   -> Maybe (Double -> event)
   -> Widget event
 numberInput attrs props onInputChanged =
-  let customAttr = customAttribute (NumberInput props onInputChanged)
+  let customAttr = customAttribute () (NumberInput props onInputChanged)
       vertical = #orientation := Gtk.OrientationVertical
    in widget Gtk.Box ([vertical, customAttr] <> attrs)
 
