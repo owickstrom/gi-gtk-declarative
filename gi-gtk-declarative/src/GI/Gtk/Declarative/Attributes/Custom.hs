@@ -100,9 +100,13 @@ class (Typeable decl, Typeable (AttrState decl), Functor decl) => CustomAttribut
 
   -- | Called when the associated widget is removed from the widget tree.
   attrDestroy :: widget -> AttrState decl -> decl event -> IO ()
+  attrDestroy _widget _state _decl =
+    pure ()
 
   -- | Attach event handlers to this attribute.
   attrSubscribe :: widget -> AttrState decl -> decl event -> (event -> IO ()) -> IO Subscription
+  attrSubscribe _widget _state _decl _cb =
+    mempty
 
 -- | Runs the create action for each custom attribute.
 createCustomAttributes

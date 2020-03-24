@@ -73,9 +73,3 @@ instance (Typeable a, Eq a) => CustomAttribute Gtk.Window (PresentWindow a) wher
     when (a /= b) $
       Gtk.windowPresent window'
     pure PresentWindowState
-
-  attrDestroy _window PresentWindowState (PresentWindow _) =
-    mempty
-
-  attrSubscribe _window PresentWindowState (PresentWindow _) _cb =
-    mempty

@@ -66,9 +66,6 @@ instance CustomAttribute Gtk.Box NumberInput where
         Gtk.spinButtonSetAdjustment spin adj
         Gtk.spinButtonSetDigits spin (digits newProps)
         return state
-  
-  attrDestroy _box _state _decl =
-    pure ()
 
   attrSubscribe _box (NumberInputState spin) (NumberInput _props onInputChanged) cb = do
     case onInputChanged of
