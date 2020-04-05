@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase       #-}
 {-# LANGUAGE RecordWildCards  #-}
+{-# LANGUAGE TypeApplications #-}
 
 -- | A simple application architecture style inspired by PureScript's Pux
 -- framework.
@@ -15,9 +16,10 @@ where
 
 import           Control.Concurrent
 import qualified Control.Concurrent.Async      as Async
-import           Control.Exception              ( Exception
-                                                , throw
-                                                )
+import           Control.Exception              ( SomeException,
+                                                  Exception,
+                                                  evaluate,
+                                                  catch )
 import           Control.Monad
 import           Data.Typeable
 import qualified GI.Gdk                        as Gdk
@@ -101,15 +103,16 @@ run app = do
 runLoop :: Gtk.IsBin window => App window state event -> IO state
 runLoop App {..} = do
   let firstMarkup = view initialState
+
   events                     <- newChan
   (firstState, subscription) <- do
     firstState <- runUI (create firstMarkup)
     runUI (Gtk.widgetShowAll =<< someStateWidget firstState)
     sub <- subscribe firstMarkup firstState (publishEvent events)
     return (firstState, sub)
-  void . forkIO $ runEffect
-    (mergeProducers inputs >-> publishInputEvents events)
-  loop firstState firstMarkup events subscription initialState
+  snd <$> Async.concurrently (void $ runEffect
+    (mergeProducers inputs >-> publishInputEvents events))
+    (loop firstState firstMarkup events subscription initialState)
 
  where
   loop oldState oldMarkup events oldSubscription oldModel = do
@@ -136,12 +139,12 @@ runLoop App {..} = do
         -- If the action returned by the update function produced an event, then
         -- we write that to the channel.
         --
-        -- TODO: Use prioritized queue for events returned by 'update', to take
-        -- precendence over those from 'inputs'.
-        void . forkIO $ action >>= maybe (return ()) (writeChan events)
-
-        -- Finally, we loop.
-        loop newState newMarkup events sub newModel
+        snd <$> Async.concurrently
+          -- TODO: Use prioritized queue for events returned by 'update', to take
+          -- precendence over those from 'inputs'.
+          (void $ action >>= maybe (return ()) (writeChan events))
+          -- Finally, we loop.
+          (loop newState newMarkup events sub newModel)
       Exit -> return oldModel
 
 -- | Assert that the program was linked using the @-threaded@ flag, to
@@ -162,11 +165,11 @@ publishEvent mvar = void . writeChan mvar
 mergeProducers :: [Producer a IO ()] -> Producer a IO ()
 mergeProducers producers = do
   (output, input) <- liftIO $ spawn unbounded
-  _               <- liftIO $ mapM (fork output) producers
+  _               <- liftIO $ Async.mapConcurrently_ (fork output) producers
   fromInput input
  where
   fork :: Output a -> Producer a IO () -> IO ()
-  fork output producer = void $ forkIO $ do
+  fork output producer = do
     runEffect $ producer >-> toOutput output
     performGC
 
@@ -180,6 +183,13 @@ runUI ma = do
   takeMVar r
 
 runUI_ :: IO () -> IO ()
-runUI_ ma = void . Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT $ do
-  ma
-  return False
+runUI_ ma = do
+  tId <- myThreadId
+
+  void . Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT $ do
+    -- Any exception in the gtk ui thread will be rethrow in the
+    -- calling thread.
+    -- This ensure that this exception won't terminate the application without any control.
+    -- HOWEVER, it may be raised ANYWHERE in the calling thread.
+    ma `catch` throwTo @SomeException tId
+    return False
