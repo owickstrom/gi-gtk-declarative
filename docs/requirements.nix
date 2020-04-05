@@ -5,7 +5,7 @@
 #   pypi2nix -V python37 -r requirements.txt
 #
 
-{ pkgs ? import <nixpkgs> {},
+{ pkgs ? import ../nixpkgs.nix,
   overrides ? ({ pkgs, python }: self: super: {})
 }:
 

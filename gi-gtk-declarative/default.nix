@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {}, compiler ? "ghc865"
+{ pkgs ? import ./nixpkgs.nix, compiler ? "ghc883"
 , doCheck ? false, doBenchmark ? false
 }:
 

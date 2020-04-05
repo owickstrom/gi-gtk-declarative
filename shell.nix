@@ -1,10 +1,10 @@
-{ pkgs ? import <nixpkgs> {}, compiler ? "ghc865", doBenchmark ? true, doCheck ? true }:
+{ pkgs ? import ./nixpkgs.nix, compiler ? "ghc883", doBenchmark ? true, doCheck ? true }:
 let
   fontsConf = pkgs.makeFontsConf {
     fontDirectories = [ pkgs.cantarell-fonts ];
   };
   haskellPackages = pkgs.haskell.packages.${compiler};
-  project = import ./. { inherit compiler doBenchmark doCheck; };
+  project = import ./. { inherit compiler doBenchmark doCheck pkgs; };
 in
   haskellPackages.shellFor {
     withHoogle = true;
