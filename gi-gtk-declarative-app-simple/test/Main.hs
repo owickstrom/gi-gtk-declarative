@@ -17,6 +17,8 @@ main = hspec $
       runApp app {view = const (error "oh no")} `shouldThrow` errorCall "oh no"
     it "propagates exceptions from update handler itself" $
       runApp app {inputs = [yield ThrowError]} `shouldThrow` errorCall "oh no"
+    it "propagates exceptions from the pipeline itself" $
+      runApp app {inputs = [error "oh no"]} `shouldThrow` errorCall "oh no"
   where
     app = App
       { update = update'
