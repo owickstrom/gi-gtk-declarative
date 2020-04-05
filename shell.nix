@@ -16,6 +16,7 @@ in
     buildInputs = [
       project.docs.packages.mkdocs
       project.docs.packages.mkdocs-material
+      pkgs.cabal-install
     ];
     FONTCONFIG_FILE = fontsConf;
   }
