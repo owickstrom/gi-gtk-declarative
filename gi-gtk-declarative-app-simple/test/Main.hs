@@ -12,7 +12,9 @@ import           Test.Hspec
 
 main :: IO ()
 main = hspec $
-  describe "run" $
+  describe "run" $ do
+    it "propagates exceptions from view function" $
+      runApp app {view = const (error "oh no")} `shouldThrow` errorCall "oh no"
     it "propagates exceptions from update handler itself" $
       runApp app {inputs = [yield ThrowError]} `shouldThrow` errorCall "oh no"
   where
