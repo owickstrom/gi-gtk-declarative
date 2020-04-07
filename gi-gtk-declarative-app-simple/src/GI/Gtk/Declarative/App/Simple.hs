@@ -19,6 +19,7 @@ import qualified Control.Concurrent.Async      as Async
 import           Control.Exception              ( SomeException,
                                                   Exception,
                                                   evaluate,
+                                                  throwIO,
                                                   catch )
 import           Control.Monad
 import           Data.Typeable
@@ -112,7 +113,11 @@ runLoop App {..} = do
     return (firstState, sub)
   snd <$> Async.concurrently (void $ runEffect
     (mergeProducers inputs >-> publishInputEvents events))
-    (loop firstState firstMarkup events subscription initialState)
+    (loop firstState firstMarkup events subscription initialState
+      -- Catch exception of linked thread and reraise them without the
+      -- async wrapping.
+      `catch` (\(Async.ExceptionInLinkedThread _ e) -> throwIO e)
+    )
 
  where
   loop oldState oldMarkup events oldSubscription oldModel = do
@@ -138,13 +143,18 @@ runLoop App {..} = do
 
         -- If the action returned by the update function produced an event, then
         -- we write that to the channel.
-        --
-        snd <$> Async.concurrently
+        -- This is done in a thread to avoid blocking the event loop.
+        a <- Async.async $
           -- TODO: Use prioritized queue for events returned by 'update', to take
           -- precendence over those from 'inputs'.
           (void $ action >>= maybe (return ()) (writeChan events))
-          -- Finally, we loop.
-          (loop newState newMarkup events sub newModel)
+
+        -- If any exception happen in the action, it will be reraised here and
+        -- catched in the thread. See the ExceptionInLinkedThread
+        -- catch.
+        Async.link a
+
+        loop newState newMarkup events sub newModel
       Exit -> return oldModel
 
 -- | Assert that the program was linked using the @-threaded@ flag, to
