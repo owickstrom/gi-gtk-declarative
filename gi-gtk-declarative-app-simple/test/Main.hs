@@ -13,12 +13,29 @@ import           Test.Hspec
 main :: IO ()
 main = hspec $
   describe "run" $ do
+    -- Propagating exception from the view/update/inputs even is
+    -- important to crash the application instead of keeping it in a
+    -- weird state.
     it "propagates exceptions from view function" $
       runApp app {view = const (error "oh no")} `shouldThrow` errorCall "oh no"
     it "propagates exceptions from update handler itself" $
       runApp app {inputs = [yield ThrowError]} `shouldThrow` errorCall "oh no"
     it "propagates exceptions from the pipeline itself" $
       runApp app {inputs = [error "oh no"]} `shouldThrow` errorCall "oh no"
+    describe "propagates exceptions from the Transition" $ do
+      it "when the maybe is an exception" $
+        runApp app { update = \() _ -> Transition () (pure $ error "oh no")
+                   , inputs = [yield ThrowError]
+                   } `shouldThrow` errorCall "oh no"
+      it "when the io is an exception" $
+        runApp app { update = \() _ -> Transition () (error "oh no")
+                   , inputs = [yield ThrowError]
+                   } `shouldThrow` errorCall "oh no"
+      it "when the newly generated even is an exception" $
+        -- Note: forcing the event by pattern matching is important to raise the exception
+        runApp app { update = \() ThrowError -> Transition () (pure $ Just (error "oh no"))
+                   , inputs = [yield ThrowError]
+                   } `shouldThrow` errorCall "oh no"
   where
     app = App
       { update = update'
