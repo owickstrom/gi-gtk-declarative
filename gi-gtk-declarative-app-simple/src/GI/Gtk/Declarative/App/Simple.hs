@@ -196,9 +196,7 @@ runUI_ ma = do
   tId <- myThreadId
 
   void . Gdk.threadsAddIdle GLib.PRIORITY_DEFAULT $ do
-    -- Any exception in the gtk ui thread will be rethrow in the
-    -- calling thread.
+    -- Any exception in the gtk ui thread will be rethrown in the calling thread.
     -- This ensure that this exception won't terminate the application without any control.
-    -- HOWEVER, it may be raised ANYWHERE in the calling thread.
     ma `catch` throwTo @SomeException tId
     return False
