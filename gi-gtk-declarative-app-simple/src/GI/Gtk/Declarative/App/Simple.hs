@@ -18,7 +18,6 @@ import           Control.Concurrent
 import qualified Control.Concurrent.Async      as Async
 import           Control.Exception              ( SomeException,
                                                   Exception,
-                                                  evaluate,
                                                   throwIO,
                                                   catch )
 import           Control.Monad
@@ -147,7 +146,7 @@ runLoop App {..} = do
         a <- Async.async $
           -- TODO: Use prioritized queue for events returned by 'update', to take
           -- precendence over those from 'inputs'.
-          (void $ action >>= maybe (return ()) (writeChan events))
+          action >>= maybe (return ()) (writeChan events)
 
         -- If any exception happen in the action, it will be reraised here and
         -- catched in the thread. See the ExceptionInLinkedThread
