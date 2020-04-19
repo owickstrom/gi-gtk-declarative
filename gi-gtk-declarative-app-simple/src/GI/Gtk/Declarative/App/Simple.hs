@@ -18,8 +18,9 @@ import           Control.Concurrent
 import qualified Control.Concurrent.Async      as Async
 import           Control.Exception              ( SomeException,
                                                   Exception,
-                                                  throwIO,
-                                                  catch )
+                                                  catch,
+                                                  finally,
+                                                  throwIO)
 import           Control.Monad
 import           Data.Typeable
 import qualified GI.Gdk                        as Gdk
@@ -29,6 +30,7 @@ import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.EventSource
 import           GI.Gtk.Declarative.State
 import           Pipes
+import qualified Pipes.Prelude                 as Pipes
 import           Pipes.Concurrent
 import           System.Exit
 import           System.IO
@@ -81,24 +83,19 @@ run app = do
   assertRuntimeSupportsBoundThreads
   void $ Gtk.init Nothing
 
-  -- If any exception happen in `runLoop`, it will be re-throw here
+  -- If any exception happen in `runLoop`, it will be re-thrown here
   -- and the application will be killed.
-  -- NOTE: the use of Aync.async for `Gtk.main` is *MANDATORY*. The documentation for `
-  -- 'Async.concurrently' says that the first exception 'Async.cancel'
-  -- the second thread only at the condition that it is not a foreign
-  -- call, which is the case for 'Gtk.main'.
-  -- By using a second `Async.async` call, the wrapping thread can be killed.
-  fst <$> Async.concurrently (runLoop app <* Gtk.mainQuit) (Async.async Gtk.main)
+  main <- Async.async Gtk.main
+  runLoop app `finally` (Gtk.mainQuit >> Async.wait main)
 
 -- | Run an 'App'. This IO action will loop, so run it in a separate thread
 -- using 'async' if you're calling it before the GTK main loop.
--- Note: the following example take care of exception raised in
--- 'runLoop'. The wrapping of 'Gtk.main' with 'Async.async' is
--- mandatory.
+-- Note: the following example take care of exception raised in 'runLoop'.
 --
 -- @
 --     void $ Gtk.init Nothing
---     concurrently (runLoop app <* Gtk.mainQuit) (Async.async Gtk.main)
+--     main <- Async.async Gtk.main
+--     runLoop app `finally` (Gtk.mainQuit >> Async.wait main)
 -- @
 runLoop :: Gtk.IsBin window => App window state event -> IO state
 runLoop App {..} = do
@@ -110,15 +107,20 @@ runLoop App {..} = do
     runUI (Gtk.widgetShowAll =<< someStateWidget firstState)
     sub <- subscribe firstMarkup firstState (publishEvent events)
     return (firstState, sub)
-  snd <$> Async.concurrently (void $ runEffect
-    (mergeProducers inputs >-> publishInputEvents events))
-    (loop firstState firstMarkup events subscription initialState
+
+  Async.withAsync (runProducers events inputs) $ \inputs' -> do
+    Async.withAsync (wrappedLoop firstState firstMarkup events subscription) $ \loop' -> do
+      Async.waitEither inputs' loop' >>= \case
+        Left _      -> Async.wait loop'
+        Right state -> state <$ Async.uninterruptibleCancel inputs'
+
+ where
+  wrappedLoop firstState firstMarkup events subscription =
+    loop firstState firstMarkup events subscription initialState
       -- Catch exception of linked thread and reraise them without the
       -- async wrapping.
       `catch` (\(Async.ExceptionInLinkedThread _ e) -> throwIO e)
-    )
 
- where
   loop oldState oldMarkup events oldSubscription oldModel = do
     event <- readChan events
     case update oldModel event of
@@ -167,23 +169,14 @@ assertRuntimeSupportsBoundThreads = unless rtsSupportsBoundThreads $ do
                      \flag)."
   exitFailure
 
-
 publishEvent :: Chan event -> event -> IO ()
 publishEvent mvar = void . writeChan mvar
 
-mergeProducers :: [Producer a IO ()] -> Producer a IO ()
-mergeProducers producers = do
-  (output, input) <- liftIO $ spawn unbounded
-  _               <- liftIO $ Async.mapConcurrently_ (fork output) producers
-  fromInput input
- where
-  fork :: Output a -> Producer a IO () -> IO ()
-  fork output producer = do
-    runEffect $ producer >-> toOutput output
+runProducers :: Chan event -> [Producer event IO ()] -> IO ()
+runProducers chan producers =
+  Async.forConcurrently_ producers $ \producer -> do
+    runEffect $ producer >-> Pipes.mapM_ (publishEvent chan)
     performGC
-
-publishInputEvents :: Chan event -> Consumer event IO ()
-publishInputEvents events = forever (await >>= liftIO . writeChan events)
 
 runUI :: IO a -> IO a
 runUI ma = do

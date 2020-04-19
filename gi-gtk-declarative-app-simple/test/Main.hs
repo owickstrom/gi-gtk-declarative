@@ -1,8 +1,9 @@
+{-# LANGUAGE LambdaCase       #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedLists  #-}
 module Main where
 
-import           Control.Monad                 (void)
+import           Control.Concurrent            (threadDelay)
 import qualified GI.Gtk                        as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
@@ -13,6 +14,10 @@ import           Test.Hspec
 main :: IO ()
 main = hspec $
   describe "run" $ do
+    it "processes events from inputs" $
+      runApp app { inputs = [yield IncState >> yield Close]} >>= (`shouldBe` Just 1)
+    it "finishes app on Exit when input still going" $ do
+      runApp app { inputs = [closeLoop] } >>= (`shouldBe` Just 0)
     -- Propagating exception from the view/update/inputs even is
     -- important to crash the application instead of keeping it in a
     -- weird state.
@@ -24,16 +29,16 @@ main = hspec $
       runApp app {inputs = [error "oh no"]} `shouldThrow` errorCall "oh no"
     describe "propagates exceptions from the Transition" $ do
       it "when the maybe is an exception" $
-        runApp app { update = \() _ -> Transition () (pure $ error "oh no")
+        runApp app { update = \s _ -> Transition s (pure $ error "oh no")
                    , inputs = [yield ThrowError]
                    } `shouldThrow` errorCall "oh no"
       it "when the io is an exception" $
-        runApp app { update = \() _ -> Transition () (error "oh no")
+        runApp app { update = \s _ -> Transition s (error "oh no")
                    , inputs = [yield ThrowError]
                    } `shouldThrow` errorCall "oh no"
-      it "when the newly generated even is an exception" $
+      it "when the newly generated event is an exception" $
         -- Note: forcing the event by pattern matching is important to raise the exception
-        runApp app { update = \() ThrowError -> Transition () (pure $ Just (error "oh no"))
+        runApp app { update = \s ThrowError -> Transition s (pure $ Just (error "oh no"))
                    , inputs = [yield ThrowError]
                    } `shouldThrow` errorCall "oh no"
   where
@@ -41,14 +46,23 @@ main = hspec $
       { update = update'
       , view = view'
       , inputs = []
-      , initialState = ()
+      , initialState = 0
       }
-    runApp = timeout 1000000 . void . run
+    runApp = timeout 1000000 . run
+    closeLoop = do
+      yield Close
+      liftIO (threadDelay 1000000)
+      closeLoop
 
-data AppEvent = ThrowError
+type AppState = Int
 
-view' :: () -> AppView Gtk.Window AppEvent
-view' () = bin Gtk.Window [] (widget Gtk.Label [])
+data AppEvent = IncState | ThrowError | Close
 
-update' :: () -> AppEvent -> Transition () AppEvent
-update' () ThrowError = error "oh no"
+view' :: AppState -> AppView Gtk.Window AppEvent
+view' _ = bin Gtk.Window [] (widget Gtk.Label [])
+
+update' :: AppState -> AppEvent -> Transition AppState AppEvent
+update' state = \case
+  IncState   -> Transition (state + 1) (pure Nothing)
+  ThrowError -> error "oh no"
+  Close      -> Exit
