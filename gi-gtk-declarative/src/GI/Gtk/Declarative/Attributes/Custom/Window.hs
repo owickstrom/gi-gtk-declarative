@@ -1,18 +1,25 @@
 {-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
 
 module GI.Gtk.Declarative.Attributes.Custom.Window
   ( window
   , presentWindow
+  , IconData(..)
+  , windowIcon
+  , setDefaultIcon
   ) where
 
-import           Control.Monad                  (when)
-import           Data.Hashable                  (Hashable)
-import           Data.Typeable                  (Typeable)
+import           Control.Monad                     (when)
+import           Data.ByteString                   (ByteString)
+import           Data.Hashable                     (Hashable)
+import           Data.Typeable                     (Typeable)
 
-import qualified GI.Gtk                         as Gtk
+import qualified GI.GdkPixbuf.Objects.Pixbuf       as Pixbuf
+import qualified GI.GdkPixbuf.Objects.PixbufLoader as Pixbuf
+import qualified GI.Gtk                            as Gtk
 
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.EventSource
@@ -73,3 +80,45 @@ instance (Typeable a, Eq a) => CustomAttribute Gtk.Window (PresentWindow a) wher
     when (a /= b) $
       Gtk.windowPresent window'
     pure PresentWindowState
+
+-- | Set the icon that is used for windows by default.
+setDefaultIcon :: IconData -> IO ()
+setDefaultIcon dat = do
+  pixbuf <- loadPixbuf dat
+  Gtk.windowSetDefaultIcon pixbuf
+
+-- | Set the icon that is used by one particular window.
+windowIcon :: IconData -> Attribute Gtk.Window event
+windowIcon = customAttribute () . WindowIcon
+
+newtype WindowIcon event = WindowIcon IconData
+  deriving (Functor)
+
+instance CustomAttribute Gtk.Window WindowIcon where
+
+  data AttrState WindowIcon = WindowIconState
+
+  attrCreate window' (WindowIcon dat) = do
+    pixbuf <- loadPixbuf dat
+    Gtk.windowSetIcon window' (Just pixbuf)
+    pure WindowIconState
+
+  attrPatch window' state (WindowIcon old) (WindowIcon new) = do
+    when (old /= new) $ do
+      pixbuf <- loadPixbuf new
+      Gtk.windowSetIcon window' (Just pixbuf)
+    pure state
+
+data IconData
+  = IconDataBytes ByteString
+  -- ^ Icon data in an image format supported by GdkPixbuf (e.g. PNG, JPG)
+  deriving (Eq)
+
+loadPixbuf :: IconData -> IO Pixbuf.Pixbuf
+loadPixbuf (IconDataBytes bs) = do
+  loader <- Pixbuf.pixbufLoaderNew
+  Pixbuf.pixbufLoaderWrite loader bs
+  Pixbuf.pixbufLoaderClose loader
+  Pixbuf.pixbufLoaderGetPixbuf loader >>= \case
+    Nothing     -> error "Failed loading icon into pixbuf."
+    Just pixbuf -> pure pixbuf

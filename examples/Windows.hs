@@ -3,11 +3,13 @@
 {-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module Windows where
 
 import           Control.Concurrent                          (threadDelay)
 import           Control.Monad                               (void)
+import           Data.FileEmbed                              (embedFile)
 import           Data.Functor                                ((<&>))
 import           Data.Text                                   (pack)
 import           Data.UUID                                   (UUID)
@@ -24,7 +26,9 @@ import           GI.Gtk                                      (Box (..),
                                                               WindowPosition (..))
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
-import           GI.Gtk.Declarative.Attributes.Custom.Window (presentWindow,
+import           GI.Gtk.Declarative.Attributes.Custom.Window (IconData(..),
+                                                              setDefaultIcon,
+                                                              presentWindow,
                                                               window)
 
 data WindowState = WindowState
@@ -105,11 +109,16 @@ update' ws = \case
   Closed->
     Exit
 
+icon :: IconData
+icon = IconDataBytes $(embedFile "icon.png")
+
 main :: IO ()
-main = void $ run App
-  { view         = view'
-  , update       = update'
-  , inputs       = [incrPeriodically]
-  , initialState = []
-  }
+main = do
+  setDefaultIcon icon
+  void $ run App
+    { view         = view'
+    , update       = update'
+    , inputs       = [incrPeriodically]
+    , initialState = []
+    }
   where incrPeriodically = repeatM $ IncrAll <$ threadDelay (1000 * 1000)

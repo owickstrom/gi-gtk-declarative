@@ -35,6 +35,7 @@ executable example
   build-depends:        base >=4.10 && <5
                       , async
                       , bytestring
+                      , file-embed
                       , gi-gobject
                       , gi-glib
                       , gi-gtk
