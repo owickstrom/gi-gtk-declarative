@@ -6,7 +6,21 @@ packages:
 - examples
 
 extra-deps:
-  - hedgehog-1.0
+  - gi-glib-2.0.24@sha256:46726f0fb6b0ef0d6f6620d53025a9ca2a5bc273ab65496b368df7bc3dbe6d83,9558
+  - gi-gtk-3.0.36@sha256:ed4525766763f290aa03ae19e41a31c429a8d381729d4869e7c44e551351df6a,39016
+  - haskell-gi-0.24.5@sha256:a7a29f3bd532c3a36c64d5c0b6d7cc0ab990ace22029e4a3b1daae3f545d5989,5241
+  - haskell-gi-base-0.24.4@sha256:436539663b9ed5b5f8228cb0a702e270207c649b0320bc44b440046d3b608e74,2435
+  - ansi-terminal-0.11@sha256:97470250c92aae14c4c810d7f664c532995ba8910e2ad797b29f22ad0d2d0194,3307
+  - gi-harfbuzz-0.0.3
+  - gi-atk-2.0.22
+  - gi-cairo-1.0.24
+  - gi-gdk-3.0.23
+  - gi-gdkpixbuf-2.0.24
+  - gi-gio-2.0.27
+  - gi-gobject-2.0.25
+  - gi-pango-1.0.23
+  - concurrent-output-1.10.12
+  - hedgehog-1.0.4
 
 nix:
   packages: [pkgconfig, gnome3.gobjectIntrospection, gnome3.gtk]
