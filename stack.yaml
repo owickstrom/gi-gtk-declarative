@@ -1,15 +1,11 @@
-resolver: lts-16.27
+resolver: nightly-2021-01-05
 
 packages:
 - gi-gtk-declarative
 - gi-gtk-declarative-app-simple
 - examples
 
-extra-deps:
-- gi-atk-2.0.22@sha256:6ec2197aee4a1b5966302fc2875be05a9b3a54f694c4a6a9a330f4b0211223c5,6791
-- gi-harfbuzz-0.0.3@sha256:0550f498854b7edac66b1a09f283e5b5c86033aff58b4ac30b024ae59e1bd866,5869
-- haskell-gi-0.24.7@sha256:d1cf3e64589c9c366228f8fe89d2d48207b3ca11b48966ef976fedfa679a819b,5241
-- haskell-gi-base-0.24.5@sha256:f289ee14d99bc91daaf15a72533def379e1f5c6e51e9eff0d67e57912816ce74,2435
+extra-deps: []
 
 nix:
   packages: [pkgconfig, gnome3.gobjectIntrospection, gnome3.gtk]
