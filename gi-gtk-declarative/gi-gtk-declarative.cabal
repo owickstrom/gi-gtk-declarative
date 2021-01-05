@@ -53,21 +53,21 @@ library
                       , GI.Gtk.Declarative.Widget
                       , GI.Gtk.Declarative.Widget.Conversions
   build-depends:        base                   >=4.10 && <5
-                      , containers             >= 0.6 && < 0.7
-                      , data-default-class     >= 0.1  && <0.2
-                      , gi-gobject             >= 2    && <3
-                      , gi-glib                == 2.0.24
-                      , gi-gtk                 == 3.0.36
-                      , haskell-gi             == 0.24.5
-                      , haskell-gi-base        == 0.24.4
-                      , haskell-gi-overloading == 1.0
+                      , containers
+                      , data-default-class
+                      , gi-gobject
+                      , gi-glib
+                      , gi-gtk <4
+                      , haskell-gi
+                      , haskell-gi-base
+                      , haskell-gi-overloading
                       , mtl
                       , text
-                      , unordered-containers >= 0.2 && < 0.3
+                      , unordered-containers
                       , vector
-                      , gi-pango                == 1.0.23
-                      , gi-harfbuzz             == 0.0.3
-                      , concurrent-output       >= 1.10.12
+                      , gi-pango
+                      , gi-harfbuzz
+                      , concurrent-output
 
   hs-source-dirs:       src
   default-language:     Haskell2010
@@ -83,7 +83,7 @@ test-suite gi-gtk-declarative-tests
                    , gi-glib
                    , gi-gdk
                    , gi-gobject
-                   , gi-gtk
+                   , gi-gtk <4
                    , gi-gtk-declarative
                    , haskell-gi-base
                    , hedgehog >= 1 && < 2
