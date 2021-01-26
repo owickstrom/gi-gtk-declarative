@@ -69,6 +69,7 @@ pane paneProperties paneChild = Pane { .. }
 instance Patchable Pane where
   create = create . paneChild
   patch s b1 b2 = patch s (paneChild b1) (paneChild b2)
+  destroy s b = destroy s (paneChild b)
 
 instance EventSource Pane where
   subscribe Pane {..} = subscribe paneChild
@@ -101,9 +102,9 @@ instance IsContainer Gtk.Paned Pane where
             "appendChild: The `GI.Gtk.Paned` widget can only fit 2 panes. Additional children will be ignored."
           )
           nullPtr
-  replaceChild paned' Pane { paneProperties = PaneProperties { resize, shrink } } i old new
+  replaceChild paned' i destroyOld Pane { paneProperties = PaneProperties { resize, shrink } } new
     = do
-      Gtk.widgetDestroy old
+      destroyOld
       case i of
         0 -> Gtk.panedPack1 paned' new (coerce resize) (coerce shrink)
         1 -> Gtk.panedPack2 paned' new (coerce resize) (coerce shrink)

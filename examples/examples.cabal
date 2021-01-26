@@ -19,7 +19,7 @@ executable example
   main-is:              Main.hs
   other-modules:        AddBoxes
                       , CSS
-                      , CustomWidget
+                      , CustomAttribute
                       , Dialog
                       , Exit
                       , FileChooserButton
@@ -31,9 +31,11 @@ executable example
                       , MenuBar
                       , Notebook
                       , Paned
+                      , Windows
   build-depends:        base >=4.10 && <5
                       , async
                       , bytestring
+                      , file-embed
                       , gi-gobject
                       , gi-glib
                       , gi-gtk
@@ -44,7 +46,9 @@ executable example
                       , haskell-gi-base
                       , pipes
                       , pipes-extras
+                      , random
                       , text
+                      , uuid
                       , vector
   default-language:     Haskell2010
   ghc-options:          -O2 -Wall -threaded

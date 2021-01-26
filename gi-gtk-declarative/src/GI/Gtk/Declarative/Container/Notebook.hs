@@ -72,7 +72,7 @@ instance IsContainer Gtk.Notebook Widget where
             void $ Gtk.notebookAppendPage parent
                                           new
                                           (Nothing :: Maybe Gtk.Widget)
-  replaceChild parent _ i old new = do
+  replaceChild parent i destroyOld _ new = do
     let i' = i `div` 2
     pageI <- Gtk.notebookGetNthPage parent i'
     case pageI of
@@ -89,7 +89,7 @@ instance IsContainer Gtk.Notebook Widget where
         if i `mod` 2 == 0
           then do
             label <- Gtk.notebookGetTabLabel parent p -- we have to replace the child
-            Gtk.widgetDestroy old
+            destroyOld
             void $ Gtk.notebookInsertPage parent new label i'
           else do
             Gtk.notebookSetTabLabel parent p (Just new) -- we have to replace the label

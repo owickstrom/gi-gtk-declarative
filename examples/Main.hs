@@ -6,7 +6,7 @@ import           System.IO
 
 import qualified AddBoxes
 import qualified CSS
-import qualified CustomWidget
+import qualified CustomAttribute
 import qualified Dialog
 import qualified Exit
 import qualified FileChooserButton
@@ -18,12 +18,13 @@ import qualified ManyBoxes
 import qualified MenuBar
 import qualified Notebook
 import qualified Paned
+import qualified Windows
 
 main :: IO ()
 main =
   let examples =
           [ ("AddBoxes"         , AddBoxes.main)
-          , ("CustomWidget"     , CustomWidget.main)
+          , ("CustomAttribute"  , CustomAttribute.main)
           , ("FileChooserButton", FileChooserButton.main)
           , ("Hello"            , Hello.main)
           , ("ListBox"          , ListBox.main)
@@ -36,6 +37,7 @@ main =
           , ("CSS"              , CSS.main)
           , ("Paned"            , Paned.main)
           , ("Dialog"           , Dialog.main)
+          , ("Windows"          , Windows.main)
           ]
   in  getArgs >>= \case
         [example] -> case lookup example examples of

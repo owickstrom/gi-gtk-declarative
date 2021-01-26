@@ -1,13 +1,14 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedLabels #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE OverloadedLabels      #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
 
 -- | Implementations for common "Gtk.Container".
@@ -19,13 +20,14 @@ module GI.Gtk.Declarative.Container
   )
 where
 
-import           Control.Monad                  ( forM )
+import           Control.Monad                           (forM)
 import           Data.Typeable
-import           Data.Vector                    ( Vector )
-import qualified Data.Vector                   as Vector
-import qualified GI.Gtk                        as Gtk
+import           Data.Vector                             (Vector)
+import qualified Data.Vector                             as Vector
+import qualified GI.Gtk                                  as Gtk
 import           GI.Gtk.Declarative.Attributes
 import           GI.Gtk.Declarative.Attributes.Collected
+import           GI.Gtk.Declarative.Attributes.Custom
 import           GI.Gtk.Declarative.Attributes.Internal
 import           GI.Gtk.Declarative.Container.Class
 import           GI.Gtk.Declarative.Container.Patch
@@ -63,7 +65,7 @@ container
      , FromWidget (Container widget (Children child)) target
      , ToChildren widget parent child
      )
-  => 
+  =>
   -- | A container widget constructor from the underlying gi-gtk library.
      (Gtk.ManagedPtr widget -> widget)
   ->
@@ -92,16 +94,17 @@ instance
     Gtk.widgetShow widget'
     sc <- Gtk.widgetGetStyleContext widget'
     updateClasses sc mempty (collectedClasses collected)
+    ca <- createCustomAttributes widget' (filterToCustom attrs)
     childStates <- forM (unChildren children) $ \child -> do
       childState <- create child
       appendChild widget' child =<< someStateWidget childState
       return childState
     return
       (SomeState
-        (StateTreeContainer (StateTreeNode widget' sc collected ()) childStates)
+        (StateTreeContainer (StateTreeNode widget' sc collected ca ()) childStates)
       )
 
-  patch (SomeState (st :: StateTree stateType w1 c1 e1 cs)) (Container _ _ oldChildren) new@(Container (ctor :: Gtk.ManagedPtr
+  patch (SomeState (st :: StateTree stateType w1 c1 e1 cs)) (Container _ oldAttributes oldChildren) new@(Container (ctor :: Gtk.ManagedPtr
       w2
     -> w2) newAttributes (newChildren :: Children c2 e2))
     = case (st, eqT @w1 @w2) of
@@ -110,6 +113,7 @@ instance
             newCollected      = collectAttributes newAttributes
             oldCollectedProps = collectedProperties oldCollected
             newCollectedProps = collectedProperties newCollected
+            oldCustomAttributeStates = stateTreeCustomAttributeStates top
         in  if oldCollectedProps `canBeModifiedTo` newCollectedProps
               then Modify $ do
                 containerWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
@@ -119,7 +123,15 @@ instance
                 updateClasses (stateTreeStyleContext top)
                               (collectedClasses oldCollected)
                               (collectedClasses newCollected)
-                let top' = top { stateTreeCollectedAttributes = newCollected }
+                newCustomAttributeStates <- patchCustomAttributes
+                  containerWidget
+                  oldCustomAttributeStates
+                  (filterToCustom oldAttributes)
+                  (filterToCustom newAttributes)
+                let top' = top
+                      { stateTreeCollectedAttributes = newCollected
+                      , stateTreeCustomAttributeStates = newCustomAttributeStates
+                      }
                 SomeState <$> patchInContainer
                   (StateTreeContainer top' childStates)
                   containerWidget
@@ -127,6 +139,18 @@ instance
                   (unChildren newChildren)
               else Replace (create new)
       _ -> Replace (create new)
+
+  destroy (SomeState (st :: StateTree stateType w c e cs)) (Container _ attrs (children :: Children child e2)) = do
+    case (st, eqT @w @container) of
+      (StateTreeContainer StateTreeNode {..} childStates, Just Refl) -> do
+        sequence_ (Vector.zipWith destroy childStates (unChildren children))
+        destroyCustomAttributes
+          stateTreeWidget
+          stateTreeCustomAttributeStates
+          (filterToCustom attrs)
+        Gtk.widgetDestroy stateTreeWidget
+      _ ->
+        error "Container destroy called with incompatiable state"
 
 --
 -- EventSource
@@ -136,16 +160,22 @@ instance
   EventSource child =>
   EventSource (Container widget (Children child))
   where
-  subscribe (Container ctor props children) (SomeState st) cb = case st of
-    StateTreeContainer top childStates -> do
-      parentWidget <- Gtk.unsafeCastTo ctor (stateTreeWidget top)
-      handlers' <- foldMap (addSignalHandler cb parentWidget) props
-      subs <- flip foldMap (Vector.zip (unChildren children) childStates)
-        $ \(c, childState) -> subscribe c childState cb
-      return (handlers' <> subs)
-    _ ->
-      error
-        "Warning: Cannot subscribe to Container events with a non-container state tree."
+  subscribe (Container ctor props children) (SomeState (st :: StateTree stateType w c e cs)) cb =
+    case (st, eqT @w @widget) of
+      (StateTreeContainer StateTreeNode {..} childStates, Just Refl) -> do
+        parentWidget <- Gtk.unsafeCastTo ctor stateTreeWidget
+        handlers' <- foldMap (addSignalHandler cb parentWidget) props
+          <> subscribeCustomAttributes
+               stateTreeWidget
+               stateTreeCustomAttributeStates
+               (filterToCustom props)
+               cb
+        subs <- flip foldMap (Vector.zip (unChildren children) childStates)
+          $ \(c, childState) -> subscribe c childState cb
+        return (handlers' <> subs)
+      _ ->
+        error
+         "Warning: Cannot subscribe to Container events with a non-container state tree."
 
 --
 -- FromWidget

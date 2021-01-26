@@ -1,22 +1,26 @@
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
 
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE LambdaCase             #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedLabels       #-}
-{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedLabels      #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 -- | Attribute lists on declarative objects, supporting the underlying
--- attributes from "Data.GI.Base.Attributes", along with CSS class lists, and
--- pure and impure event EventHandlers.
+-- attributes from "Data.GI.Base.Attributes", along with CSS class lists,
+-- pure and impure event EventHandlers, and custom attributes with
+-- arbitrary state and patching behaviour.
 
 module GI.Gtk.Declarative.Attributes
   ( Attribute(..)
   , classes
   , ClassSet
+  , customAttribute
+  , filterToCustom
   -- * Event Handling
   , on
   , onM
@@ -25,20 +29,23 @@ module GI.Gtk.Declarative.Attributes
   )
 where
 
-import qualified Data.GI.Base.Attributes       as GI
-import qualified Data.GI.Base.Signals          as GI
-import           Data.HashSet                   ( HashSet )
-import qualified Data.HashSet                  as HashSet
-import qualified Data.Text                     as T
-import           Data.Text                      ( Text )
+import qualified Data.GI.Base.Attributes                             as GI
+import qualified Data.GI.Base.Signals                                as GI
+import           Data.Hashable                                       (Hashable)
+import           Data.HashSet                                        (HashSet)
+import qualified Data.HashSet                                        as HashSet
+import           Data.Text                                           (Text)
+import qualified Data.Text                                           as T
 import           Data.Typeable
-import           GHC.TypeLits                   ( KnownSymbol
-                                                , Symbol
-                                                )
-import qualified GI.Gtk                        as Gtk
+import           Data.Vector                                         (Vector)
+import qualified Data.Vector                                         as Vector
+import           GHC.TypeLits                                        (KnownSymbol,
+                                                                      Symbol)
+import qualified GI.Gtk                                              as Gtk
 
-import           GI.Gtk.Declarative.Attributes.Internal.EventHandler
+import           GI.Gtk.Declarative.Attributes.Custom
 import           GI.Gtk.Declarative.Attributes.Internal.Conversions
+import           GI.Gtk.Declarative.Attributes.Internal.EventHandler
 
 -- * Attributes
 
@@ -89,6 +96,9 @@ data Attribute widget event where
     => Gtk.SignalProxy widget info
     -> EventHandler gtkCallback widget Impure event
     -> Attribute widget event
+  Custom
+    :: CustomAttributeDecl widget event
+    -> Attribute widget event
 
 -- | A set of CSS classes.
 type ClassSet = HashSet Text
@@ -101,6 +111,7 @@ instance Functor (Attribute widget) where
     Classes cs               -> Classes cs
     OnSignalPure   signal eh -> OnSignalPure signal (fmap f eh)
     OnSignalImpure signal eh -> OnSignalImpure signal (fmap f eh)
+    Custom attr              -> Custom (fmap f attr)
 
 -- | Define the CSS classes for the underlying widget's style context. For these
 -- classes to have any effect, this requires a 'Gtk.CssProvider' with CSS files
@@ -138,3 +149,22 @@ onM
   -> userEventHandler
   -> Attribute widget event
 onM signal = OnSignalImpure signal . toEventHandler
+
+-- | Create a custom attribute from its declarative form
+customAttribute
+  :: (Typeable key, Eq key, Hashable key, CustomAttribute widget decl)
+  => key
+  -> decl event
+  -> Attribute widget event
+customAttribute key decl =
+  Custom (CustomAttributeDecl (CustomAttributeKey key) decl)
+
+-- | Extract the custom attributes from a list of attributes.
+filterToCustom
+  :: Vector (Attribute widget event)
+  -> Vector (CustomAttributeDecl widget event)
+filterToCustom = Vector.mapMaybe
+  (\case
+    Custom a -> Just a
+    _        -> Nothing
+  )

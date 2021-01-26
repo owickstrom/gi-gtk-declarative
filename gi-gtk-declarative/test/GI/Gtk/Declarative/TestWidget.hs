@@ -20,8 +20,6 @@ import           Data.Void
 import qualified GI.Gtk                            as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.Container.Grid  ( GridChild (..), GridChildProperties (..) )
-import           GI.Gtk.Declarative.Container.Grid as Grid
-import           GI.Gtk.Declarative.EventSource
 import           Hedgehog                    hiding ( label )
 import qualified Hedgehog.Gen                      as Gen
 import qualified Hedgehog.Range                    as Range
@@ -33,7 +31,6 @@ import           Prelude
 -- instantiated GTK widgets.
 data TestWidget
   = TestButton Text (Maybe Bool)
-  | TestCustomWidget (Maybe Text)
   | TestScrolledWindow (Maybe Gtk.PolicyType) TestWidget
   | TestBox (Maybe Gtk.Orientation) [TestBoxChild]
   | TestGrid [TestGridChild]
@@ -48,7 +45,6 @@ data TestGridChild = TestGridChild GridChildProperties TestWidget
 isNested :: TestWidget -> Bool
 isNested = \case
   TestButton{}                  -> False
-  TestCustomWidget{}            -> False
   TestScrolledWindow _ _        -> True
   TestBox            _ children -> not (null children)
   TestGrid children             -> not (null children)
@@ -60,7 +56,6 @@ instance HasGtkDefaults TestWidget where
   setDefaults = \case
     TestButton label useUnderline ->
       TestButton label (useUnderline <|> Just False)
-    TestCustomWidget fontName -> TestCustomWidget (fontName <|> Just "Sans 12")
     TestScrolledWindow policy child -> TestScrolledWindow
       (policy <|> Just Gtk.PolicyTypeAutomatic)
       (setDefaults child)
@@ -83,22 +78,6 @@ onlyJusts = Vector.concatMap (maybe Vector.empty Vector.singleton)
 
 toTestWidget :: TestWidget -> Widget Void
 toTestWidget = \case
-  TestCustomWidget fontName -> Widget (CustomWidget { .. })
-   where
-    customParams     = ()
-    customAttributes = case fontName of
-      Just t  -> [#fontName := t]
-      Nothing -> []
-    customWidget = Gtk.FontButton
-    customCreate () = do
-      btn <- Gtk.new Gtk.FontButton []
-      return (btn, ())
-    customPatch :: () -> () -> () -> CustomPatch Gtk.FontButton ()
-    customPatch _ () () = CustomKeep
-    customSubscribe
-      :: () -> () -> Gtk.FontButton -> (Void -> IO ()) -> IO Subscription
-    customSubscribe () () _lbl _cb = do
-      return (fromCancellation (pure ()))
   TestButton label useUnderline -> widget
     Gtk.Button
     (onlyJusts [Just (#label := label), (#useUnderline :=) <$> useUnderline])
@@ -136,10 +115,6 @@ fromGtkWidget = runExceptT . go
             <$> Gtk.get btn #label
             <*> (Just <$> Gtk.get btn #useUnderline)
         )
-      "GtkFontButton" -> withCast
-        w
-        Gtk.FontButton
-        (\btn -> TestCustomWidget . Just <$> Gtk.get btn #fontName)
       "GtkScrolledWindow" -> withCast w Gtk.ScrolledWindow $ \win -> do
         w' <-
           #getChild win
@@ -212,7 +187,7 @@ genTestWidget = Gen.frequency
     )
   )
  where
-  leaves = [genCustomWidget, genButton]
+  leaves = [genButton]
   -- In lack of `subtermN` (https://github.com/hedgehogqa/haskell-hedgehog/issues/119), we use this terrible hack:
   subwidgets :: ([TestWidget] -> Gen TestWidget) -> [Gen TestWidget]
   subwidgets f =
@@ -263,10 +238,6 @@ genGridChildProperties rowN = do
   leftAttach <- Gen.int32 (Range.linear 0 10)
   topAttach  <- Gen.int32 (Range.constant (rowN * 5) (rowN * 5 + 5 - height))
   pure GridChildProperties {..}
-
-genCustomWidget :: Gen TestWidget
-genCustomWidget = do
-  TestCustomWidget <$> Gen.maybe (Gen.choice [pure "Sans 10"])
 
 genButton :: Gen TestWidget
 genButton = do

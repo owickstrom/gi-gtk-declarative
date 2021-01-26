@@ -11,12 +11,12 @@
 -- performance of patching.
 module GI.Gtk.Declarative.State where
 
-import           Data.Typeable
-
+import           Data.Dynamic
 import           Data.Vector                             (Vector)
 import qualified GI.Gtk                                  as Gtk
 
 import           GI.Gtk.Declarative.Attributes.Collected
+import           GI.Gtk.Declarative.Attributes.Custom
 import           GI.Gtk.Declarative.Container.Class
 
 -- | A 'Data.Dynamic.Dynamic'-like container of a 'StateTree' value.
@@ -53,10 +53,11 @@ data StateTree (stateType :: StateType) widget child event customState where
 
 -- | The common structure for all state tree nodes.
 data StateTreeNode widget event customState = StateTreeNode
-  { stateTreeWidget              :: !widget
-  , stateTreeStyleContext        :: !Gtk.StyleContext
-  , stateTreeCollectedAttributes :: !(Collected widget event)
-  , stateTreeCustomState         :: customState
+  { stateTreeWidget                :: !widget
+  , stateTreeStyleContext          :: !Gtk.StyleContext
+  , stateTreeCollectedAttributes   :: !(Collected widget event)
+  , stateTreeCustomAttributeStates :: !(CollectedCustomAttributeStates widget)
+  , stateTreeCustomState           :: customState
   }
 
 -- * Convenience accessor functions

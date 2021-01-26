@@ -66,7 +66,7 @@ menuItem
   -> MenuItem event
 menuItem item attrs = MenuItem . Bin item attrs
 
--- | Construct a sub menu for a 'Gtk.Menu', wit a text label and the
+-- | Construct a sub menu for a 'Gtk.Menu', with a text label and the
 -- child menu items.
 subMenu :: Text -> Vector (MenuItem event) -> MenuItem event
 subMenu label = SubMenu label . container Gtk.Menu mempty
@@ -82,7 +82,7 @@ newSubMenuItem label createSubMenu = do
       Gtk.menuItemSetSubmenu menuItem' (Just (stateTreeNodeWidget subMenuState))
       return
         (SomeState
-          (StateTreeBin (StateTreeNode menuItem' sc mempty ())
+          (StateTreeBin (StateTreeNode menuItem' sc mempty mempty ())
                         (SomeState subMenuState)
           )
         )
@@ -104,6 +104,14 @@ instance Patchable MenuItem where
     -- TODO: case for l1 /= l2
     _ -> Replace (create (SubMenu l2 c2))
   patch _ _ b2 = Replace (create b2)
+  destroy state (MenuItem (c :: Bin i e)) =
+    destroy state c
+  destroy (SomeState st) (SubMenu _ c) = case st of
+    StateTreeBin top childState -> do
+      destroy childState c
+      Gtk.toWidget (stateTreeWidget top) >>= Gtk.widgetDestroy
+    _ ->
+      error "Cannot destroy SubMenu with non-StateTreeBin state"
 
 instance EventSource MenuItem where
   subscribe (MenuItem item     ) state          cb = subscribe item state cb
@@ -115,8 +123,8 @@ instance EventSource MenuItem where
 instance IsContainer Gtk.MenuShell MenuItem where
   appendChild shell _ widget' =
     Gtk.menuShellAppend shell =<< Gtk.unsafeCastTo Gtk.MenuItem widget'
-  replaceChild shell _ i old new = do
-    Gtk.containerRemove shell old
+  replaceChild shell i destroyOld _ new = do
+    destroyOld
     menuItem' <- Gtk.unsafeCastTo Gtk.MenuItem new
     Gtk.menuShellInsert shell menuItem' i
     Gtk.widgetShowAll shell
@@ -125,14 +133,14 @@ instance IsContainer Gtk.MenuBar MenuItem where
   appendChild menuBar d w = do
     s <- Gtk.toMenuShell menuBar
     appendChild s d w
-  replaceChild menuBar d i old new = do
+  replaceChild menuBar i destroyOld d new = do
     s <- Gtk.toMenuShell menuBar
-    replaceChild s d i old new
+    replaceChild s i destroyOld d new
 
 instance IsContainer Gtk.Menu MenuItem where
   appendChild menuBar d w = do
     s <- Gtk.toMenuShell menuBar
     appendChild s d w
-  replaceChild menuBar d i old new = do
+  replaceChild menuBar i destroyOld d new = do
     s <- Gtk.toMenuShell menuBar
-    replaceChild s d i old new
+    replaceChild s i destroyOld d new

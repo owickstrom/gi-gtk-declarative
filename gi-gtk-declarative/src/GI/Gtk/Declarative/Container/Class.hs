@@ -22,10 +22,10 @@ class IsContainer container child | container -> child where
   -- | Replace the child widget at the given index in the container.
   replaceChild
     :: container    -- ^ Container widget
-    -> child event  -- ^ Declarative child widget
     -> Int32        -- ^ Index to replace at
-    -> Gtk.Widget   -- ^ Old GTK widget to replace
-    -> Gtk.Widget   -- ^ New GTK widget to replace with
+    -> IO ()        -- ^ IO action to destroy the old child widget
+    -> child event  -- ^ New declarative child widget
+    -> Gtk.Widget   -- ^ New GTK widget created from the declarative widget
     -> IO ()
 
 -- | Common collection type for child widgets, used when patching containers.

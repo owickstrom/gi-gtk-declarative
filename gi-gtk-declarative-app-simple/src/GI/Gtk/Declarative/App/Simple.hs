@@ -134,7 +134,7 @@ runLoop App {..} = do
             sub      <- subscribe newMarkup newState (publishEvent events)
             return (newState, sub)
           Replace createNew -> runUI $ do
-            Gtk.widgetDestroy =<< someStateWidget oldState
+            destroy oldState oldMarkup
             cancel oldSubscription
             newState <- createNew
             Gtk.widgetShowAll =<< someStateWidget newState

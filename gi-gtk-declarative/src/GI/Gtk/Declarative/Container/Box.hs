@@ -57,6 +57,7 @@ instance Patchable BoxChild where
   create = create . child
   patch s b1 b2 | properties b1 == properties b2 = patch s (child b1) (child b2)
                 | otherwise                      = Replace (create b2)
+  destroy s b = destroy s (child b)
 
 instance EventSource BoxChild where
   subscribe BoxChild {..} = subscribe child
@@ -66,7 +67,7 @@ instance ToChildren Gtk.Box Vector BoxChild
 instance IsContainer Gtk.Box BoxChild where
   appendChild box BoxChild { properties = BoxChildProperties { expand, fill, padding } } widget'
     = Gtk.boxPackStart box widget' expand fill padding
-  replaceChild box boxChild' i old new = do
-    Gtk.widgetDestroy old
+  replaceChild box i destroyOld boxChild' new = do
+    destroyOld
     appendChild box boxChild' new
     Gtk.boxReorderChild box new i
