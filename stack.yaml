@@ -1,12 +1,11 @@
-resolver: lts-13.24
+resolver: lts-17.0
 
 packages:
 - gi-gtk-declarative
 - gi-gtk-declarative-app-simple
 - examples
 
-extra-deps:
-  - hedgehog-1.0
+extra-deps: []
 
 nix:
   packages: [pkgconfig, gnome3.gobjectIntrospection, gnome3.gtk]

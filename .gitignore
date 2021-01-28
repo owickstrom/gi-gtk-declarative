@@ -9,6 +9,7 @@
 /TAGS
 .ghc.environment*
 /cabal.project.local
+**stack.yaml.lock
 
 # Profiling and flamegraphs
 /gi-gtk-*.prof
