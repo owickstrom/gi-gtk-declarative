@@ -1,3 +1,10 @@
+* 0.7.0
+    - Version bounds compatibility with Stack resolver lts-17.0
+    - Replace Travis badge with a Github workflow one.
+    - Replace .travis.yml with a Github Actions Workflow.
+    - Improved exception handling and async handling in app-simple
+    - Fix race condition in app-simple
+    - Fix patching of grid child properties.
 * 0.6.3
     - Add `Grid` container widget
     - Fix bugs in patching properties for all types of widgets
