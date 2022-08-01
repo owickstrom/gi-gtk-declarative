@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 -- | Orphan instances for automatically converting between different
 -- widget types. As these use 'UndecidableInstances', they are kept
