@@ -1,4 +1,4 @@
-{ pkgs ? import ./nixpkgs.nix, compiler ? "ghc883", doBenchmark ? false, doCheck ? false }:
+{ pkgs ? import ./nixpkgs.nix, compiler ? "ghc884", doBenchmark ? false, doCheck ? false }:
 rec {
   docs = import ./docs/requirements.nix { inherit pkgs; };
   gi-gtk-declarative = (import ./gi-gtk-declarative { inherit compiler doBenchmark doCheck pkgs; }).gi-gtk-declarative;
