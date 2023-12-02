@@ -5,6 +5,11 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        ghc:
+          - ghc884
+          - ghc923
     steps:
       - uses: actions/checkout@v2
       - uses: cachix/install-nix-action@v12
@@ -13,6 +18,6 @@ jobs:
           name: gi-gtk-declarative
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
       - name: 'Build and Test Libraries and Examples'
-        run: nix-build -j2 --arg doCheck true
+        run: nix-build -j2 --arg compiler \"${{ matrix.ghc }}\" --arg doCheck true
       - name: 'Build Docs'
-        run: nix-shell -j2 --run 'cd docs && mkdocs build'
+        run: nix-shell -j2 --arg compiler \"${{ matrix.ghc }}\" --run 'cd docs && mkdocs build'

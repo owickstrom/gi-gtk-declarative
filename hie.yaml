@@ -1,6 +1,8 @@
 cradle:
-  direct:
-    arguments:
-      - -igi-gtk-declarative/src
-      - -igi-gtk-declarative-app-simple/src
-      - -iexamples
+  cabal:
+    - path: "./gi-gtk-declarative/src"
+      component: "lib:gi-gtk-declarative"
+    - path: "./gi-gtk-declarative-app-simple/src"
+      component: "lib:gi-gtk-declarative-app-simple"
+    - path: "./examples"
+      component: exe:example

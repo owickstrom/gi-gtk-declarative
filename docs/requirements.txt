@@ -1,3 +1,4 @@
+flit_core
 mkdocs
 mkdocs-material
 pygments

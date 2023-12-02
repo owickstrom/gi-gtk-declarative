@@ -27,8 +27,8 @@ library
                       , gi-glib
                       , gi-gtk                  >=3    && <4
                       , gi-gdk
-                      , haskell-gi              >=0.24 && <0.26
-                      , haskell-gi-base         >=0.24 && <0.26
+                      , haskell-gi              >=0.24 && <0.27
+                      , haskell-gi-base         >=0.24 && <0.27
                       , haskell-gi-overloading  >=1.0  && <1.1
                       , pipes                   >=4    && <5
                       , pipes-concurrency       >=2    && <3
