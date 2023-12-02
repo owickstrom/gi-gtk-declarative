@@ -1,5 +1,5 @@
 import (fetchTarball {
-  name = "nixpkgs-unstable-2021-01-17";
-  url = "https://github.com/nixos/nixpkgs/archive/4a2481f0c7085c5fc4eab5e0a6e09dad54d4caaa.tar.gz";
-  sha256 = "0r7d6rf62n1mrgh0z9pariwf27lqnvsfqy77yrpqdxdg8jzn0akd";
+  name = "nixpkgs-unstable-2022-07-17";
+  url = "https://github.com/NixOS/nixpkgs/archive/9eb60f25aff0d2218c848dd4574a0ab5e296cabe.tar.gz";
+  sha256 = "0vax04vac774acpf09dbwv1iz9ly19xrrsls18w1gv0hhij4xsp2";
 }) {}
